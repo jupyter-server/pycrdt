@@ -1,0 +1,15 @@
+[package]
+name = "pycrdt"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "pycrdt"
+crate-type = ["cdylib"]
+
+[dependencies]
+lib0 = "0.16.10"
+yrs = "0.16.10"
+
+[dependencies.pyo3]
+version = "0.19.2"

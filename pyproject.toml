@@ -1,0 +1,44 @@
+[build-system]
+requires = ["maturin>=1.2.3,<2"]
+build-backend = "maturin"
+
+[project]
+name = "pycrdt"
+description = "Python bindings for Yrs"
+license = { file = "LICENSE" }
+authors = [
+    { name = "David Brochart", email = "david.brochart@gmail.com" },
+]
+readme = "README.md"
+keywords = [
+    "crdt",
+]
+requires-python = ">=3.7"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest >=7.4.2,<8",
+  "y-py >=0.6,<0.7",
+]
+
+[project.urls]
+Homepage = "https://github.com/davidbrochart/pycrdt"
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+python-source = "python"
+module-name = "pycrdt._pycrdt"
