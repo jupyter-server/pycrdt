@@ -1,16 +1,16 @@
+from ._pycrdt import Transaction as _Transaction
+
+
 class Transaction:
     def __init__(self, doc) -> None:
         self._doc = doc
-        self._ops = []
 
     def __enter__(self) -> "Transaction":
-        self._doc._txn = self
-        return self
+        self._doc._txn = txn = self._doc._doc.create_transaction()
+        return txn
 
     def __exit__(self, *args, **kwargs) -> None:
-        for op in self._ops:
-            self._doc._doc.text_concat(*op)
-
-        self._doc._doc.process_transaction()
-
+        # dropping the transaction will commit
+        # self._doc._txn.commit()
+        self._doc._txn.drop()
         self._doc._txn = None
