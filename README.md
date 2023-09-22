@@ -1,4 +1,4 @@
-[![Build Status](https://github.com/davidbrochart/pycrdt/workflows/tests/badge.svg)](https://github.com/davidbrochart/pycrdt/actions)
+[![Build Status](https://github.com/davidbrochart/pycrdt/workflows/Tests/badge.svg)](https://github.com/davidbrochart/pycrdt/actions)
 
 # pycrdt
 
