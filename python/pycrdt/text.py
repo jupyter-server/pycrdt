@@ -12,7 +12,7 @@ class Text:
     _doc: Doc | None
     _text: _Text
 
-    def __init__(self, name: str, doc: Doc = None):
+    def __init__(self, name: str, doc: Doc | None = None):
         self._doc = doc
         if doc is None:
             pass  # TODO: prelim
@@ -22,5 +22,8 @@ class Text:
     def __iadd__(self, other: str):
         if self._doc is None:
             raise RuntimeError("Not in a document")
+
+        if self._doc._txn is None:
+            raise RuntimeError("No current transaction")
 
         self._text.extend(self._doc._txn, other)
