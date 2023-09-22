@@ -36,5 +36,8 @@ jobs:
     - name: Build and install pycrdt
       run: pip install .[test]
 
+    - name: Check types
+      run: mypy python
+
     - name: Run tests
       run: pytest -v tests

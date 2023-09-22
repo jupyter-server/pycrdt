@@ -32,6 +32,7 @@ classifiers = [
 test = [
   "pytest >=7.4.2,<8",
   "y-py >=0.6,<0.7",
+  "mypy",
 ]
 
 [project.urls]
