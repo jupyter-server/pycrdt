@@ -6,7 +6,7 @@ def test_text():
     doc = Doc()
     text = doc.get_text("text")
     with doc.transaction():
-        text.extend("Hello, World!")
+        text += "Hello, World!"
 
     update = doc.get_update(Doc().get_state())
 
