@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from ._pycrdt import Doc as _Doc
 from ._pycrdt import Transaction as _Transaction
 from .text import Text

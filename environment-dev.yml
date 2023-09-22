@@ -1,0 +1,7 @@
+name: pycrdt
+channels:
+  - conda-forge
+dependencies:
+  - python
+  - pip
+  - rust

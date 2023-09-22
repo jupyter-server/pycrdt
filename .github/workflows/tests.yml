@@ -1,0 +1,40 @@
+name: Tests
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+    branches:
+    - main
+
+jobs:
+  test:
+    name: ${{ matrix.os }} python-${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: [ '3.8', '3.9', '3.10', '3.11' ]
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Setup conda environment
+      uses: mamba-org/setup-micromamba@v1
+      with:
+        environment-file: environment-dev.yml
+        environment-name: pycrdt
+        create-args: python=${{ matrix.python-version }}
+
+    - name: Build and install pycrdt
+      run: pip install .[test]
+
+    - name: Run tests
+      run: pytest -v tests
