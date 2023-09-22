@@ -42,3 +42,7 @@ Homepage = "https://github.com/davidbrochart/pycrdt"
 features = ["pyo3/extension-module"]
 python-source = "python"
 module-name = "pycrdt._pycrdt"
+
+[tool.ruff]
+line-length = 88
+select = ["F", "E", "W", "I001"]
