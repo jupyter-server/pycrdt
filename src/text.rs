@@ -6,7 +6,7 @@ use yrs::{
 use crate::transaction::Transaction;
 
 
-#[pyclass(unsendable)]
+#[pyclass]
 pub struct Text {
     text: TextRef,
 }
@@ -28,10 +28,10 @@ impl Text {
         Ok(len)
     }
 
-    fn push(&self, txn: &mut Transaction, chunk: &str)  -> PyResult<()> {
+    fn push(&self, py: Python<'_>, txn: &mut Transaction, chunk: &str)  -> PyResult<()> {
         let mut _t = txn.transaction();
         let mut t = _t.as_mut().unwrap();
-        self.text.push(&mut t, chunk);
+        py.allow_threads(|| self.text.push(&mut t, chunk));
         Ok(())
     }
 
