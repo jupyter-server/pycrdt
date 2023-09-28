@@ -15,9 +15,16 @@ class Transaction:
 
     def drop(self) -> None:
         """Drop the transaction, effectively committing document changes."""
+    def commit(self) -> None:
+        """Commit the document changes."""
 
 class Text:
     """Collaborative text structure."""
 
-    def extend(self, txn: Transaction, chunk: str) -> None:
-        """Extend the text structure with more text."""
+    def len(self, txn: Transaction) -> int:
+        """Returns a number of characters visible in a current text data structure."""
+    def push(self, txn: Transaction, chunk: str) -> None:
+        """Appends a given `chunk` of text at the end of a current text structure."""
+    def remove_range(self, txn: Transaction, index: int, len: int) -> None:
+        """Removes up to `len` characters from a current text structure, starting at
+        given`index`."""

@@ -21,17 +21,24 @@ impl Text {
 
 #[pymethods]
 impl Text {
-    //#[new]
-    //pub fn new(text: TextRef) -> Self {
-    //    Text {
-    //        text: text,
-    //    }
-    //}
+    fn len(&self, txn: &mut Transaction)  -> PyResult<u32> {
+        let mut _t = txn.transaction();
+        let t = _t.as_mut().unwrap();
+        let len = self.text.len(t);
+        Ok(len)
+    }
 
-    fn extend(&self, txn: &mut Transaction, chunk: &str)  -> PyResult<()> {
-        let mut t1 = txn.transaction();
-        let mut t2 = t1.as_mut().unwrap();
-        self.text.push(&mut t2, chunk);
+    fn push(&self, txn: &mut Transaction, chunk: &str)  -> PyResult<()> {
+        let mut _t = txn.transaction();
+        let mut t = _t.as_mut().unwrap();
+        self.text.push(&mut t, chunk);
+        Ok(())
+    }
+
+    fn remove_range(&self, txn: &mut Transaction, index: u32, len: u32)  -> PyResult<()> {
+        let mut _t = txn.transaction();
+        let mut t = _t.as_mut().unwrap();
+        self.text.remove_range(&mut t, index, len);
         Ok(())
     }
 }

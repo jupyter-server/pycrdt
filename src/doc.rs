@@ -1,7 +1,9 @@
 use pyo3::prelude::*;
 use pyo3::types::PyBytes;
 use yrs::{
-    Doc as _Doc, ReadTxn, Transact,
+    Doc as _Doc,
+    ReadTxn,
+    Transact,
     StateVector,
 };
 use yrs::updates::encoder::{Encode};
