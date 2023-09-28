@@ -4,13 +4,24 @@ from pycrdt import Doc
 
 def test_text():
     doc = Doc()
+    ypy_doc = Y.YDoc()
+
+    # add text
+    hello = "Hello"
+    world = ", World!"
+    prev_state = doc.get_state()
     text = doc.get_text("text")
     with doc.transaction():
-        text += "Hello, World!"
+        text += hello + world
+    update = doc.get_update(prev_state)
+    Y.apply_update(ypy_doc, update)
+    remote_text = ypy_doc.get_text("text")
+    assert str(remote_text) == hello + world
 
-    update = doc.get_update(Doc().get_state())
-
-    remote_doc = Y.YDoc()
-    Y.apply_update(remote_doc, update)
-    remote_text = remote_doc.get_text("text")
-    assert str(remote_text) == "Hello, World!"
+    # del text
+    prev_state = doc.get_state()
+    with doc.transaction():
+        del text[len(hello) :]
+    update = doc.get_update(prev_state)
+    Y.apply_update(ypy_doc, update)
+    assert str(remote_text) == hello
