@@ -10,17 +10,24 @@ if TYPE_CHECKING:
 
 class Transaction:
     _doc: "Doc"
+    _txn: _Transaction
+    _nb: int
 
     def __init__(self, doc: "Doc") -> None:
         self._doc = doc
+        self._nb = 0
 
-    def __enter__(self) -> _Transaction:
-        self._doc._txn = txn = self._doc._doc.create_transaction()
-        return txn
+    def __enter__(self) -> Transaction:
+        self._nb += 1
+        if self._doc._txn is None:
+            self._doc._txn = self
+            self._txn = self._doc._doc.create_transaction()
+        return self
 
     def __exit__(self, exc_type, exc_value, exc_tb) -> None:
-        # dropping the transaction will commit, no need to do it
-        # self._doc._txn.commit()
-        assert self._doc._txn is not None
-        self._doc._txn.drop()
-        self._doc._txn = None
+        self._nb -= 1
+        if self._nb == 0:
+            # dropping the transaction will commit, no need to do it
+            # self._txn.commit()
+            self._txn.drop()
+            self._doc._txn = None

@@ -8,15 +8,19 @@ def test_text():
 
     # add text
     hello = "Hello"
-    world = ", World!"
+    world = ", World"
+    punct = "!"
     prev_state = doc.get_state()
     text = doc.get_text("text")
     with doc.transaction():
-        text += hello + world
+        text += hello
+        with doc.transaction():
+            text += world
+        text += punct
     update = doc.get_update(prev_state)
     Y.apply_update(ypy_doc, update)
     remote_text = ypy_doc.get_text("text")
-    assert str(remote_text) == hello + world
+    assert str(remote_text) == hello + world + punct
 
     # del text
     prev_state = doc.get_state()
