@@ -22,7 +22,7 @@ class Text:
     def __len__(self) -> int:
         assert self._doc is not None
         assert self._doc._txn is not None
-        return self._text.len(self._doc._txn)
+        return self._text.len(self._doc._txn._txn)
 
     def __iadd__(self, other: str) -> Text:
         if self._doc is None:
@@ -31,14 +31,14 @@ class Text:
         if self._doc._txn is None:
             raise RuntimeError("No current transaction")
 
-        self._text.push(self._doc._txn, other)
+        self._text.push(self._doc._txn._txn, other)
         return self
 
     def __delitem__(self, key) -> None:
         assert self._doc is not None
         assert self._doc._txn is not None
         if isinstance(key, int):
-            self._text.remove_range(self._doc._txn, key, 1)
+            self._text.remove_range(self._doc._txn._txn, key, 1)
         elif isinstance(key, slice):
             if key.step is not None:
                 raise RuntimeError("Step not supported")
@@ -54,4 +54,4 @@ class Text:
                 raise RuntimeError("Negative stop not supported")
             else:
                 n = key.stop - i
-            self._text.remove_range(self._doc._txn, i, n)
+            self._text.remove_range(self._doc._txn._txn, i, n)
