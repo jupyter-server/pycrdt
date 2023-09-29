@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 from ._pycrdt import Text as _Text
+from ._pycrdt import TextEvent
 
 if TYPE_CHECKING:
     from .doc import Doc
@@ -55,3 +56,9 @@ class Text:
             else:
                 n = key.stop - i
             self._text.remove_range(self._doc._txn._txn, i, n)
+
+    def observe(self, callback: Callable[[TextEvent], None]) -> int:
+        return self._text.observe(callback)
+
+    def unobserve(self, subscription_id: int) -> None:
+        self._text.unobserve(subscription_id)
