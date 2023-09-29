@@ -27,6 +27,8 @@ class Text:
         """Returns a number of characters visible in a current text data structure."""
     def push(self, txn: Transaction, chunk: str) -> None:
         """Appends a given `chunk` of text at the end of a current text structure."""
+    def insert(self, txn: Transaction, index: int, chunk: str) -> None:
+        """Inserts a `chunk` of text at a given `index`."""
     def remove_range(self, txn: Transaction, index: int, len: int) -> None:
         """Removes up to `len` characters from a current text structure, starting at
         given`index`."""
