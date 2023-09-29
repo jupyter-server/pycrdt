@@ -55,6 +55,8 @@ def test_observe():
         text += punct
     with doc.transaction():
         del text[len(hello) : len(hello) + len(world)]
+    with doc.transaction():
+        text[len(hello) : len(hello)] = hello
     text.unobserve(subscription_id)
     with doc.transaction():
         text += punct
@@ -81,11 +83,14 @@ def test_observe():
         ypy_text.extend(txn, punct)
     with ypy_doc.begin_transaction() as txn:
         ypy_text.delete_range(txn, len(hello), len(world))
+    with ypy_doc.begin_transaction() as txn:
+        ypy_text.insert(txn, len(hello), hello)
 
     ref = [
         {"delta": [{"insert": hello}], "path": []},
         {"delta": [{"retain": len(hello)}, {"insert": world}], "path": []},
         {"delta": [{"retain": len(hello) + len(world)}, {"insert": punct}], "path": []},
         {"delta": [{"retain": len(hello)}, {"delete": len(world)}], "path": []},
+        {"delta": [{"retain": len(hello)}, {"insert": hello}], "path": []},
     ]
     assert events == ypy_events == ref

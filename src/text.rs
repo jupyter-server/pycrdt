@@ -40,6 +40,13 @@ impl Text {
         Ok(())
     }
 
+    fn insert(&self, txn: &mut Transaction, index: u32, chunk: &str) -> PyResult<()> {
+        let mut _t = txn.transaction();
+        let mut t = _t.as_mut().unwrap();
+        self.text.insert(&mut t, index, chunk);
+        Ok(())
+    }
+
     fn remove_range(&self, txn: &mut Transaction, index: u32, len: u32) -> PyResult<()> {
         let mut _t = txn.transaction();
         let mut t = _t.as_mut().unwrap();

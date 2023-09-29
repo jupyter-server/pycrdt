@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Callable
 
 from ._pycrdt import Text as _Text
-from ._pycrdt import TextEvent
+from ._pycrdt import TextEvent, Transaction
 
 if TYPE_CHECKING:
     from .doc import Doc
@@ -21,25 +21,25 @@ class Text:
             self._text = doc._doc.get_or_insert_text(name)
 
     def __len__(self) -> int:
-        assert self._doc is not None
-        assert self._doc._txn is not None
-        return self._text.len(self._doc._txn._txn)
+        txn = self._current_transaction()
+        return self._text.len(txn)
 
-    def __iadd__(self, other: str) -> Text:
+    def _current_transaction(self) -> Transaction:
         if self._doc is None:
             raise RuntimeError("Not in a document")
-
         if self._doc._txn is None:
             raise RuntimeError("No current transaction")
+        return self._doc._txn._txn
 
-        self._text.push(self._doc._txn._txn, other)
+    def __iadd__(self, other: str) -> Text:
+        txn = self._current_transaction()
+        self._text.push(txn, other)
         return self
 
-    def __delitem__(self, key) -> None:
-        assert self._doc is not None
-        assert self._doc._txn is not None
+    def __delitem__(self, key: int | slice) -> None:
+        txn = self._current_transaction()
         if isinstance(key, int):
-            self._text.remove_range(self._doc._txn._txn, key, 1)
+            self._text.remove_range(txn, key, 1)
         elif isinstance(key, slice):
             if key.step is not None:
                 raise RuntimeError("Step not supported")
@@ -55,7 +55,24 @@ class Text:
                 raise RuntimeError("Negative stop not supported")
             else:
                 n = key.stop - i
-            self._text.remove_range(self._doc._txn._txn, i, n)
+            self._text.remove_range(txn, i, n)
+        else:
+            raise RuntimeError(f"Index not supported: {key}")
+
+    def __setitem__(self, key: int | slice, value: str) -> None:
+        txn = self._current_transaction()
+        if isinstance(key, int):
+            raise RuntimeError("Single item assignment not supported")
+        elif isinstance(key, slice):
+            if key.step is not None:
+                raise RuntimeError("Step not supported")
+            if key.start != key.stop:
+                raise RuntimeError("Start and stop should be equal")
+            if len(self) <= key.start < 0:
+                raise RuntimeError("Index out of range")
+            self._text.insert(txn, key.start, value)
+        else:
+            raise RuntimeError(f"Index not supported: {key}")
 
     def observe(self, callback: Callable[[TextEvent], None]) -> int:
         return self._text.observe(callback)
