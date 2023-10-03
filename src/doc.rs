@@ -6,9 +6,11 @@ use yrs::{
     Transact,
     StateVector,
 };
-use yrs::updates::encoder::{Encode};
+use yrs::updates::encoder::Encode;
 use yrs::updates::decoder::Decode;
 use crate::text::Text;
+use crate::array::Array;
+use crate::map::Map;
 use crate::transaction::Transaction;
 
 
@@ -29,8 +31,20 @@ impl Doc {
 
     fn get_or_insert_text(&mut self, py: Python<'_>, name: &str) -> PyResult<Py<Text>> {
         let text = self.doc.get_or_insert_text(name);
-        let pytext: Py<Text> = Py::new(py, Text::from_text(text))?;
+        let pytext: Py<Text> = Py::new(py, Text::from(text))?;
         Ok(pytext)
+    }
+
+    fn get_or_insert_array(&mut self, py: Python<'_>, name: &str) -> PyResult<Py<Array>> {
+        let shared = self.doc.get_or_insert_array(name);
+        let pyshared: Py<Array > = Py::new(py, Array::from(shared))?;
+        Ok(pyshared)
+    }
+
+    fn get_or_insert_map(&mut self, py: Python<'_>, name: &str) -> PyResult<Py<Map>> {
+        let shared = self.doc.get_or_insert_map(name);
+        let pyshared: Py<Map> = Py::new(py, Map::from(shared))?;
+        Ok(pyshared)
     }
 
     fn create_transaction(&self, py: Python<'_>) -> PyResult<Py<Transaction>> {

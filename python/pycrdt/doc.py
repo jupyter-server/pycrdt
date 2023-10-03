@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from ._pycrdt import Doc as _Doc
+from .array import Array
+from .map import Map
 from .text import Text
 from .transaction import Transaction
 
@@ -14,8 +16,13 @@ class Doc:
         self._txn = None
 
     def get_text(self, name: str) -> Text:
-        text = Text(name, self)
-        return text
+        return Text(name=name, doc=self)
+
+    def get_array(self, name: str) -> Array:
+        return Array(name=name, doc=self)
+
+    def get_map(self, name: str) -> Map:
+        return Map(name=name, doc=self)
 
     def transaction(self) -> Transaction:
         if self._txn is not None:
