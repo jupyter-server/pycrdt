@@ -5,6 +5,7 @@ use yrs::{
     ReadTxn,
     Transact,
     StateVector,
+    Update,
 };
 use yrs::updates::encoder::Encode;
 use yrs::updates::decoder::Decode;
@@ -74,5 +75,14 @@ impl Doc {
         drop(txn);
         let bytes: PyObject = Python::with_gil(|py| PyBytes::new(py, &update).into());
         Ok(bytes)
+    }
+
+    fn apply_update(&mut self, update: &PyBytes) -> PyResult<()> {
+        let mut txn = self.doc.transact_mut();
+        let bytes: &[u8] = FromPyObject::extract(update)?;
+        let u = Update::decode_v1(&bytes).unwrap();
+        txn.apply_update(u);
+        drop(txn);
+        Ok(())
     }
 }
