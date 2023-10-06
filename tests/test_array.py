@@ -7,6 +7,15 @@ from yaml import load
 json_loads = partial(load, Loader=Loader)
 
 
+def callback(events, event):
+    events.append(
+        dict(
+            delta=event.delta,
+            path=event.path,
+        )
+    )
+
+
 def test_nested():
     doc = Doc()
     array0 = Array(name="array", doc=doc)
@@ -31,15 +40,7 @@ def test_array():
     array = doc.get_array("array")
     events = []
 
-    def callback(event):
-        events.append(
-            dict(
-                delta=event.delta,
-                path=event.path,
-            )
-        )
-
-    array.observe(callback)
+    array.observe(partial(callback, events))
     ref = [
         -1,
         -2,

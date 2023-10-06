@@ -2,19 +2,13 @@ from __future__ import annotations
 
 from ._pycrdt import Doc as _Doc
 from .array import Array
+from .base import BaseDoc, integrated_types
 from .map import Map
 from .text import Text
 from .transaction import Transaction
 
 
-class Doc:
-    _doc: _Doc
-    _txn: Transaction | None
-
-    def __init__(self) -> None:
-        self._doc = _Doc()
-        self._txn = None
-
+class Doc(BaseDoc):
     def get_text(self, name: str) -> Text:
         return Text(name=name, doc=self)
 
@@ -34,3 +28,6 @@ class Doc:
 
     def get_update(self, state: bytes) -> bytes:
         return self._doc.get_update(state)
+
+
+integrated_types[_Doc] = Doc
