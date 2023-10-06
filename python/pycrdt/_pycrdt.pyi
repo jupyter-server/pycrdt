@@ -15,6 +15,8 @@ class Doc:
         """Get the current document state."""
     def get_update(self, state: bytes) -> bytes:
         """Get the update from the given state to the current state."""
+    def apply_update(self, update: bytes) -> None:
+        """Apply the update to the document."""
 
 class Transaction:
     """Document transaction"""

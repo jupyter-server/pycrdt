@@ -92,7 +92,7 @@ class BaseType(ABC):
     def _do_and_integrate(
         self, action: str, other: BaseType, txn: _Transaction, *args
     ) -> None:
-        if not other.is_prelim:
+        if other.is_integrated:
             raise RuntimeError("Already integrated")
         method = getattr(self._integrated, f"{action}_{other.type_name}_prelim")
         integrated = method(txn, *args)
@@ -127,6 +127,10 @@ class BaseType(ABC):
     @property
     def is_prelim(self) -> bool:
         return self._prelim is not None
+
+    @property
+    def is_integrated(self) -> bool:
+        return self._integrated is not None
 
     @property
     def prelim(self) -> Any:

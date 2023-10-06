@@ -29,5 +29,8 @@ class Doc(BaseDoc):
     def get_update(self, state: bytes) -> bytes:
         return self._doc.get_update(state)
 
+    def apply_update(self, update: bytes) -> None:
+        self._doc.apply_update(update)
+
 
 integrated_types[_Doc] = Doc
