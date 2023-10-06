@@ -1,12 +1,13 @@
 use pyo3::prelude::*;
-use pyo3::types::PyList;
+use pyo3::types::{PyList, PyString};
 use yrs::{
+    GetString,
     Observable,
     TextRef,
     Text as _Text,
     TransactionMut,
 };
-use yrs::types::text::{TextEvent as _TextEvent};
+use yrs::types::text::TextEvent as _TextEvent;
 use crate::transaction::Transaction;
 use crate::type_conversions::ToPython;
 
@@ -17,7 +18,7 @@ pub struct Text {
 }
 
 impl Text {
-    pub fn from_text(text: TextRef) -> Self {
+    pub fn from(text: TextRef) -> Self {
         Text {
             text,
         }
@@ -52,6 +53,13 @@ impl Text {
         let mut t = _t.as_mut().unwrap();
         self.text.remove_range(&mut t, index, len);
         Ok(())
+    }
+
+    fn to_json(&mut self, txn: &mut Transaction) -> PyObject {
+        let mut _t = txn.transaction();
+        let t = _t.as_mut().unwrap();
+        let s = self.text.get_string(t);
+        Python::with_gil(|py| PyString::new(py, &s).into())
     }
 
     fn observe(&mut self, f: PyObject) -> PyResult<u32> {
@@ -102,7 +110,6 @@ impl TextEvent {
     fn txn(&self) -> &TransactionMut {
         unsafe { self.txn.as_ref().unwrap() }
     }
-
 }
 
 #[pymethods]
@@ -112,7 +119,7 @@ impl TextEvent {
         if let Some(target) = self.target.as_ref() {
             target.clone()
         } else {
-            let target: PyObject = Python::with_gil(|py| Text::from_text(self.event().target().clone()).into_py(py));
+            let target: PyObject = Python::with_gil(|py| Text::from(self.event().target().clone()).into_py(py));
             self.target = Some(target.clone());
             target
         }
