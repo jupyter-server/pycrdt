@@ -1,9 +1,20 @@
+from functools import partial
+
 import y_py as Y
 from pycrdt import Doc
 
 hello = "Hello"
 world = ", World"
 punct = "!"
+
+
+def callback(events, event):
+    events.append(
+        dict(
+            delta=event.delta,
+            path=event.path,
+        )
+    )
 
 
 def test_text():
@@ -38,15 +49,7 @@ def test_observe():
     text = doc.get_text("text")
     events = []
 
-    def callback(event):
-        events.append(
-            dict(
-                delta=event.delta,
-                path=event.path,
-            )
-        )
-
-    subscription_id = text.observe(callback)
+    subscription_id = text.observe(partial(callback, events))
     with doc.transaction():
         text += hello
     with doc.transaction():

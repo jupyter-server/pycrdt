@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from ._pycrdt import Array as _Array
-from .base_type import BaseType
+from .base import BaseDoc, BaseType, integrated_types
 
 if TYPE_CHECKING:
     from .doc import Doc
@@ -36,7 +36,10 @@ class Array(BaseType):
     def _set(self, value: list[Any]) -> None:
         txn = self._current_transaction()
         for v in value:
-            if isinstance(v, BaseType):
+            if isinstance(v, BaseDoc):
+                # subdoc
+                self.integrated.push_back_doc(txn, v._doc)
+            elif isinstance(v, BaseType):
                 # shared type
                 self._do_and_integrate("push_back", v, txn)
             else:
@@ -112,11 +115,11 @@ class Array(BaseType):
         txn = self._current_transaction()
         if not isinstance(key, int):
             raise RuntimeError("Slices are not supported")
-        return self._maybe_as_type(self.integrated.get(txn, key))
+        return self._maybe_as_type_or_doc(self.integrated.get(txn, key))
 
     def __str__(self) -> str:
         txn = self._current_transaction()
         return self.integrated.to_json(txn)
 
 
-BaseType._integrated_types[_Array] = Array
+integrated_types[_Array] = Array

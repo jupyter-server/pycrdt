@@ -15,8 +15,15 @@ use crate::transaction::Transaction;
 
 
 #[pyclass(unsendable)]
+#[derive(Clone)]
 pub struct Doc {
-    doc: _Doc,
+    pub doc: _Doc,
+}
+
+impl Doc {
+    pub fn from(doc: _Doc) -> Self {
+        Doc { doc }
+    }
 }
 
 #[pymethods]

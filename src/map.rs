@@ -2,6 +2,7 @@ use pyo3::prelude::*;
 use pyo3::exceptions::{PyValueError, PyTypeError};
 use pyo3::types::{PyString, PyDict};
 use yrs::{
+    Doc as _Doc,
     MapRef,
     Map as _Map,
     DeepObservable,
@@ -17,6 +18,7 @@ use crate::transaction::Transaction;
 use crate::type_conversions::{EntryChangeWrapper, events_into_py, py_to_any, ToPython};
 use crate::text::Text;
 use crate::array::Array;
+use crate::doc::Doc;
 
 
 #[pyclass(unsendable)]
@@ -73,6 +75,16 @@ impl Map {
         let integrated = self.map.insert(&mut t, key, MapPrelim::<Any>::new());
         let shared = Map::from(integrated);
         Python::with_gil(|py| { Ok(shared.into_py(py)) })
+    }
+
+    fn insert_doc(&self, txn: &mut Transaction, key: &str, doc: &PyAny) -> PyResult<()> {
+        let mut _t = txn.transaction();
+        let mut t = _t.as_mut().unwrap();
+        let d1: Doc = doc.extract().unwrap();
+        let d2: _Doc = d1.doc;
+        let doc_ref = self.map.insert(&mut t, key, d2);
+        doc_ref.load(t);
+        Ok(())
     }
 
     fn remove(&self, txn: &mut Transaction, key: &str) -> PyResult<()> {

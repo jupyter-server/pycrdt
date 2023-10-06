@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from ._pycrdt import Text as _Text
-from .base_type import BaseType
+from .base import BaseType, integrated_types
 
 if TYPE_CHECKING:
     from .doc import Doc
@@ -72,4 +72,4 @@ class Text(BaseType):
             raise RuntimeError(f"Index not supported: {key}")
 
 
-BaseType._integrated_types[_Text] = Text
+integrated_types[_Text] = Text

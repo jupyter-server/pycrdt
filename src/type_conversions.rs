@@ -8,6 +8,7 @@ use std::collections::{VecDeque, HashMap};
 use crate::text::{Text, TextEvent};
 use crate::array::{Array, ArrayEvent};
 use crate::map::{Map, MapEvent};
+use crate::doc::Doc;
 
 pub trait ToPython {
     fn into_py(self, py: Python) -> PyObject;
@@ -96,7 +97,8 @@ impl ToPython for Value {
             Value::YText(v) => Text::from(v).into_py(py),
             Value::YArray(v) => Array::from(v).into_py(py),
             Value::YMap(v) => Map::from(v).into_py(py),
-            _ => pyo3::IntoPy::into_py(0, py),
+            Value::YDoc(v) => Doc::from(v).into_py(py),
+            _ => pyo3::IntoPy::into_py(py.None(), py),
             //Value::YXmlElement(v) => YXmlElement::from(v).into_py(py),
             //Value::YXmlText(v) => YXmlText::from(v).into_py(py),
         }

@@ -4,6 +4,7 @@ use pyo3::types::{PyList, PyString};
 use yrs::{
     ArrayRef,
     Array as _Array,
+    Doc as _Doc,
     DeepObservable,
     Observable,
     TransactionMut,
@@ -17,6 +18,7 @@ use crate::transaction::Transaction;
 use crate::type_conversions::{events_into_py, py_to_any, ToPython};
 use crate::text::Text;
 use crate::map::Map;
+use crate::doc::Doc;
 
 
 #[pyclass(unsendable)]
@@ -98,6 +100,16 @@ impl Array {
         let integrated = self.array.push_back(&mut t, MapPrelim::<Any>::new());
         let shared = Map::from(integrated);
         Python::with_gil(|py| { Ok(shared.into_py(py)) })
+    }
+
+    fn push_back_doc(&self, txn: &mut Transaction, doc: &PyAny) -> PyResult<()> {
+        let mut _t = txn.transaction();
+        let mut t = _t.as_mut().unwrap();
+        let d1: Doc = doc.extract().unwrap();
+        let d2: _Doc = d1.doc;
+        let doc_ref = self.array.push_back(&mut t, d2);
+        doc_ref.load(t);
+        Ok(())
     }
 
     fn push_front(&self, txn: &mut Transaction, value: &PyAny) -> PyResult<()> {

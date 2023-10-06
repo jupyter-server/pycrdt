@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from ._pycrdt import Map as _Map
-from .base_type import BaseType
+from .base import BaseDoc, BaseType, integrated_types
 
 if TYPE_CHECKING:
     from .doc import Doc
@@ -23,7 +23,10 @@ class Map(BaseType):
     def _set(self, value: dict[str, Any]) -> None:
         txn = self._current_transaction()
         for k, v in value.items():
-            if isinstance(v, BaseType):
+            if isinstance(v, BaseDoc):
+                # subdoc
+                self.integrated.insert_doc(txn, k, v._doc)
+            elif isinstance(v, BaseType):
                 # shared type
                 self._do_and_integrate("insert", v, txn, k)
             else:
@@ -48,7 +51,7 @@ class Map(BaseType):
         if not isinstance(key, str):
             raise RuntimeError("Key must be of type string")
         txn = self._current_transaction()
-        return self._maybe_as_type(self.integrated.get(txn, key))
+        return self._maybe_as_type_or_doc(self.integrated.get(txn, key))
 
     def __setitem__(self, key: str, value: Any) -> None:
         if not isinstance(key, str):
@@ -57,4 +60,4 @@ class Map(BaseType):
         self.integrated.insert(txn, key, value)
 
 
-BaseType._integrated_types[_Map] = Map
+integrated_types[_Map] = Map

@@ -3,10 +3,26 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Callable, Type
 
-from ._pycrdt import Transaction
+from ._pycrdt import Doc as _Doc
+from ._pycrdt import Transaction as _Transaction
+from .transaction import Transaction
 
 if TYPE_CHECKING:
     from .doc import Doc
+
+
+integrated_types: dict[Any, Type[BaseType | BaseDoc]] = {}
+
+
+class BaseDoc:
+    _doc: _Doc
+    _txn: Transaction | None
+
+    def __init__(self, doc: _Doc | None = None) -> None:
+        if doc is None:
+            doc = _Doc()
+        self._doc = doc
+        self._txn = None
 
 
 class BaseType(ABC):
@@ -14,7 +30,6 @@ class BaseType(ABC):
     _prelim: Any
     _integrated: Any
     _type_name: str
-    _integrated_types: dict[Any, Type[BaseType]] = {}
 
     def __init__(
         self,
@@ -62,7 +77,7 @@ class BaseType(ABC):
     def _set(self, value: Any) -> None:
         ...
 
-    def _current_transaction(self) -> Transaction:
+    def _current_transaction(self) -> _Transaction:
         if self._doc is None:
             raise RuntimeError("Not associated with a document")
         if self._doc._txn is None:
@@ -75,7 +90,7 @@ class BaseType(ABC):
         self._integrated = integrated
 
     def _do_and_integrate(
-        self, action: str, other: BaseType, txn: Transaction, *args
+        self, action: str, other: BaseType, txn: _Transaction, *args
     ) -> None:
         if not other.is_prelim:
             raise RuntimeError("Already integrated")
@@ -86,10 +101,15 @@ class BaseType(ABC):
         other._integrate(self._doc, integrated)
         other._set(prelim)
 
-    def _maybe_as_type(self, obj: Any) -> Any:
-        for k, v in BaseType._integrated_types.items():
+    def _maybe_as_type_or_doc(self, obj: Any) -> Any:
+        for k, v in integrated_types.items():
             if isinstance(obj, k):
-                return v(doc=self._doc, _integrated=obj)
+                if issubclass(v, BaseDoc):
+                    # create a BaseDoc
+                    return v(doc=obj)
+                # create a BaseType
+                return v(doc=self.doc, _integrated=obj)
+        # that was a primitive value, just return it
         return obj
 
     @property
@@ -118,6 +138,9 @@ class BaseType(ABC):
 
     def observe(self, callback: Callable[[Any], None]) -> int:
         return self.integrated.observe(callback)
+
+    def observe_deep(self, callback: Callable[[Any], None]) -> int:
+        return self.integrated.observe_deep(callback)
 
     def unobserve(self, subscription_id: int) -> None:
         self.integrated.unobserve(subscription_id)
