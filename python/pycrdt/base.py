@@ -33,8 +33,8 @@ class BaseType(ABC):
 
     def __init__(
         self,
+        init: Any = None,
         *,
-        prelim: Any = None,
         doc: Doc | None = None,
         name: str | None = None,
         _integrated: Any = None,
@@ -53,10 +53,10 @@ class BaseType(ABC):
                     "Name only supported when type integrated in a document"
                 )
             self._doc = None
-            self._prelim = prelim
+            self._prelim = init
             self._integrated = None
         else:
-            if prelim is not None:
+            if init is not None:
                 raise RuntimeError(
                     "Initial content only supported when "
                     "type is not integrated in a document"
@@ -74,7 +74,7 @@ class BaseType(ABC):
         ...
 
     @abstractmethod
-    def _set(self, value: Any) -> None:
+    def _init(self, value: Any) -> None:
         ...
 
     def _current_transaction(self) -> _Transaction:
@@ -99,7 +99,7 @@ class BaseType(ABC):
         prelim = other._prelim
         assert self._doc is not None
         other._integrate(self._doc, integrated)
-        other._set(prelim)
+        other._init(prelim)
 
     def _maybe_as_type_or_doc(self, obj: Any) -> Any:
         for k, v in integrated_types.items():

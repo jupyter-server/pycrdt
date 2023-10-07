@@ -53,81 +53,37 @@ impl Array {
         }
     }
 
-    fn insert_range(&self, txn: &mut Transaction, index: u32, values: &PyList) -> PyResult<()> {
-        let v: Vec<&_> = values.extract().unwrap();
-        let mut items = Vec::new();
-        for i in v.iter() {
-            let a = py_to_any(i);
-            items.push(a);
-        }
+    fn insert_text_prelim(&self, txn: &mut Transaction, index: u32) -> PyResult<PyObject> {
         let mut _t = txn.transaction();
         let mut t = _t.as_mut().unwrap();
-        self.array.insert_range(&mut t, index, items);
-        Ok(())
-    }
-
-    fn push_back(&self, txn: &mut Transaction, value: &PyAny) -> PyResult<()> {
-        let mut _t = txn.transaction();
-        let mut t = _t.as_mut().unwrap();
-        match py_to_any(value) {
-            Any::Undefined => Err(PyTypeError::new_err("Type not supported")),
-            v => {
-                self.array.push_back(&mut t, v);
-                Ok(())
-            },
-        }
-    }
-
-    fn push_back_text_prelim(&self, txn: &mut Transaction) -> PyResult<PyObject> {
-        let mut _t = txn.transaction();
-        let mut t = _t.as_mut().unwrap();
-        let integrated = self.array.push_back(&mut t, TextPrelim::new(""));
+        let integrated = self.array.insert(&mut t, index, TextPrelim::new(""));
         let shared = Text::from(integrated);
         Python::with_gil(|py| { Ok(shared.into_py(py)) })
     }
 
-    fn push_back_array_prelim(&self, txn: &mut Transaction) -> PyResult<PyObject> {
+    fn insert_array_prelim(&self, txn: &mut Transaction, index: u32) -> PyResult<PyObject> {
         let mut _t = txn.transaction();
         let mut t = _t.as_mut().unwrap();
-        let integrated = self.array.push_back(&mut t, ArrayPrelim::<_, Any>::from([]));
+        let integrated = self.array.insert(&mut t, index, ArrayPrelim::<_, Any>::from([]));
         let shared = Array::from(integrated);
         Python::with_gil(|py| { Ok(shared.into_py(py)) })
     }
 
-    fn push_back_map_prelim(&self, txn: &mut Transaction) -> PyResult<PyObject> {
+    fn insert_map_prelim(&self, txn: &mut Transaction, index: u32) -> PyResult<PyObject> {
         let mut _t = txn.transaction();
         let mut t = _t.as_mut().unwrap();
-        let integrated = self.array.push_back(&mut t, MapPrelim::<Any>::new());
+        let integrated = self.array.insert(&mut t, index, MapPrelim::<Any>::new());
         let shared = Map::from(integrated);
         Python::with_gil(|py| { Ok(shared.into_py(py)) })
     }
 
-    fn push_back_doc(&self, txn: &mut Transaction, doc: &PyAny) -> PyResult<()> {
+    fn insert_doc(&self, txn: &mut Transaction, index: u32, doc: &PyAny) -> PyResult<()> {
         let mut _t = txn.transaction();
         let mut t = _t.as_mut().unwrap();
         let d1: Doc = doc.extract().unwrap();
         let d2: _Doc = d1.doc;
-        let doc_ref = self.array.push_back(&mut t, d2);
+        let doc_ref = self.array.insert(&mut t, index, d2);
         doc_ref.load(t);
-        Ok(())
-    }
-
-    fn push_front(&self, txn: &mut Transaction, value: &PyAny) -> PyResult<()> {
-        let mut _t = txn.transaction();
-        let mut t = _t.as_mut().unwrap();
-        match py_to_any(value) {
-            Any::Undefined => Err(PyTypeError::new_err("Type not supported")),
-            v => {
-                self.array.push_front(&mut t, v);
-                Ok(())
-            },
-        }
-    }
-
-    fn remove(&self, txn: &mut Transaction, index: u32) -> PyResult<()> {
-        let mut _t = txn.transaction();
-        let mut t = _t.as_mut().unwrap();
-        self.array.remove(&mut t, index);
         Ok(())
     }
 

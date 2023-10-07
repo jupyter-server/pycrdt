@@ -17,12 +17,12 @@ class Transaction:
         self._doc = doc
         self._nb = 0
 
-    def __enter__(self) -> Transaction:
+    def __enter__(self) -> _Transaction:
         self._nb += 1
         if self._doc._txn is None:
             self._doc._txn = self
             self._txn = self._doc._doc.create_transaction()
-        return self
+        return self._txn
 
     def __exit__(self, exc_type, exc_value, exc_tb) -> None:
         self._nb -= 1
