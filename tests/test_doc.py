@@ -13,7 +13,6 @@ def callback(events, event):
 def test_subdoc():
     doc0 = Doc()
     state0 = doc0.get_state()
-    array0 = Array(name="array0", doc=doc0)
     map0 = Map(name="map0", doc=doc0)
 
     doc1 = Doc()
@@ -24,7 +23,7 @@ def test_subdoc():
     state2 = doc2.get_state()
     array2 = Array(name="array2", doc=doc2)
 
-    array0 += ["hello", 1, doc1]
+    Array(["hello", 1, doc1], name="array0", doc=doc0)
     map0.update({"key0": "val0", "key1": doc2})
 
     update0 = doc0.get_update(state0)

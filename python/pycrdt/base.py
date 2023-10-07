@@ -27,7 +27,7 @@ class BaseDoc:
 
 class BaseType(ABC):
     _doc: Doc | None
-    _prelim: Any
+    _prelim: Any | None
     _integrated: Any
     _type_name: str
 
@@ -56,11 +56,6 @@ class BaseType(ABC):
             self._prelim = init
             self._integrated = None
         else:
-            if init is not None:
-                raise RuntimeError(
-                    "Initial content only supported when "
-                    "type is not integrated in a document"
-                )
             if name is None:
                 raise RuntimeError(
                     "Name is required when type is integrated in a document"
@@ -68,6 +63,8 @@ class BaseType(ABC):
             self._doc = doc
             self._prelim = None
             self._integrated = self._get_or_insert(name, doc)
+            if init is not None:
+                self._init(init)
 
     @abstractmethod
     def _get_or_insert(self, name: str, doc: Doc) -> Any:
