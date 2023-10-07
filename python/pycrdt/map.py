@@ -15,46 +15,45 @@ class Map(BaseType):
 
     def __init__(
         self,
+        init: dict | None = None,
         *,
-        prelim: dict | None = None,
         doc: Doc | None = None,
         name: str | None = None,
         _integrated: _Map | None = None,
     ) -> None:
         super().__init__(
-            prelim=prelim,
+            init=init,
             doc=doc,
             name=name,
             _integrated=_integrated,
         )
 
+    def _init(self, value: dict[str, Any]) -> None:
+        with self.doc.transaction():
+            for k, v in value.items():
+                self._set(k, v)
+
+    def _set(self, key: str, value: Any) -> None:
+        with self.doc.transaction() as txn:
+            if isinstance(value, BaseDoc):
+                # subdoc
+                self.integrated.insert_doc(txn, key, value._doc)
+            elif isinstance(value, BaseType):
+                # shared type
+                self._do_and_integrate("insert", value, txn, key)
+            else:
+                # primitive type
+                self.integrated.insert(txn, key, value)
+
     def _get_or_insert(self, name: str, doc: Doc) -> _Map:
         return doc._doc.get_or_insert_map(name)
 
-    def init(self, value: dict[str, Any]) -> None:
-        with self.doc.transaction():
-            self._set(value)
-
-    def _set(self, value: dict[str, Any]) -> None:
-        txn = self._current_transaction()
-        for k, v in value.items():
-            if isinstance(v, BaseDoc):
-                # subdoc
-                self.integrated.insert_doc(txn, k, v._doc)
-            elif isinstance(v, BaseType):
-                # shared type
-                self._do_and_integrate("insert", v, txn, k)
-            else:
-                # primitive type
-                self.integrated.insert(txn, k, v)
-
     def __len__(self) -> int:
-        txn = self._current_transaction()
-        return self.integrated.len(txn)
+        with self.doc.transaction() as txn:
+            return self.integrated.len(txn)
 
     def __str__(self) -> str:
-        with self.doc.transaction():
-            txn = self._current_transaction()
+        with self.doc.transaction() as txn:
             return self.integrated.to_json(txn)
 
     def __delitem__(self, key: str) -> None:
@@ -64,17 +63,19 @@ class Map(BaseType):
         self.integrated.remove(txn, key)
 
     def __getitem__(self, key: str) -> None:
-        with self.doc.transaction():
+        with self.doc.transaction() as txn:
             if not isinstance(key, str):
                 raise RuntimeError("Key must be of type string")
-            txn = self._current_transaction()
             return self._maybe_as_type_or_doc(self.integrated.get(txn, key))
 
     def __setitem__(self, key: str, value: Any) -> None:
         if not isinstance(key, str):
             raise RuntimeError("Key must be of type string")
-        txn = self._current_transaction()
-        self.integrated.insert(txn, key, value)
+        with self.doc.transaction() as txn:
+            self.integrated.insert(txn, key, value)
+
+    def update(self, value: dict[str, Any]) -> None:
+        self._init(value)
 
 
 integrated_types[_Map] = Map

@@ -16,21 +16,21 @@ def callback(events, event):
 def test_str():
     doc = Doc()
     array0 = Array(name="array", doc=doc)
-    map2 = Map(prelim={"key": "val"})
-    array1 = Array(prelim=[2, 3, map2])
-    map1 = Map(prelim={"foo": array1})
-    array0.init([0, 1, map1])
+    map2 = Map({"key": "val"})
+    array1 = Array([2, 3, map2])
+    map1 = Map({"foo": array1})
+    array0 += [0, 1, map1]
     assert str(array0) == '[0,1,{"foo":[2,3,{"key":"val"}]}]'
 
 
 def test_nested():
     doc = Doc()
     array0 = Array(name="array", doc=doc)
-    text1 = Text(prelim="my_text1")
-    array1 = Array(prelim=[0, "foo", 2])
-    text2 = Text(prelim="my_text2")
-    map1 = Map(prelim={"foo": [3, 4, 5], "bar": "hello", "baz": text2})
-    array0.init([text1, array1, map1])
+    text1 = Text("my_text1")
+    array1 = Array([0, "foo", 2])
+    text2 = Text("my_text2")
+    map1 = Map({"foo": [3, 4, 5], "bar": "hello", "baz": text2})
+    array0 += [text1, array1, map1]
     ref = [
         "my_text1",
         [0, "foo", 2],

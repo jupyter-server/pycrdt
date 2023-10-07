@@ -34,13 +34,6 @@ impl Text {
         Ok(len)
     }
 
-    fn push(&self, txn: &mut Transaction, chunk: &str)  -> PyResult<()> {
-        let mut _t = txn.transaction();
-        let mut t = _t.as_mut().unwrap();
-        self.text.push(&mut t, chunk);
-        Ok(())
-    }
-
     fn insert(&self, txn: &mut Transaction, index: u32, chunk: &str) -> PyResult<()> {
         let mut _t = txn.transaction();
         let mut t = _t.as_mut().unwrap();
