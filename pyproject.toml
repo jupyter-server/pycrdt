@@ -31,7 +31,6 @@ classifiers = [
 [project.optional-dependencies]
 test = [
   "pytest >=7.4.2,<8",
-  "pyyaml",
   "y-py >=0.6,<0.7",
   "mypy",
 ]

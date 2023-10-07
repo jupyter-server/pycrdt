@@ -43,24 +43,16 @@ def test_subdoc():
 
     with doc1.transaction():
         map1["foo"] = "bar"
-        map1_str = str(map1)
 
     update1 = doc1.get_update(state1)
 
     with doc2.transaction():
         array2 += ["baz", 3]
-        array2_str = str(array2)
 
     update2 = doc2.get_update(state2)
 
     remote_doc1.apply_update(update1)
     remote_doc2.apply_update(update2)
 
-    with remote_doc1.transaction():
-        remote_map1_str = str(remote_map1)
-
-    with remote_doc2.transaction():
-        remote_array2_str = str(remote_array2)
-
-    assert map1_str == remote_map1_str
-    assert array2_str == remote_array2_str
+    assert str(map1) == str(remote_map1)
+    assert str(array2) == str(remote_array2)

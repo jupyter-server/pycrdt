@@ -13,7 +13,22 @@ class Text(BaseType):
     _prelim: str | None
     _integrated: _Text | None
 
-    def _get_or_insert(self, name: str, doc: "Doc") -> _Text:
+    def __init__(
+        self,
+        *,
+        prelim: str | None = None,
+        doc: Doc | None = None,
+        name: str | None = None,
+        _integrated: _Text | None = None,
+    ) -> None:
+        super().__init__(
+            prelim=prelim,
+            doc=doc,
+            name=name,
+            _integrated=_integrated,
+        )
+
+    def _get_or_insert(self, name: str, doc: Doc) -> _Text:
         return doc._doc.get_or_insert_text(name)
 
     def _set(self, value: str) -> None:
@@ -25,8 +40,9 @@ class Text(BaseType):
         return self.integrated.len(txn)
 
     def __str__(self) -> str:
-        txn = self._current_transaction()
-        return self.integrated.to_json(txn)
+        with self.doc.transaction():
+            txn = self._current_transaction()
+            return self.integrated.get_string(txn)
 
     def __iadd__(self, other: str) -> Text:
         txn = self._current_transaction()

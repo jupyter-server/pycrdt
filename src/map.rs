@@ -108,8 +108,9 @@ impl Map {
     fn to_json(&mut self, txn: &mut Transaction) -> PyObject {
         let mut _t = txn.transaction();
         let t = _t.as_mut().unwrap();
-        let s: &str = &self.map.to_json(t).to_string();
-        Python::with_gil(|py| PyString::new(py, s).into())
+        let mut s = String::new();
+        self.map.to_json(t).to_json(&mut s);
+        Python::with_gil(|py| PyString::new(py, s.as_str()).into())
     }
 
     pub fn observe(&mut self, f: PyObject) -> PyResult<u32> {

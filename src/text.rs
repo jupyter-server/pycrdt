@@ -55,7 +55,7 @@ impl Text {
         Ok(())
     }
 
-    fn to_json(&mut self, txn: &mut Transaction) -> PyObject {
+    fn get_string(&mut self, txn: &mut Transaction) -> PyObject {
         let mut _t = txn.transaction();
         let t = _t.as_mut().unwrap();
         let s = self.text.get_string(t);

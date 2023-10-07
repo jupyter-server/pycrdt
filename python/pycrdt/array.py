@@ -11,26 +11,28 @@ if TYPE_CHECKING:
 
 class Array(BaseType):
     _prelim: list | None
-    _integrated: _Array
+    _integrated: _Array | None
 
     def __init__(
         self,
         *,
         prelim: list | None = None,
-        doc: "Doc" | None = None,
+        doc: Doc | None = None,
         name: str | None = None,
+        _integrated: _Array | None = None,
     ) -> None:
         super().__init__(
             prelim=prelim,
             doc=doc,
             name=name,
+            _integrated=_integrated,
         )
 
     def init(self, value: list[Any]) -> None:
         with self.doc.transaction():
             self._set(value)
 
-    def _get_or_insert(self, name: str, doc: "Doc") -> _Array:
+    def _get_or_insert(self, name: str, doc: Doc) -> _Array:
         return doc._doc.get_or_insert_array(name)
 
     def _set(self, value: list[Any]) -> None:
@@ -47,8 +49,9 @@ class Array(BaseType):
                 self.integrated.push_back(txn, v)
 
     def __len__(self) -> int:
-        txn = self._current_transaction()
-        return self.integrated.len(txn)
+        with self.doc.transaction():
+            txn = self._current_transaction()
+            return self.integrated.len(txn)
 
     def append(self, other: Any) -> None:
         txn = self._current_transaction()
@@ -112,14 +115,16 @@ class Array(BaseType):
             raise RuntimeError(f"Index not supported: {key}")
 
     def __getitem__(self, key: int) -> BaseType:
-        txn = self._current_transaction()
-        if not isinstance(key, int):
-            raise RuntimeError("Slices are not supported")
-        return self._maybe_as_type_or_doc(self.integrated.get(txn, key))
+        with self.doc.transaction():
+            txn = self._current_transaction()
+            if not isinstance(key, int):
+                raise RuntimeError("Slices are not supported")
+            return self._maybe_as_type_or_doc(self.integrated.get(txn, key))
 
     def __str__(self) -> str:
-        txn = self._current_transaction()
-        return self.integrated.to_json(txn)
+        with self.doc.transaction():
+            txn = self._current_transaction()
+            return self.integrated.to_json(txn)
 
 
 integrated_types[_Array] = Array
