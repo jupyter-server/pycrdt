@@ -1,15 +1,20 @@
-from functools import partial
+import json
 
 from pycrdt import Array, Doc, Map, Text
-from yaml import CLoader as Loader
-from yaml import load
 
-json_loads = partial(load, Loader=Loader)
+
+def test_str():
+    doc = Doc()
+    map0 = Map(name="map", doc=doc)
+    map2 = Map(prelim={"key2": "val2"})
+    array1 = Array(prelim=[0, 1, map2])
+    map0.init({"key1": array1})
+    assert str(map0) == '{"key1":[0,1,{"key2":"val2"}]}'
 
 
 def test_nested():
     doc = Doc()
-    map0 = doc.get_map("map")
+    map0 = Map(name="map", doc=doc)
     text1 = Text(prelim="my_text")
     array1 = Array(prelim=[0, "foo", 2])
     map1 = Map(prelim={"foo": [3, 4, 5], "bar": "baz"})
@@ -19,5 +24,4 @@ def test_nested():
         "array1": [0, "foo", 2],
         "map1": {"bar": "baz", "foo": [3, 4, 5]},
     }
-    with doc.transaction():
-        assert json_loads(str(map0)) == ref
+    assert json.loads(str(map0)) == ref

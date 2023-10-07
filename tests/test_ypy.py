@@ -1,7 +1,7 @@
 from functools import partial
 
 import y_py as Y
-from pycrdt import Doc
+from pycrdt import Doc, Text
 
 hello = "Hello"
 world = ", World"
@@ -23,7 +23,7 @@ def test_text():
 
     # add text
     prev_state = doc.get_state()
-    text = doc.get_text("text")
+    text = Text(name="text", doc=doc)
     with doc.transaction():
         text += hello
         with doc.transaction():
@@ -46,7 +46,7 @@ def test_text():
 def test_observe():
     # pycrdt
     doc = Doc()
-    text = doc.get_text("text")
+    text = Text(name="text", doc=doc)
     events = []
 
     subscription_id = text.observe(partial(callback, events))

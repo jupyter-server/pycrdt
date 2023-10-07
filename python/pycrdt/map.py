@@ -13,7 +13,22 @@ class Map(BaseType):
     _prelim: dict | None
     _integrated: _Map | None
 
-    def _get_or_insert(self, name: str, doc: "Doc") -> _Map:
+    def __init__(
+        self,
+        *,
+        prelim: dict | None = None,
+        doc: Doc | None = None,
+        name: str | None = None,
+        _integrated: _Map | None = None,
+    ) -> None:
+        super().__init__(
+            prelim=prelim,
+            doc=doc,
+            name=name,
+            _integrated=_integrated,
+        )
+
+    def _get_or_insert(self, name: str, doc: Doc) -> _Map:
         return doc._doc.get_or_insert_map(name)
 
     def init(self, value: dict[str, Any]) -> None:
@@ -38,8 +53,9 @@ class Map(BaseType):
         return self.integrated.len(txn)
 
     def __str__(self) -> str:
-        txn = self._current_transaction()
-        return self.integrated.to_json(txn)
+        with self.doc.transaction():
+            txn = self._current_transaction()
+            return self.integrated.to_json(txn)
 
     def __delitem__(self, key: str) -> None:
         if not isinstance(key, str):
@@ -48,10 +64,11 @@ class Map(BaseType):
         self.integrated.remove(txn, key)
 
     def __getitem__(self, key: str) -> None:
-        if not isinstance(key, str):
-            raise RuntimeError("Key must be of type string")
-        txn = self._current_transaction()
-        return self._maybe_as_type_or_doc(self.integrated.get(txn, key))
+        with self.doc.transaction():
+            if not isinstance(key, str):
+                raise RuntimeError("Key must be of type string")
+            txn = self._current_transaction()
+            return self._maybe_as_type_or_doc(self.integrated.get(txn, key))
 
     def __setitem__(self, key: str, value: Any) -> None:
         if not isinstance(key, str):

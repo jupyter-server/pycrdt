@@ -9,11 +9,11 @@ if TYPE_CHECKING:
 
 
 class Transaction:
-    _doc: "Doc"
+    _doc: Doc
     _txn: _Transaction
     _nb: int
 
-    def __init__(self, doc: "Doc") -> None:
+    def __init__(self, doc: Doc) -> None:
         self._doc = doc
         self._nb = 0
 
@@ -26,6 +26,8 @@ class Transaction:
 
     def __exit__(self, exc_type, exc_value, exc_tb) -> None:
         self._nb -= 1
+        # only drop the transaction when exiting root context manager
+        # since nested transactions reuse the root transaction
         if self._nb == 0:
             # dropping the transaction will commit, no need to do it
             # self._txn.commit()

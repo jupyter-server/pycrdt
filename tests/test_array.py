@@ -1,10 +1,7 @@
+import json
 from functools import partial
 
 from pycrdt import Array, Doc, Map, Text
-from yaml import CLoader as Loader
-from yaml import load
-
-json_loads = partial(load, Loader=Loader)
 
 
 def callback(events, event):
@@ -14,6 +11,16 @@ def callback(events, event):
             path=event.path,
         )
     )
+
+
+def test_str():
+    doc = Doc()
+    array0 = Array(name="array", doc=doc)
+    map2 = Map(prelim={"key": "val"})
+    array1 = Array(prelim=[2, 3, map2])
+    map1 = Map(prelim={"foo": array1})
+    array0.init([0, 1, map1])
+    assert str(array0) == '[0,1,{"foo":[2,3,{"key":"val"}]}]'
 
 
 def test_nested():
@@ -29,15 +36,14 @@ def test_nested():
         [0, "foo", 2],
         {"bar": "hello", "foo": [3, 4, 5], "baz": "my_text2"},
     ]
-    with doc.transaction():
-        assert json_loads(str(array0)) == ref
-        assert isinstance(array0[2], Map)
-        assert isinstance(array0[2]["baz"], Text)
+    assert json.loads(str(array0)) == ref
+    assert isinstance(array0[2], Map)
+    assert isinstance(array0[2]["baz"], Text)
 
 
 def test_array():
     doc = Doc()
-    array = doc.get_array("array")
+    array = Array(name="array", doc=doc)
     events = []
 
     array.observe(partial(callback, events))
@@ -71,9 +77,10 @@ def test_array():
         array = [-1, -2] + array
         array = array + [-3, -4]
         array += [-5]
-        assert json_loads(str(array)) == ref
-        assert len(array) == len(ref)
-        assert array[9] == ref[9]
+
+    assert json.loads(str(array)) == ref
+    assert len(array) == len(ref)
+    assert array[9] == ref[9]
 
     assert events == [
         {
