@@ -1,13 +1,10 @@
-from pycrdt import Array, Doc, Map
+from functools import partial
+
+from pycrdt import Array, Doc, Map, Text
 
 
 def callback(events, event):
-    events.append(
-        dict(
-            delta=event.delta,
-            path=event.path,
-        )
-    )
+    events.append(event)
 
 
 def test_subdoc():
@@ -59,3 +56,20 @@ def test_subdoc():
 
     assert str(map1) == str(remote_map1)
     assert str(array2) == str(remote_array2)
+
+
+def test_transaction_event():
+    doc = Doc()
+    events = []
+    doc.observe(partial(callback, events))
+    text = Text("Hello, World!")
+    doc["text"] = text
+
+    remote_doc = Doc()
+    for event in events:
+        update = event.get_update()
+        remote_doc.apply_update(update)
+
+    remote_text = Text()
+    remote_doc["text"] = remote_text
+    assert str(remote_text) == "Hello, World!"

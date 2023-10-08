@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from typing import Callable
+
 from ._pycrdt import Doc as _Doc
+from ._pycrdt import TransactionEvent
 from .base import BaseDoc, BaseType, integrated_types
 from .transaction import Transaction
 
@@ -26,6 +29,9 @@ class Doc(BaseDoc):
         integrated = value._get_or_insert(key, self)
         prelim = value._integrate(self, integrated)
         value._init(prelim)
+
+    def observe(self, callback: Callable[[TransactionEvent], None]) -> int:
+        return self._doc.observe(callback)
 
 
 integrated_types[_Doc] = Doc

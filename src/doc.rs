@@ -4,6 +4,8 @@ use yrs::{
     Doc as _Doc,
     ReadTxn,
     Transact,
+    TransactionMut,
+    TransactionCleanupEvent,
     StateVector,
     Update,
 };
@@ -84,5 +86,71 @@ impl Doc {
         txn.apply_update(u);
         drop(txn);
         Ok(())
+    }
+
+    pub fn observe(&mut self, f: PyObject) -> PyResult<u32> {
+        let id: u32 = self.doc
+            .observe_transaction_cleanup(move |txn, event| {
+                Python::with_gil(|py| {
+                    let event = TransactionEvent::new(event, txn);
+                    if let Err(err) = f.call1(py, (event,)) {
+                        err.restore(py)
+                    }
+                })
+            })
+            .unwrap()
+            .into();
+        Ok(id)
+    }
+}
+
+#[pyclass(unsendable)]
+pub struct TransactionEvent {
+    before_state: PyObject,
+    after_state: PyObject,
+    delete_set: PyObject,
+    update: PyObject,
+}
+
+impl TransactionEvent {
+    fn new(event: &TransactionCleanupEvent, txn: &TransactionMut) -> Self {
+        // Convert all event data into Python objects eagerly, so that we don't have to hold
+        // on to the transaction.
+        let before_state = event.before_state.encode_v1();
+        let before_state: PyObject = Python::with_gil(|py| PyBytes::new(py, &before_state).into());
+        let after_state = event.after_state.encode_v1();
+        let after_state: PyObject = Python::with_gil(|py| PyBytes::new(py, &after_state).into());
+        let delete_set = event.delete_set.encode_v1();
+        let delete_set: PyObject = Python::with_gil(|py| PyBytes::new(py, &delete_set).into());
+        let update = txn.encode_update_v1();
+        let update = Python::with_gil(|py| PyBytes::new(py, &update).into());
+        TransactionEvent {
+            before_state,
+            after_state,
+            delete_set,
+            update,
+        }
+    }
+}
+
+#[pymethods]
+impl TransactionEvent {
+    #[getter]
+    pub fn before_state(&mut self) -> PyObject {
+        self.before_state.clone()
+    }
+
+    #[getter]
+    pub fn after_state(&mut self) -> PyObject {
+        self.after_state.clone()
+    }
+
+    #[getter]
+    pub fn delete_set(&mut self) -> PyObject {
+        self.delete_set.clone()
+    }
+
+    pub fn get_update(&self) -> PyObject {
+        self.update.clone()
     }
 }

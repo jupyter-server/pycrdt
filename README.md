@@ -75,11 +75,12 @@ array0 = remote_doc["array0"]
 map0 = remote_doc["map0"]
 ```
 
-You could say that there is nothing fancy here, it's just about (de)serializing changes to data so that they can be applied on another object.
+You could say that there is nothing fancy here, it's just about encoding data changes so that they can be applied on another object.
 But this is where the magic of CRDTs come into play.
-Their algorythm ensures that if some changes are done concurrently on different objects representing the same data (for instance on different machines), applying the changes will lead to the same data on all objects.
+Their algorithm ensures that if some changes are done concurrently on different objects representing the same data (for instance on different machines), applying the changes will lead to the same data on all objects. Without such algorithms, this property doesn't hold due to the fact that changes depend on the order in which they are applied, and that they take time to travel on the wire.
+
 The most common example is inserting a different character on a text editor on two machines.
 Say we start with a blank page on both editors, and the user on machine A inserts "a" at the same time the user on machine B inserts "b".
-After receiving the other user's update, if no special care is taken, machine A will show "ab" and machine B will show "ba".
-In other words, their document states will diverge, and thus users don't collaborate on the same document anymore.
+After receiving the other user's update, if no special care is taken, machine A will show "ba" and machine B will show "ab".
+In other words, their document states will diverge, and thus users won't collaborate on the same document anymore.
 CRDTs ensure that documents don't diverge, their shared documents will eventually have the same state. It will arbitrary be "ab" or "ba", but it will be the same on both machines.
