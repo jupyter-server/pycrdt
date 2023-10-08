@@ -1,0 +1,235 @@
+name: publish
+
+on:
+  release:
+    types: [published]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PACKAGE_NAME: pycrdt
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          architecture: x64
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build wheels - x86_64
+        uses: PyO3/maturin-action@v1
+        with:
+          target: x86_64
+          args: --release --out dist --sdist -i 3.7 3.8 3.9 3.10 3.11 3.12 pypy3.8 pypy3.9
+      - name: Test built wheel - x86_64
+        run: |
+          pip install pycrdt --no-index --find-links dist --force-reinstall
+          pip install pytest y-py
+          pytest
+      - name: Build wheels - universal2
+        uses: PyO3/maturin-action@v1
+        with:
+          args: --release --target universal2-apple-darwin --out dist -i 3.8 3.9 3.10 3.11 3.12 pypy3.8 pypy3.9
+      - name: Test built wheel - universal2
+        run: |
+          pip install pycrdt --no-index --find-links dist --force-reinstall
+          pytest
+      - name: Upload wheels
+        uses: actions/upload-artifact@v2
+        with:
+          name: wheels
+          path: dist
+
+  windows:
+    runs-on: windows-latest
+    name: windows (${{ matrix.platform.target }})
+    strategy:
+      matrix:
+        platform:
+          - target: x64
+            interpreter: 3.7 3.8 3.9 3.10 3.11
+          - target: x86
+            interpreter: 3.7 3.8 3.9 3.10 3.11
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          architecture: ${{ matrix.platform.target }}
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.platform.target }}
+          args: --release --out dist -i ${{ matrix.platform.interpreter }}
+      - name: Test built wheel
+        run: |
+          pip install pycrdt --no-index --find-links dist --force-reinstall
+          pip install pytest y-py
+          pytest
+      - name: Upload wheels
+        uses: actions/upload-artifact@v2
+        with:
+          name: wheels
+          path: dist
+
+  linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [x86_64, i686]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          architecture: x64
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          rust-toolchain: stable
+          target: ${{ matrix.target }}
+          manylinux: auto
+          args: --release --out dist -i 3.7 3.8 3.9 3.10 3.11 3.12 pypy3.8 pypy3.9
+      - name: Test built wheel
+        if: matrix.target == 'x86_64'
+        run: |
+          pip install pycrdt --no-index --find-links dist --force-reinstall
+          pip install pytest y-py
+          pytest
+      - name: Upload wheels
+        uses: actions/upload-artifact@v2
+        with:
+          name: wheels
+          path: dist
+
+  linux-cross:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [aarch64, armv7, s390x, ppc64le]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          rust-toolchain: stable
+          target: ${{ matrix.target }}
+          manylinux: auto
+          args: --release --out dist -i 3.7 3.8 3.9 3.10 3.11 3.12 pypy3.8 pypy3.9
+
+      - uses: uraimo/run-on-arch-action@v2.3.0
+        if: matrix.target != 'ppc64'
+        name: Test built wheel
+        with:
+          arch: ${{ matrix.target }}
+          distro: ubuntu20.04
+          githubToken: ${{ github.token }}
+          install: |
+            apt-get update
+            apt-get install -y --no-install-recommends python3 python3-pip
+            pip3 install -U pip pytest y-py
+          run: |
+            pip3 install pycrdt --no-index --find-links dist/ --force-reinstall
+            pytest
+
+      - name: Upload wheels
+        uses: actions/upload-artifact@v3
+        with:
+          name: wheels
+          path: dist
+
+  wasm:
+    runs-on: ubuntu-20.04
+    # Pyodide began supporting `micropip.install` from emscripten-compiled binary wheels
+    # in Pyodide 0.21.0 (Aug 2022), so no need to build wheels for versions before then.
+    # As of Nov 2022, the matrix for emscripten/python versions since then is simple. 
+    # Update this matrix when new Pyodide versions come out that bump the Python interpreter
+    # or emscripten version. Ref: https://pyodide.org/en/stable/project/changelog.html
+    strategy:
+      matrix:
+        python-version: ["3.10.2"]
+        emscripten-version: ["3.1.14"]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: x64
+      - name: Install Rust
+        # if this isn't here, wasm wheel build fails with error: failed to run `rustc` to learn about target-specific information
+        uses: actions-rs/toolchain@v1
+        with:
+            # maturin build will generate args -Z link-native-libraries=no which is only accepted on nightly compiler
+            toolchain: nightly
+            profile: minimal
+            override: true
+      - name: Rustup add wasm32 target
+        # maturin build --target wasm32-unknown-emscripten requires rust to add that target first
+        run: rustup target add wasm32-unknown-emscripten
+      - name: Setup emsdk
+        uses: mymindstorm/setup-emsdk@v11
+        with: 
+          version: ${{ matrix.emscripten-version }}
+      - name: Build wheels
+        uses: messense/maturin-action@v1
+        with:
+          target: wasm32-unknown-emscripten
+          args: --release --out wasm_wheel --find-interpreter
+      - name: Upload wheels
+        uses: actions/upload-artifact@v2
+        with:
+          name: wasm_wheel
+          path: wasm_wheel
+     
+  pypi-release:
+    name: Publish to PyPI on Release
+    runs-on: ubuntu-latest
+    needs:
+      - macos
+      - windows
+      - linux
+      - linux-cross
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: wheels
+      - uses: actions/setup-python@v2
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        run: |
+          pip install --upgrade twine
+          twine upload --skip-existing *
+
+  # Can't upload emscripten wheels to Pypi, see https://github.com/pypi/warehouse/issues/10416.
+  # For now, this will attach the binary wheels to the Release page in Github. Users can 
+  # download those into a pyodide environment and micropip.install from there.
+  wasm-release:
+    name: Attach wasm wheel to Release
+    runs-on: ubuntu-latest
+    needs:
+      - wasm
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: wasm_wheel
+
+      - name: Attach assets to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: '*.whl'
+          # 'name' (release name) defaults to the tag ref in this action.
+          # If release naming pattern changes, will need to configure 'name' here.
