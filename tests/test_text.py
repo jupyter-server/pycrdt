@@ -7,7 +7,8 @@ punct = "!"
 
 def test_str():
     doc = Doc()
-    text = Text(name="text", doc=doc)
+    text = Text()
+    doc["text"] = text
     with doc.transaction():
         text += hello
         with doc.transaction():

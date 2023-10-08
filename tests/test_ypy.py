@@ -22,23 +22,24 @@ def test_text():
     ypy_doc = Y.YDoc()
 
     # add text
-    prev_state = doc.get_state()
-    text = Text(name="text", doc=doc)
+    state = doc.get_state()
+    text = Text()
+    doc["text"] = text
     with doc.transaction():
         text += hello
         with doc.transaction():
             text += world
         text += punct
-    update = doc.get_update(prev_state)
+    update = doc.get_update(state)
     Y.apply_update(ypy_doc, update)
     remote_text = ypy_doc.get_text("text")
     assert str(remote_text) == hello + world + punct
 
     # del text
-    prev_state = doc.get_state()
+    state = doc.get_state()
     with doc.transaction():
         del text[len(hello) :]
-    update = doc.get_update(prev_state)
+    update = doc.get_update(state)
     Y.apply_update(ypy_doc, update)
     assert str(remote_text) == hello
 
@@ -46,23 +47,18 @@ def test_text():
 def test_observe():
     # pycrdt
     doc = Doc()
-    text = Text(name="text", doc=doc)
+    text = Text()
+    doc["text"] = text
     events = []
 
     subscription_id = text.observe(partial(callback, events))
-    with doc.transaction():
-        text += hello
-    with doc.transaction():
-        text += world
-    with doc.transaction():
-        text += punct
-    with doc.transaction():
-        del text[len(hello) : len(hello) + len(world)]
-    with doc.transaction():
-        text[len(hello) : len(hello)] = hello
+    text += hello
+    text += world
+    text += punct
+    del text[len(hello) : len(hello) + len(world)]
+    text[len(hello) : len(hello)] = hello
     text.unobserve(subscription_id)
-    with doc.transaction():
-        text += punct
+    text += punct
 
     # ypy
     ypy_doc = Y.YDoc()

@@ -17,18 +17,18 @@ class Map(BaseType):
         self,
         init: dict | None = None,
         *,
-        doc: Doc | None = None,
-        name: str | None = None,
+        _doc: Doc | None = None,
         _integrated: _Map | None = None,
     ) -> None:
         super().__init__(
             init=init,
-            doc=doc,
-            name=name,
+            _doc=_doc,
             _integrated=_integrated,
         )
 
-    def _init(self, value: dict[str, Any]) -> None:
+    def _init(self, value: dict[str, Any] | None) -> None:
+        if value is None:
+            return
         with self.doc.transaction():
             for k, v in value.items():
                 self._set(k, v)

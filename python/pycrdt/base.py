@@ -35,43 +35,27 @@ class BaseType(ABC):
         self,
         init: Any = None,
         *,
-        doc: Doc | None = None,
-        name: str | None = None,
+        _doc: Doc | None = None,
         _integrated: Any = None,
     ) -> None:
         self._type_name = self.__class__.__name__.lower()
         # private API
         if _integrated is not None:
-            self._doc = doc
+            self._doc = _doc
             self._prelim = None
             self._integrated = _integrated
             return
         # public API
-        if doc is None:
-            if name is not None:
-                raise RuntimeError(
-                    "Name only supported when type integrated in a document"
-                )
-            self._doc = None
-            self._prelim = init
-            self._integrated = None
-        else:
-            if name is None:
-                raise RuntimeError(
-                    "Name is required when type is integrated in a document"
-                )
-            self._doc = doc
-            self._prelim = None
-            self._integrated = self._get_or_insert(name, doc)
-            if init is not None:
-                self._init(init)
+        self._doc = None
+        self._prelim = init
+        self._integrated = None
 
     @abstractmethod
     def _get_or_insert(self, name: str, doc: Doc) -> Any:
         ...
 
     @abstractmethod
-    def _init(self, value: Any) -> None:
+    def _init(self, value: Any | None) -> None:
         ...
 
     def _current_transaction(self) -> _Transaction:
@@ -81,22 +65,23 @@ class BaseType(ABC):
             raise RuntimeError("No current transaction")
         return self._doc._txn._txn
 
-    def _integrate(self, doc: Doc, integrated: Any) -> None:
+    def _integrate(self, doc: Doc, integrated: Any) -> Any:
+        prelim = self._prelim
         self._doc = doc
         self._prelim = None
         self._integrated = integrated
+        return prelim
 
     def _do_and_integrate(
-        self, action: str, other: BaseType, txn: _Transaction, *args
+        self, action: str, value: BaseType, txn: _Transaction, *args
     ) -> None:
-        if other.is_integrated:
+        if value.is_integrated:
             raise RuntimeError("Already integrated")
-        method = getattr(self._integrated, f"{action}_{other.type_name}_prelim")
+        method = getattr(self._integrated, f"{action}_{value.type_name}_prelim")
         integrated = method(txn, *args)
-        prelim = other._prelim
         assert self._doc is not None
-        other._integrate(self._doc, integrated)
-        other._init(prelim)
+        prelim = value._integrate(self._doc, integrated)
+        value._init(prelim)
 
     def _maybe_as_type_or_doc(self, obj: Any) -> Any:
         for k, v in integrated_types.items():
@@ -105,7 +90,7 @@ class BaseType(ABC):
                     # create a BaseDoc
                     return v(doc=obj)
                 # create a BaseType
-                return v(doc=self.doc, _integrated=obj)
+                return v(_doc=self.doc, _integrated=obj)
         # that was a primitive value, just return it
         return obj
 

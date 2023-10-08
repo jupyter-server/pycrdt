@@ -17,18 +17,18 @@ class Text(BaseType):
         self,
         init: str | None = None,
         *,
-        doc: Doc | None = None,
-        name: str | None = None,
+        _doc: Doc | None = None,
         _integrated: _Text | None = None,
     ) -> None:
         super().__init__(
             init=init,
-            doc=doc,
-            name=name,
+            _doc=_doc,
             _integrated=_integrated,
         )
 
-    def _init(self, value: str) -> None:
+    def _init(self, value: str | None) -> None:
+        if value is None:
+            return
         with self.doc.transaction() as txn:
             self.integrated.insert(txn, 0, value)
 

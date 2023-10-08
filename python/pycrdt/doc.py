@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from ._pycrdt import Doc as _Doc
-from .base import BaseDoc, integrated_types
+from .base import BaseDoc, BaseType, integrated_types
 from .transaction import Transaction
 
 
@@ -19,6 +19,13 @@ class Doc(BaseDoc):
 
     def apply_update(self, update: bytes) -> None:
         self._doc.apply_update(update)
+
+    def __setitem__(self, key: str, value: BaseType) -> None:
+        if not isinstance(key, str):
+            raise RuntimeError("Key must be of type string")
+        integrated = value._get_or_insert(key, self)
+        prelim = value._integrate(self, integrated)
+        value._init(prelim)
 
 
 integrated_types[_Doc] = Doc

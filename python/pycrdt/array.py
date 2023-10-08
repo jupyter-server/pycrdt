@@ -17,18 +17,18 @@ class Array(BaseType):
         self,
         init: list | None = None,
         *,
-        doc: Doc | None = None,
-        name: str | None = None,
+        _doc: Doc | None = None,
         _integrated: _Array | None = None,
     ) -> None:
         super().__init__(
             init=init,
-            doc=doc,
-            name=name,
+            _doc=_doc,
             _integrated=_integrated,
         )
 
-    def _init(self, value: list[Any]) -> None:
+    def _init(self, value: list[Any] | None) -> None:
+        if value is None:
+            return
         with self.doc.transaction():
             for i, v in enumerate(value):
                 self._set(i, v)
