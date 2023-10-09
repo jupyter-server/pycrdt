@@ -28,7 +28,7 @@ array0 = Array([0, "foo"])
 map0 = Map({"key0": "value0"})
 ```
 
-But they are pretty useless on their own. They only become useful when inserted in a shared document:
+But they are pretty useless on their own. They are just placeholders waiting to be inserted in a shared document. Only then do they really become useful:
 
 ```py
 from pycrdt import Doc
@@ -39,7 +39,7 @@ doc["array0"] = array0
 doc["map0"] = map0
 ```
 
-Now you can change them as you would expect in Python, for instance:
+Now you can operate on them as you would expect, for instance:
 
 ```py
 text0 += ", World!"
@@ -58,25 +58,28 @@ map0["key2"] = array1
 ```
 
 Every change to `doc` (a modified/added/deleted value) will generate an update in the form of some encoded binary data.
-You can listen to these updates and transmit them on the wire, so that they can be applied to a remote document.
+You can listen to these updates and send them on the wire, so that they can be applied to a remote document.
 
 We say that `text0`, `array0` and `map0` are root types of `doc`.
 When they got inserted into `doc`, we gave them a name. For instance, `text0` was inserted under `"text0"`.
-This is how a remote document will retrieve the shared data types of the document, after applying the received updates:
+This is how a remote document will retrieve the root types of the document, after applying the received updates:
 
 ```py
-from pycrdt import Doc
+from pycrdt import Doc, Text, Array, Map
 
 remote_doc = Doc()
 remote_doc.apply_updates(updates)
 
-text0 = remote_doc["text0"]
-array0 = remote_doc["array0"]
-map0 = remote_doc["map0"]
+text0 = Text()
+array0 = Array()
+map0 = Map()
+remote_doc["text0"] = text0
+remote_doc["array0"] = array0
+remote_doc["map0"] = map0
 ```
 
 You could say that there is nothing fancy here, it's just about encoding data changes so that they can be applied on another object.
-But this is where the magic of CRDTs come into play.
+But this is where the magic of CRDTs comes into play.
 Their algorithm ensures that if some changes are done concurrently on different objects representing the same data (for instance on different machines), applying the changes will lead to the same data on all objects. Without such algorithms, this property doesn't hold due to the fact that changes depend on the order in which they are applied, and that they take time to travel on the wire.
 
 The most common example is inserting a different character on a text editor on two machines.
