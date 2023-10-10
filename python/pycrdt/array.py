@@ -71,10 +71,13 @@ class Array(BaseType):
             self[0:0] = value
             return self
 
-    def __setitem__(self, key: int | slice, value: list[Any]) -> None:
+    def __setitem__(self, key: int | slice, value: Any | list[Any]) -> None:
         with self.doc.transaction():
             if isinstance(key, int):
-                raise RuntimeError("Single item assignment not supported")
+                if key < 0:
+                    key += len(self)
+                del self[key]
+                self[key:key] = [value]
             elif isinstance(key, slice):
                 if key.step is not None:
                     raise RuntimeError("Step not supported")
