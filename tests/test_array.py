@@ -61,7 +61,7 @@ def test_array():
         {"foo": 3, "bar": True, "baz": [6, 7]},
         -3,
         -4,
-        -5,
+        -6,
     ]
     with doc.transaction():
         array.append("foo")
@@ -78,6 +78,7 @@ def test_array():
         array = [-1, -2] + array
         array = array + [-3, -4]
         array += [-5]
+        array[-1] = -6
 
     assert json.loads(str(array)) == ref
     assert len(array) == len(ref)
@@ -85,25 +86,7 @@ def test_array():
 
     assert events == [
         {
-            "delta": [
-                {
-                    "insert": [
-                        -1,
-                        -2,
-                        "foo",
-                        10,
-                        11,
-                        12,
-                        3.1,
-                        False,
-                        [4, 5.2],
-                        {"bar": True, "foo": 3, "baz": [6, 7]},
-                        -3,
-                        -4,
-                        -5,
-                    ]
-                }
-            ],
+            "delta": [{"insert": ref}],
             "path": [],
         }
     ]
