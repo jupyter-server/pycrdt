@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 class Map(BaseType):
     _prelim: dict | None
     _integrated: _Map | None
+    _keys: dict[str, None]
 
     def __init__(
         self,
@@ -25,6 +26,7 @@ class Map(BaseType):
             _doc=_doc,
             _integrated=_integrated,
         )
+        self._keys = dict()
 
     def _init(self, value: dict[str, Any] | None) -> None:
         if value is None:
@@ -44,6 +46,7 @@ class Map(BaseType):
             else:
                 # primitive type
                 self.integrated.insert(txn, key, value)
+            self._keys[key] = None
 
     def _get_or_insert(self, name: str, doc: Doc) -> _Map:
         return doc._doc.get_or_insert_map(name)
@@ -61,6 +64,7 @@ class Map(BaseType):
             raise RuntimeError("Key must be of type string")
         txn = self._current_transaction()
         self.integrated.remove(txn, key)
+        del self._keys[key]
 
     def __getitem__(self, key: str) -> None:
         with self.doc.transaction() as txn:
@@ -71,11 +75,32 @@ class Map(BaseType):
     def __setitem__(self, key: str, value: Any) -> None:
         if not isinstance(key, str):
             raise RuntimeError("Key must be of type string")
-        with self.doc.transaction() as txn:
-            self.integrated.insert(txn, key, value)
+        with self.doc.transaction():
+            self._set(key, value)
+
+    def __iter__(self):
+        return self._keys.keys()
+
+    def keys(self):
+        return self._keys.keys()
+
+    def values(self):
+        for k in self.keys():
+            yield self[k]
+
+    def items(self):
+        for k in self.keys():
+            yield k, self[k]
 
     def update(self, value: dict[str, Any]) -> None:
         self._init(value)
+
+    def clear(self) -> None:
+        with self.doc.transaction():
+            keys = list(self.keys())
+            for k in keys:
+                del self[k]
+        self._keys.clear()
 
 
 integrated_types[_Map] = Map

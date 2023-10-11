@@ -25,3 +25,18 @@ def test_nested():
         "map1": {"bar": "baz", "foo": [3, 4, 5]},
     }
     assert json.loads(str(map0)) == ref
+
+
+def test_api():
+    doc = Doc()
+    n = 5
+    keys = [f"key{i}" for i in range(n)]
+    values = [f"value{i}" for i in range(n)]
+    items = {keys[i]: values[i] for i in range(5)}
+    map0 = Map(items)
+    doc["map0"] = map0
+    assert list(map0.keys()) == keys
+    assert list(map0.values()) == values
+    assert dict(map0.items()) == items
+    map0.clear()
+    assert len(map0) == 0
