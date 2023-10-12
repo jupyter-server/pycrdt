@@ -115,9 +115,13 @@ class Array(BaseType):
 
     def __getitem__(self, key: int) -> BaseType:
         with self.doc.transaction() as txn:
-            if not isinstance(key, int):
-                raise RuntimeError("Slices are not supported")
-            return self._maybe_as_type_or_doc(self.integrated.get(txn, key))
+            if isinstance(key, int):
+                return self._maybe_as_type_or_doc(self.integrated.get(txn, key))
+            elif isinstance(key, slice):
+                i0 = 0 if key.start is None else key.start
+                i1 = len(self) if key.stop is None else key.stop
+                step = 1 if key.step is None else key.step
+                return [self[i] for i in range(i0, i1, step)]
 
     def __str__(self) -> str:
         with self.doc.transaction() as txn:

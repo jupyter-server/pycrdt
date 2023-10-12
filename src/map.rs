@@ -1,6 +1,6 @@
 use pyo3::prelude::*;
 use pyo3::exceptions::{PyValueError, PyTypeError};
-use pyo3::types::{PyString, PyDict};
+use pyo3::types::{PyString, PyDict, PyList};
 use yrs::{
     Doc as _Doc,
     MapRef,
@@ -103,6 +103,17 @@ impl Map {
         } else {
             Python::with_gil(|py| { Ok(v.unwrap().into_py(py)) })
         }
+    }
+
+    fn keys(&self, txn: &mut Transaction) -> PyObject {
+        let mut _t = txn.transaction();
+        let t = _t.as_mut().unwrap();
+        let it = self.map.keys(t);
+        let mut v: Vec<String> = Vec::new();
+        for k in it {
+            v.push(k.into());
+        }
+        Python::with_gil(|py| { PyList::new(py, v).into() })
     }
 
     fn to_json(&mut self, txn: &mut Transaction) -> PyObject {
