@@ -62,7 +62,7 @@ class Map(BaseType):
         txn = self._current_transaction()
         self.integrated.remove(txn, key)
 
-    def __getitem__(self, key: str) -> None:
+    def __getitem__(self, key: str) -> Any:
         with self.doc.transaction() as txn:
             if not isinstance(key, str):
                 raise RuntimeError("Key must be of type string")
@@ -73,6 +73,12 @@ class Map(BaseType):
             raise RuntimeError("Key must be of type string")
         with self.doc.transaction():
             self._set(key, value)
+
+    def get(self, key: str, default_value: Any | None = None) -> Any | None:
+        with self.doc.transaction():
+            if key in self.keys():
+                return self[key]
+            return default_value
 
     def keys(self):
         with self.doc.transaction() as txn:
