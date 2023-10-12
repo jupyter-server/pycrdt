@@ -1,5 +1,5 @@
 use pyo3::prelude::*;
-use pyo3::types::PyBytes;
+use pyo3::types::{PyBytes, PyLong};
 use yrs::{
     Doc as _Doc,
     ReadTxn,
@@ -32,11 +32,18 @@ impl Doc {
 #[pymethods]
 impl Doc {
     #[new]
-    fn new() -> Self {
-        let doc = _Doc::new();
-        Doc {
-            doc: doc,
+    fn new(client_id: &PyAny) -> Self {
+        if client_id.is_none() {
+            let doc = _Doc::new();
+            return Doc { doc };
         }
+        let id: u64 = client_id.downcast::<PyLong>().unwrap().extract().unwrap();
+        let doc = _Doc::with_client_id(id);
+        Doc { doc }
+    }
+
+    fn client_id(&mut self) -> u64 {
+        self.doc.client_id()
     }
 
     fn get_or_insert_text(&mut self, py: Python<'_>, name: &str) -> PyResult<Py<Text>> {

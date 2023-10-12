@@ -3,6 +3,11 @@ from typing import Any, Callable
 class Doc:
     """Shared document."""
 
+    def __init__(self, client_id: int | None) -> None:
+        """Create a new document with an optional global client ID.
+        If no client ID is passed, a random one will be generated."""
+    def client_id(self) -> int:
+        """Returns the document global client ID."""
     def create_transaction(self) -> Transaction:
         """Create a document transaction."""
     def get_or_insert_text(self, name: str) -> Text:

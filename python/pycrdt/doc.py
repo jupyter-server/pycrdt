@@ -9,6 +9,10 @@ from .transaction import Transaction
 
 
 class Doc(BaseDoc):
+    @property
+    def client_id(self) -> int:
+        return self._doc.client_id()
+
     def transaction(self) -> Transaction:
         if self._txn is not None:
             return self._txn
@@ -17,7 +21,9 @@ class Doc(BaseDoc):
     def get_state(self) -> bytes:
         return self._doc.get_state()
 
-    def get_update(self, state: bytes) -> bytes:
+    def get_update(self, state: bytes | None = None) -> bytes:
+        if state is None:
+            state = self.get_state()
         return self._doc.get_update(state)
 
     def apply_update(self, update: bytes) -> None:
