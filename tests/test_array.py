@@ -91,3 +91,21 @@ def test_array():
             "path": [],
         }
     ]
+
+
+def test_observe():
+    doc = Doc()
+    array = Array()
+    doc["array"] = array
+
+    def callback(e):
+        pass
+
+    sid0 = array.observe(callback)
+    sid1 = array.observe(callback)
+    sid2 = array.observe_deep(callback)
+    sid3 = array.observe_deep(callback)
+    assert sid0 == "o_0"
+    assert sid1 == "o_1"
+    assert sid2 == "od0"
+    assert sid3 == "od1"
