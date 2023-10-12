@@ -73,3 +73,12 @@ def test_transaction_event():
     remote_text = Text()
     remote_doc["text"] = remote_text
     assert str(remote_text) == "Hello, World!"
+
+
+def test_client_id():
+    doc0 = Doc()
+    doc1 = Doc()
+    assert doc0.client_id != doc1.client_id
+
+    doc2 = Doc(client_id=123)
+    assert doc2.client_id == 123

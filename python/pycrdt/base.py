@@ -18,9 +18,11 @@ class BaseDoc:
     _doc: _Doc
     _txn: Transaction | None
 
-    def __init__(self, doc: _Doc | None = None) -> None:
+    def __init__(
+        self, *, client_id: int | None = None, doc: _Doc | None = None
+    ) -> None:
         if doc is None:
-            doc = _Doc()
+            doc = _Doc(client_id)
         self._doc = doc
         self._txn = None
 

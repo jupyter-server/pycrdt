@@ -7,6 +7,7 @@ from ._pycrdt import (
 from ._pycrdt import (
     TextEvent as TextEvent,
 )
+from ._pycrdt import TransactionEvent as TransactionEvent
 from .array import Array as Array
 from .doc import Doc as Doc
 from .map import Map as Map
