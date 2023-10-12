@@ -83,6 +83,7 @@ def test_array():
     assert json.loads(str(array)) == ref
     assert len(array) == len(ref)
     assert array[9] == ref[9]
+    assert array[1:10:2] == ref[1:10:2]
 
     assert events == [
         {

@@ -35,8 +35,13 @@ def test_api():
     items = {keys[i]: values[i] for i in range(5)}
     map0 = Map(items)
     doc["map0"] = map0
-    assert list(map0.keys()) == keys
-    assert list(map0.values()) == values
+    key_list = list(map0.keys())
+    value_list = list(map0.values())
+    assert len(key_list) == n
+    assert len(value_list) == n
+    # Yrs Map doesn't keep order
+    assert set(key_list) == set(keys)
+    assert set(value_list) == set(values)
     assert dict(map0.items()) == items
     map0.clear()
     assert len(map0) == 0
