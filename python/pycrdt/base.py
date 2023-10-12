@@ -124,11 +124,15 @@ class BaseType(ABC):
     def type_name(self) -> str:
         return self._type_name
 
-    def observe(self, callback: Callable[[Any], None]) -> int:
-        return self.integrated.observe(callback)
+    def observe(self, callback: Callable[[Any], None]) -> str:
+        return f"o_{self.integrated.observe(callback)}"
 
-    def observe_deep(self, callback: Callable[[Any], None]) -> int:
-        return self.integrated.observe_deep(callback)
+    def observe_deep(self, callback: Callable[[Any], None]) -> str:
+        return f"od{self.integrated.observe_deep(callback)}"
 
-    def unobserve(self, subscription_id: int) -> None:
-        self.integrated.unobserve(subscription_id)
+    def unobserve(self, subscription_id: str) -> None:
+        sid = int(subscription_id[2:])
+        if subscription_id.startswith("o_"):
+            self.integrated.unobserve(sid)
+        else:
+            self.integrated.unobserve_deep(sid)

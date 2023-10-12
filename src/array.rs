@@ -145,6 +145,11 @@ impl Array {
         self.array.unobserve(subscription_id);
         Ok(())
     }
+
+    pub fn unobserve_deep(&mut self, subscription_id: u32) -> PyResult<()> {
+        self.array.unobserve_deep(subscription_id);
+        Ok(())
+    }
 }
 
 #[pyclass(unsendable)]

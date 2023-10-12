@@ -60,6 +60,9 @@ class Array(BaseType):
         with self.doc.transaction():
             self += value
 
+    def clear(self) -> None:
+        del self[:]
+
     def __add__(self, value: list[Any]) -> Array:
         with self.doc.transaction():
             length = len(self)
