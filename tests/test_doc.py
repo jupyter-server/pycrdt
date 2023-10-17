@@ -7,6 +7,17 @@ def callback(events, event):
     events.append(event)
 
 
+def encode_client_id(client_id_bytes):
+    client_id_len = len(client_id_bytes)
+    b = []
+    for i, n in enumerate(client_id_bytes[::-1]):
+        j = n << i
+        if i != client_id_len - 1:
+            j |= 0x80
+        b.append(j)
+    return bytes(b)
+
+
 def test_subdoc():
     doc0 = Doc()
     state0 = doc0.get_state()
@@ -80,5 +91,14 @@ def test_client_id():
     doc1 = Doc()
     assert doc0.client_id != doc1.client_id
 
-    doc2 = Doc(client_id=123)
-    assert doc2.client_id == 123
+    client_id_bytes = b"\x01\x02\x03\x04"
+    client_id = int.from_bytes(client_id_bytes, byteorder="big")
+    doc2 = Doc(client_id=client_id)
+    assert doc2.client_id == client_id
+    text = Text("Hello, World!")
+    doc2["text"] = text
+    update = doc2.get_update()
+
+    b = encode_client_id(client_id_bytes)
+
+    assert update[2 : 2 + len(b)] == b
