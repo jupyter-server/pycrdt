@@ -23,7 +23,7 @@ class Doc(BaseDoc):
 
     def get_update(self, state: bytes | None = None) -> bytes:
         if state is None:
-            state = self.get_state()
+            state = b"\x00"
         return self._doc.get_update(state)
 
     def apply_update(self, update: bytes) -> None:
