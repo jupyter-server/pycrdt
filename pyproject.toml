@@ -44,5 +44,5 @@ python-source = "python"
 module-name = "pycrdt._pycrdt"
 
 [tool.ruff]
-line-length = 88
+line-length = 100
 select = ["F", "E", "W", "I001"]

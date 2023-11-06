@@ -77,8 +77,11 @@ class Array(BaseType):
     def __setitem__(self, key: int | slice, value: Any | list[Any]) -> None:
         with self.doc.transaction():
             if isinstance(key, int):
+                length = len(self)
+                if length == 0:
+                    raise IndexError("Array index out of range")
                 if key < 0:
-                    key += len(self)
+                    key += length
                 del self[key]
                 self[key:key] = [value]
             elif isinstance(key, slice):
@@ -96,6 +99,11 @@ class Array(BaseType):
     def __delitem__(self, key: int | slice) -> None:
         with self.doc.transaction() as txn:
             if isinstance(key, int):
+                length = len(self)
+                if length == 0:
+                    raise IndexError("Array index out of range")
+                if key < 0:
+                    key += length
                 self.integrated.remove_range(txn, key, 1)
             elif isinstance(key, slice):
                 if key.step is not None:
@@ -119,6 +127,11 @@ class Array(BaseType):
     def __getitem__(self, key: int) -> BaseType:
         with self.doc.transaction() as txn:
             if isinstance(key, int):
+                length = len(self)
+                if length == 0:
+                    raise IndexError("Array index out of range")
+                if key < 0:
+                    key += length
                 return self._maybe_as_type_or_doc(self.integrated.get(txn, key))
             elif isinstance(key, slice):
                 i0 = 0 if key.start is None else key.start

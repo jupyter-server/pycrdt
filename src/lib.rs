@@ -7,6 +7,7 @@ mod transaction;
 mod type_conversions;
 use crate::doc::Doc;
 use crate::doc::TransactionEvent;
+use crate::doc::SubdocsEvent;
 use crate::text::{Text, TextEvent};
 use crate::array::{Array, ArrayEvent};
 use crate::map::{Map, MapEvent};
@@ -16,6 +17,7 @@ use crate::transaction::Transaction;
 fn _pycrdt(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Doc>()?;
     m.add_class::<TransactionEvent>()?;
+    m.add_class::<SubdocsEvent>()?;
     m.add_class::<Text>()?;
     m.add_class::<TextEvent>()?;
     m.add_class::<Array>()?;

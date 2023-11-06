@@ -3,12 +3,16 @@ from __future__ import annotations
 from typing import Callable
 
 from ._pycrdt import Doc as _Doc
-from ._pycrdt import TransactionEvent
+from ._pycrdt import TransactionEvent, SubdocsEvent
 from .base import BaseDoc, BaseType, integrated_types
 from .transaction import Transaction
 
 
 class Doc(BaseDoc):
+    @property
+    def guid(self) -> int:
+        return self._doc.guid()
+
     @property
     def client_id(self) -> int:
         return self._doc.client_id()
@@ -38,6 +42,9 @@ class Doc(BaseDoc):
 
     def observe(self, callback: Callable[[TransactionEvent], None]) -> int:
         return self._doc.observe(callback)
+
+    def observe_subdocs(self, callback: Callable[[SubdocsEvent], None]) -> int:
+        return self._doc.observe_subdocs(callback)
 
 
 integrated_types[_Doc] = Doc

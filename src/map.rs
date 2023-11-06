@@ -176,13 +176,17 @@ impl MapEvent {
     pub fn new(event: &_MapEvent, txn: &TransactionMut) -> Self {
         let event = event as *const _MapEvent;
         let txn = unsafe { std::mem::transmute::<&TransactionMut, &TransactionMut<'static>>(txn) };
-        MapEvent {
+        let mut map_event = MapEvent {
             event,
             txn,
             target: None,
             keys: None,
             path: None,
-        }
+        };
+        map_event.target();
+        map_event.path();
+        map_event.keys();
+        map_event
     }
 
     fn event(&self) -> &_MapEvent {
