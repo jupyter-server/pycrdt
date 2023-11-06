@@ -1,11 +1,12 @@
 use pyo3::prelude::*;
-use pyo3::types::{PyBytes, PyLong};
+use pyo3::types::{PyBytes, PyLong, PyList};
 use yrs::{
     Doc as _Doc,
     ReadTxn,
     Transact,
     TransactionMut,
     TransactionCleanupEvent,
+    SubdocsEvent as _SubdocsEvent,
     StateVector,
     Update,
 };
@@ -40,6 +41,10 @@ impl Doc {
         let id: u64 = client_id.downcast::<PyLong>().unwrap().extract().unwrap();
         let doc = _Doc::with_client_id(id);
         Doc { doc }
+    }
+
+    fn guid(&mut self) -> String {
+        self.doc.guid().to_string()
     }
 
     fn client_id(&mut self) -> u64 {
@@ -109,6 +114,21 @@ impl Doc {
             .into();
         Ok(id)
     }
+
+    pub fn observe_subdocs(&mut self, f: PyObject) -> PyResult<u32> {
+        let id: u32 = self.doc
+            .observe_subdocs(move |_, event| {
+                Python::with_gil(|py| {
+                    let event = SubdocsEvent::new(event);
+                    if let Err(err) = f.call1(py, (event,)) {
+                        err.restore(py)
+                    }
+                })
+            })
+            .unwrap()
+            .into();
+        Ok(id)
+    }
 }
 
 #[pyclass(unsendable)]
@@ -159,5 +179,46 @@ impl TransactionEvent {
 
     pub fn get_update(&self) -> PyObject {
         self.update.clone()
+    }
+}
+
+#[pyclass(unsendable)]
+pub struct SubdocsEvent {
+    added: PyObject,
+    removed: PyObject,
+    loaded: PyObject,
+}
+
+impl SubdocsEvent {
+    fn new(event: &_SubdocsEvent) -> Self {
+        let added: Vec<String> = event.added().map(|d| d.guid().clone().to_string()).collect();
+        let added: PyObject = Python::with_gil(|py| PyList::new(py, &added).into());
+        let removed: Vec<String> = event.removed().map(|d| d.guid().clone().to_string()).collect();
+        let removed: PyObject = Python::with_gil(|py| PyList::new(py, &removed).into());
+        let loaded: Vec<String> = event.loaded().map(|d| d.guid().clone().to_string()).collect();
+        let loaded: PyObject = Python::with_gil(|py| PyList::new(py, &loaded).into());
+        SubdocsEvent {
+            added,
+            removed,
+            loaded,
+        }
+    }
+}
+
+#[pymethods]
+impl SubdocsEvent {
+    #[getter]
+    pub fn added(&mut self) -> PyObject {
+        self.added.clone()
+    }
+
+    #[getter]
+    pub fn removed(&mut self) -> PyObject {
+        self.removed.clone()
+    }
+
+    #[getter]
+    pub fn loaded(&mut self) -> PyObject {
+        self.loaded.clone()
     }
 }

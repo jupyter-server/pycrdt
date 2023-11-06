@@ -87,13 +87,17 @@ impl TextEvent {
     pub fn new(event: &_TextEvent, txn: &TransactionMut) -> Self {
         let event = event as *const _TextEvent;
         let txn = unsafe { std::mem::transmute::<&TransactionMut, &TransactionMut<'static>>(txn) };
-        TextEvent {
+        let mut text_event = TextEvent {
             event,
             txn,
             target: None,
             delta: None,
             path: None,
-        }
+        };
+        text_event.target();
+        text_event.path();
+        text_event.delta();
+        text_event
     }
 
     fn event(&self) -> &_TextEvent {

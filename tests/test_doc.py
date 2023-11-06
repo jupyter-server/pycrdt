@@ -1,5 +1,6 @@
 from functools import partial
 
+import pytest
 from pycrdt import Array, Doc, Map, Text
 
 
@@ -20,26 +21,25 @@ def encode_client_id(client_id_bytes):
 
 def test_subdoc():
     doc0 = Doc()
-    state0 = doc0.get_state()
     map0 = Map()
     doc0["map0"] = map0
 
     doc1 = Doc()
-    state1 = doc1.get_state()
     map1 = Map()
     doc1["map1"] = map1
 
     doc2 = Doc()
-    state2 = doc2.get_state()
     array2 = Array()
     doc2["array2"] = array2
 
     doc0["array0"] = Array(["hello", 1, doc1])
     map0.update({"key0": "val0", "key1": doc2})
 
-    update0 = doc0.get_update(state0)
+    update0 = doc0.get_update()
 
     remote_doc = Doc()
+    events = []
+    remote_doc.observe_subdocs(partial(callback, events))
     remote_doc.apply_update(update0)
     remote_array0 = Array()
     remote_map0 = Map()
@@ -56,17 +56,26 @@ def test_subdoc():
 
     map1["foo"] = "bar"
 
-    update1 = doc1.get_update(state1)
+    update1 = doc1.get_update()
 
     array2 += ["baz", 3]
 
-    update2 = doc2.get_update(state2)
+    update2 = doc2.get_update()
 
     remote_doc1.apply_update(update1)
     remote_doc2.apply_update(update2)
 
     assert str(map1) == str(remote_map1)
     assert str(array2) == str(remote_array2)
+
+    assert len(events) == 1
+    event = events[0]
+    assert len(event.added) == 2
+    assert event.added[0] in (doc1.guid, doc2.guid)
+    assert event.added[1] in (doc1.guid, doc2.guid)
+    assert doc1.guid != doc2.guid
+    assert event.removed == []
+    assert event.loaded == []
 
 
 def test_transaction_event():

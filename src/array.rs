@@ -165,13 +165,17 @@ impl ArrayEvent {
     pub fn new(event: &_ArrayEvent, txn: &TransactionMut) -> Self {
         let event = event as *const _ArrayEvent;
         let txn = unsafe { std::mem::transmute::<&TransactionMut, &TransactionMut<'static>>(txn) };
-        ArrayEvent {
+        let mut array_event = ArrayEvent {
             event,
             txn,
             target: None,
             delta: None,
             path: None,
-        }
+        };
+        array_event.target();
+        array_event.path();
+        array_event.delta();
+        array_event
     }
 
     fn event(&self) -> &_ArrayEvent {
@@ -216,7 +220,6 @@ impl ArrayEvent {
                 let delta = self.event().delta(self.txn()).iter().map(|change| {
                     Python::with_gil(|py| change.clone().into_py(py))
                 });
-
                 PyList::new(py, delta).into()
             });
             self.delta = Some(delta.clone());
