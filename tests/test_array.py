@@ -18,9 +18,9 @@ def test_str():
     map2 = Map({"key": "val"})
     array1 = Array([2, 3, map2])
     map1 = Map({"foo": array1})
-    array0 = Array([0, 1, map1])
+    array0 = Array([0, 1, None, map1])
     doc["array"] = array0
-    assert str(array0) == '[0,1,{"foo":[2,3,{"key":"val"}]}]'
+    assert str(array0) == '[0,1,null,{"foo":[2,3,{"key":"val"}]}]'
 
 
 def test_nested():

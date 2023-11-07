@@ -139,9 +139,27 @@ class Array(BaseType):
                 step = 1 if key.step is None else key.step
                 return [self[i] for i in range(i0, i1, step)]
 
+    def __iter__(self):
+        return ArrayIterator(self)
+
     def __str__(self) -> str:
         with self.doc.transaction() as txn:
             return self.integrated.to_json(txn)
+
+
+class ArrayIterator:
+    def __init__(self, array: Array):
+        self.array = array
+        self.length = len(array)
+        self.idx = 0
+
+    def __next__(self):
+        if self.idx == self.length:
+            raise StopIteration
+
+        res = self.array[self.idx]
+        self.idx += 1
+        return res
 
 
 integrated_types[_Array] = Array
