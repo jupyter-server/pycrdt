@@ -24,3 +24,14 @@ def test_str():
     map2 = Map({"key": text2})
     array2.append(map2)
     assert str(array2) == '[{"key":"val"}]'
+
+
+def test_api():
+    doc = Doc()
+    text = Text(hello + punct)
+    doc["text"] = text
+    assert str(text) == hello + punct
+    text.insert(len(hello), world)
+    assert str(text) == hello + world + punct
+    text.clear()
+    assert len(text) == 0
