@@ -109,3 +109,22 @@ def test_observe():
     assert sid1 == "o_1"
     assert sid2 == "od0"
     assert sid3 == "od1"
+
+
+def test_api():
+    # pop
+    doc = Doc()
+    array = Array([1, 2, 3])
+    doc["array"] = array
+    v = array.pop()
+    assert v == 3
+    v = array.pop(0)
+    assert v == 1
+    assert str(array) == "[2]"
+
+    # insert
+    doc = Doc()
+    array = Array([1, 2, 3])
+    doc["array"] = array
+    array.insert(1, 4)
+    assert str(array) == "[1,4,2,3]"

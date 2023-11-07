@@ -63,6 +63,15 @@ class Array(BaseType):
     def clear(self) -> None:
         del self[:]
 
+    def insert(self, index, object) -> None:
+        self[index:index] = [object]
+
+    def pop(self, index: int = -1) -> Any:
+        with self.doc.transaction():
+            res = self[index]
+            del self[index]
+            return res
+
     def __add__(self, value: list[Any]) -> Array:
         with self.doc.transaction():
             length = len(self)

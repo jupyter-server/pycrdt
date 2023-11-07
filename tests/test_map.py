@@ -45,3 +45,14 @@ def test_api():
     assert dict(map0.items()) == items
     map0.clear()
     assert len(map0) == 0
+
+    # pop
+    doc = Doc()
+    map0 = Map({"foo": 1, "bar": 2})
+    doc["map0"] = map0
+    v = map0.pop("foo")
+    assert v == 1
+    assert str(map0) == '{"bar":2}'
+    v = map0.pop("bar")
+    assert v == 2
+    assert str(map0) == "{}"
