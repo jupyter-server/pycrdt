@@ -1,4 +1,4 @@
-from pycrdt import Doc, Text
+from pycrdt import Array, Doc, Map, Text
 
 hello = "Hello"
 world = ", World"
@@ -6,13 +6,21 @@ punct = "!"
 
 
 def test_str():
-    doc = Doc()
-    text = Text()
-    doc["text"] = text
-    with doc.transaction():
-        text += hello
-        with doc.transaction():
-            text += world
-        text += punct
+    doc1 = Doc()
+    text1 = Text()
+    doc1["text"] = text1
+    with doc1.transaction():
+        text1 += hello
+        with doc1.transaction():
+            text1 += world
+        text1 += punct
 
-    assert str(text) == hello + world + punct
+    assert str(text1) == hello + world + punct
+
+    doc2 = Doc()
+    array2 = Array()
+    doc2["array"] = array2
+    text2 = Text("val")
+    map2 = Map({"key": text2})
+    array2.append(map2)
+    assert str(array2) == '[{"key":"val"}]'
