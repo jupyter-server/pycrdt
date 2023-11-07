@@ -87,5 +87,11 @@ class Text(BaseType):
             else:
                 raise RuntimeError(f"Index not supported: {key}")
 
+    def clear(self) -> None:
+        del self[:]
+
+    def insert(self, index, text: str) -> None:
+        self[index:index] = text
+
 
 integrated_types[_Text] = Text
