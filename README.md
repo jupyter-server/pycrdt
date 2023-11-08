@@ -65,10 +65,12 @@ When they got inserted into `doc`, we gave them a name. For instance, `text0` wa
 This is how a remote document will retrieve the root types of the document, after applying the received updates:
 
 ```py
-from pycrdt import Doc, Text, Array, Map
+update = doc.get_update()
+
+# the (binary) update could travel on the wire to a remote machine
 
 remote_doc = Doc()
-remote_doc.apply_update(updates)
+remote_doc.apply_update(update)
 
 text0 = Text()
 array0 = Array()
