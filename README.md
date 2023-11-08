@@ -68,7 +68,7 @@ This is how a remote document will retrieve the root types of the document, afte
 from pycrdt import Doc, Text, Array, Map
 
 remote_doc = Doc()
-remote_doc.apply_updates(updates)
+remote_doc.apply_update(updates)
 
 text0 = Text()
 array0 = Array()
