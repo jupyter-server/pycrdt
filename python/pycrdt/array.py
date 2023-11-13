@@ -72,6 +72,10 @@ class Array(BaseType):
             del self[index]
             return res
 
+    def move(self, source_index: int, destination_index: int) -> None:
+        with self.doc.transaction() as txn:
+            self.integrated.move_to(txn, source_index, destination_index)
+
     def __add__(self, value: list[Any]) -> Array:
         with self.doc.transaction():
             length = len(self)
