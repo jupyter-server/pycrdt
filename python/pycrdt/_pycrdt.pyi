@@ -85,6 +85,8 @@ class Array:
         """Returns the number of elements in the current array."""
     def insert(self, txn: Transaction, index: int, value: Any) -> None:
         """Inserts `value` at the given `index`."""
+    def move_to(self, txn: Transaction, source: int, target: int) -> None:
+        """Moves element found at `source` index into `target` index position.."""
     def remove_range(self, txn: Transaction, index: int, len: int) -> None:
         """Removes 'len' elements starting at provided `index`."""
     def get(self, txn: Transaction, index: int) -> Any:
