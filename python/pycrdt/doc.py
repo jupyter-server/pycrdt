@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import Callable
 
 from ._pycrdt import Doc as _Doc
-from ._pycrdt import TransactionEvent, SubdocsEvent
-from .base import BaseDoc, BaseType, integrated_types
+from ._pycrdt import SubdocsEvent, TransactionEvent
+from .base import BaseDoc, BaseType, base_types
 from .transaction import Transaction
 
 
@@ -47,4 +47,4 @@ class Doc(BaseDoc):
         return self._doc.observe_subdocs(callback)
 
 
-integrated_types[_Doc] = Doc
+base_types[_Doc] = Doc

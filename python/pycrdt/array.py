@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from ._pycrdt import Array as _Array
-from .base import BaseDoc, BaseType, integrated_types
+from .base import BaseDoc, BaseType, base_types
 
 if TYPE_CHECKING:
     from .doc import Doc
@@ -175,4 +175,4 @@ class ArrayIterator:
         return res
 
 
-integrated_types[_Array] = Array
+base_types[_Array] = Array

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from ._pycrdt import Map as _Map
-from .base import BaseDoc, BaseType, integrated_types
+from .base import BaseDoc, BaseType, base_types
 
 if TYPE_CHECKING:
     from .doc import Doc
@@ -115,4 +115,4 @@ class Map(BaseType):
         self._init(value)
 
 
-integrated_types[_Map] = Map
+base_types[_Map] = Map
