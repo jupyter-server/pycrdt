@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from ._pycrdt import Text as _Text
-from .base import BaseType, integrated_types
+from .base import BaseType, base_types
 
 if TYPE_CHECKING:
     from .doc import Doc
@@ -94,4 +94,4 @@ class Text(BaseType):
         self[index:index] = text
 
 
-integrated_types[_Text] = Text
+base_types[_Text] = Text

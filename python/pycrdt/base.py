@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Callable, Type
+from functools import partial
+from typing import TYPE_CHECKING, Any, Callable, Type, cast
 
 from ._pycrdt import Doc as _Doc
 from ._pycrdt import Transaction as _Transaction
@@ -11,7 +12,7 @@ if TYPE_CHECKING:
     from .doc import Doc
 
 
-integrated_types: dict[Any, Type[BaseType | BaseDoc]] = {}
+base_types: dict[Any, Type[BaseType | BaseDoc]] = {}
 
 
 class BaseDoc:
@@ -86,7 +87,7 @@ class BaseType(ABC):
         value._init(prelim)
 
     def _maybe_as_type_or_doc(self, obj: Any) -> Any:
-        for k, v in integrated_types.items():
+        for k, v in base_types.items():
             if isinstance(obj, k):
                 if issubclass(v, BaseDoc):
                     # create a BaseDoc
@@ -125,10 +126,12 @@ class BaseType(ABC):
         return self._type_name
 
     def observe(self, callback: Callable[[Any], None]) -> str:
-        return f"o_{self.integrated.observe(callback)}"
+        _callback = partial(observe_callback, callback, self.doc)
+        return f"o_{self.integrated.observe(_callback)}"
 
     def observe_deep(self, callback: Callable[[Any], None]) -> str:
-        return f"od{self.integrated.observe_deep(callback)}"
+        _callback = partial(observe_deep_callback, callback, self.doc)
+        return f"od{self.integrated.observe_deep(_callback)}"
 
     def unobserve(self, subscription_id: str) -> None:
         sid = int(subscription_id[2:])
@@ -136,3 +139,41 @@ class BaseType(ABC):
             self.integrated.unobserve(sid)
         else:
             self.integrated.unobserve_deep(sid)
+
+
+def observe_callback(callback: Callable[[Any], None], doc: Doc, event: Any):
+    _event = Event(event, doc)
+    callback(_event)
+
+
+def observe_deep_callback(callback: Callable[[Any], None], doc: Doc, events: list[Any]):
+    for idx, event in enumerate(events):
+        events[idx] = Event(event, doc)
+    callback(events)
+
+
+class Event:
+    def __init__(self, event: Any, doc: Doc):
+        self._doc = doc
+        attrs = [attr for attr in dir(event) if not attr.startswith("_")]
+        for attr in attrs:
+            processed = self._process(getattr(event, attr))
+            setattr(self, attr, processed)
+
+    def _process(self, value: Any) -> Any:
+        if isinstance(value, list):
+            for idx, val in enumerate(value):
+                value[idx] = self._process(val)
+        elif isinstance(value, dict):
+            for key, val in value.items():
+                value[key] = self._process(val)
+        else:
+            val_type = type(value)
+            if val_type in base_types:
+                if isinstance(val_type, _Doc):
+                    doc_type = cast(Type[BaseDoc], base_types[val_type])
+                    value = doc_type(doc=self._doc._doc)
+                else:
+                    base_type = cast(Type[BaseType], base_types[val_type])
+                    value = base_type(_integrated=value, _doc=self._doc)
+        return value
