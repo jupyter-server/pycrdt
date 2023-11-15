@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from functools import partial
+from typing import TYPE_CHECKING, Any, Callable
 
 from ._pycrdt import Map as _Map
-from .base import BaseDoc, BaseType, base_types
+from ._pycrdt import MapEvent as _MapEvent
+from .base import BaseDoc, BaseEvent, BaseType, base_types, event_types
 
 if TYPE_CHECKING:
     from .doc import Doc
@@ -114,5 +116,36 @@ class Map(BaseType):
     def update(self, value: dict[str, Any]) -> None:
         self._init(value)
 
+    def observe(self, callback: Callable[[Any], None]) -> str:
+        _callback = partial(observe_callback, callback, self.doc)
+        return f"o_{self.integrated.observe(_callback)}"
+
+    def observe_deep(self, callback: Callable[[Any], None]) -> str:
+        _callback = partial(observe_deep_callback, callback, self.doc)
+        return f"od{self.integrated.observe_deep(_callback)}"
+
+    def unobserve(self, subscription_id: str) -> None:
+        sid = int(subscription_id[2:])
+        if subscription_id.startswith("o_"):
+            self.integrated.unobserve(sid)
+        else:
+            self.integrated.unobserve_deep(sid)
+
+
+def observe_callback(callback: Callable[[Any], None], doc: Doc, event: Any):
+    _event = event_types[type(event)](event, doc)
+    callback(_event)
+
+
+def observe_deep_callback(callback: Callable[[Any], None], doc: Doc, events: list[Any]):
+    for idx, event in enumerate(events):
+        events[idx] = event_types[type(event)](event, doc)
+    callback(events)
+
+
+class MapEvent(BaseEvent):
+    __slots__ = "target", "keys", "path"
+
 
 base_types[_Map] = Map
+event_types[_MapEvent] = MapEvent

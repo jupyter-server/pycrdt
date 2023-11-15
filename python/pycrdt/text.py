@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from functools import partial
+from typing import TYPE_CHECKING, Any, Callable
 
 from ._pycrdt import Text as _Text
-from .base import BaseType, base_types
+from ._pycrdt import TextEvent as _TextEvent
+from .base import BaseEvent, BaseType, base_types, event_types
 
 if TYPE_CHECKING:
     from .doc import Doc
@@ -93,5 +95,23 @@ class Text(BaseType):
     def insert(self, index, text: str) -> None:
         self[index:index] = text
 
+    def observe(self, callback: Callable[[Any], None]) -> str:
+        _callback = partial(observe_callback, callback, self.doc)
+        return f"o_{self.integrated.observe(_callback)}"
+
+    def unobserve(self, subscription_id: str) -> None:
+        sid = int(subscription_id[2:])
+        self.integrated.unobserve(sid)
+
+
+def observe_callback(callback: Callable[[Any], None], doc: Doc, event: Any):
+    _event = event_types[type(event)](event, doc)
+    callback(_event)
+
+
+class TextEvent(BaseEvent):
+    __slots__ = "target", "delta", "path"
+
 
 base_types[_Text] = Text
+event_types[_TextEvent] = TextEvent
