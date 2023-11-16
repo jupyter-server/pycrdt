@@ -1,3 +1,5 @@
+## Quickstart
+
 Pycrdt offers the following shared data types:
 
 - `Text`: a type similar to a `str`.
@@ -36,7 +38,7 @@ map0["key1"] = "value1"
 Note that an `Array` and a `Map` can hold other shared data types:
 
 ```py
-map1 = Map({"foo": 1})
+map1 = Map({"baz": 1})
 array1 = Array([5, 6, 7])
 
 array0.append(map1)
@@ -75,3 +77,102 @@ Say we start with a blank page on both editors, and the user on machine A insert
 After receiving the other user's update, if no special care is taken, machine A will show "ba" and machine B will show "ab".
 In other words, their document states will diverge, and thus users won't collaborate on the same document anymore.
 CRDTs ensure that documents don't diverge, their shared documents will eventually have the same state. It will arbitrary be "ab" or "ba", but it will be the same on both machines.
+
+## Transactions
+
+Every change to a shared data happens in a document transaction. When no current transaction exists, an implicit transaction is created.
+Grouping multiple changes in a single transaction makes them atomic: they will appear as done simultaneously rather than sequentially.
+
+```py
+with doc.transaction():
+    text0 += ", World!"
+    array0.append("bar")
+    map0["key1"] = "value1"
+```
+
+Transactions can be nested: when a transaction is created inside another one, changes will be made in the outer transaction.
+In the following example, all changes are made in transaction `t0`.
+
+```py
+with doc.transaction() as t0:
+    text0 += ", World!"
+    with doc.transaction() as t1:
+        array0.append("bar")
+        with doc.transaction() as t2:
+            map0["key1"] = "value1"
+```
+
+## Events
+
+### Shared data events
+
+Changes to shared data can be observed in order to react on them. For instance, if a character is inserted in a `Text` data,
+a text editor should insert the character in the text shown to the user. This is done by registering callbacks.
+
+```py
+from pycrdt import TextEvent
+
+def handle_changes(event: TextEvent):
+    # process the event
+    ...
+
+text0_subscription_id = text0.observe(handle_changes)
+```
+
+The subscription ID can be used to unregister the callback later.
+
+```py
+text0.unobserve(text0_subscription_id)
+```
+
+For container data types like `Array` and `Map`, it can be useful to observe changes that are deeply nested in the hierarchy.
+For instance, you may want to observe all changes that happen in `array0`, including changes in `map1`:
+
+```yaml
+array0:
+  - 0
+  - "foo"
+  - "bar"
+  - map1:
+    "baz": 1
+```
+
+Using the `observe` method will only notify for changes happening at the top-level of the container, for instance when the value
+at index 2 is deleted, but not for changes happening in `map1`. Use the `observe_deep` method instead, with a callback that accepts
+a list of events.
+
+```py
+from pycrdt import ArrayEvent
+
+def handle_deep_changes(events: list[ArrayEvent]):
+    # process the events
+    ...
+
+array0_subscription_id = array0.observe_deep(handle_deep_changes)
+```
+
+Unregistering the callback is done with the same `unobserve` method.
+
+### Document events
+
+Observing changes made to a document is mostly meant to send the changes to another document, usually over the wire to a remote machine.
+Changes can be serialized to binary by calling `get_update()` on the event:
+
+```py
+from pycrdt import TransactionEvent
+
+def handle_doc_changes(event: TransactionEvent):
+    update: bytes = event.get_update()
+    # send binary update on the wire
+
+doc.observe(handle_doc_changes)
+```
+
+Changes can be applied to a remote document at the other end of the wire:
+
+```py
+# receive binary update from e.g. a WebSocket
+update: bytes
+
+remote_doc.apply_update(update)
+```
