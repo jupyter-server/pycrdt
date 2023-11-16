@@ -74,6 +74,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#quickstart" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -292,6 +297,17 @@
       
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Usage
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -301,6 +317,64 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#quickstart" class="md-nav__link">
+    Quickstart
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transactions" class="md-nav__link">
+    Transactions
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#events" class="md-nav__link">
+    Events
+  </a>
+  
+    <nav class="md-nav" aria-label="Events">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#shared-data-events" class="md-nav__link">
+    Shared data events
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#document-events" class="md-nav__link">
+    Document events
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -324,6 +398,55 @@
   
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#quickstart" class="md-nav__link">
+    Quickstart
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transactions" class="md-nav__link">
+    Transactions
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#events" class="md-nav__link">
+    Events
+  </a>
+  
+    <nav class="md-nav" aria-label="Events">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#shared-data-events" class="md-nav__link">
+    Shared data events
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#document-events" class="md-nav__link">
+    Document events
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -342,6 +465,7 @@
 
   <h1>Usage</h1>
 
+<h2 id="quickstart">Quickstart</h2>
 <p>Pycrdt offers the following shared data types:</p>
 <ul>
 <li><code>Text</code>: a type similar to a <code>str</code>.</li>
@@ -369,7 +493,7 @@
 <span class="n">map0</span><span class="p">[</span><span class="s2">&quot;key1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;value1&quot;</span>
 </code></pre></div>
 <p>Note that an <code>Array</code> and a <code>Map</code> can hold other shared data types:</p>
-<div class="highlight"><pre><span></span><code><span class="n">map1</span> <span class="o">=</span> <span class="n">Map</span><span class="p">({</span><span class="s2">&quot;foo&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+<div class="highlight"><pre><span></span><code><span class="n">map1</span> <span class="o">=</span> <span class="n">Map</span><span class="p">({</span><span class="s2">&quot;baz&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
 <span class="n">array1</span> <span class="o">=</span> <span class="n">Array</span><span class="p">([</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">])</span>
 
 <span class="n">array0</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">map1</span><span class="p">)</span>
@@ -401,6 +525,76 @@ Say we start with a blank page on both editors, and the user on machine A insert
 After receiving the other user's update, if no special care is taken, machine A will show "ba" and machine B will show "ab".
 In other words, their document states will diverge, and thus users won't collaborate on the same document anymore.
 CRDTs ensure that documents don't diverge, their shared documents will eventually have the same state. It will arbitrary be "ab" or "ba", but it will be the same on both machines.</p>
+<h2 id="transactions">Transactions</h2>
+<p>Every change to a shared data happens in a document transaction. When no current transaction exists, an implicit transaction is created.
+Grouping multiple changes in a single transaction makes them atomic: they will appear as done simultaneously rather than sequentially.</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span> <span class="n">doc</span><span class="o">.</span><span class="n">transaction</span><span class="p">():</span>
+    <span class="n">text0</span> <span class="o">+=</span> <span class="s2">&quot;, World!&quot;</span>
+    <span class="n">array0</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;bar&quot;</span><span class="p">)</span>
+    <span class="n">map0</span><span class="p">[</span><span class="s2">&quot;key1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;value1&quot;</span>
+</code></pre></div>
+<p>Transactions can be nested: when a transaction is created inside another one, changes will be made in the outer transaction.
+In the following example, all changes are made in transaction <code>t0</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span> <span class="n">doc</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">t0</span><span class="p">:</span>
+    <span class="n">text0</span> <span class="o">+=</span> <span class="s2">&quot;, World!&quot;</span>
+    <span class="k">with</span> <span class="n">doc</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">t1</span><span class="p">:</span>
+        <span class="n">array0</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;bar&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">doc</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">t2</span><span class="p">:</span>
+            <span class="n">map0</span><span class="p">[</span><span class="s2">&quot;key1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;value1&quot;</span>
+</code></pre></div>
+<h2 id="events">Events</h2>
+<h3 id="shared-data-events">Shared data events</h3>
+<p>Changes to shared data can be observed in order to react on them. For instance, if a character is inserted in a <code>Text</code> data,
+a text editor should insert the character in the text shown to the user. This is done by registering callbacks.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pycrdt</span> <span class="kn">import</span> <span class="n">TextEvent</span>
+
+<span class="k">def</span> <span class="nf">handle_changes</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">TextEvent</span><span class="p">):</span>
+    <span class="c1"># process the event</span>
+    <span class="o">...</span>
+
+<span class="n">text0_subscription_id</span> <span class="o">=</span> <span class="n">text0</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="n">handle_changes</span><span class="p">)</span>
+</code></pre></div>
+<p>The subscription ID can be used to unregister the callback later.</p>
+<div class="highlight"><pre><span></span><code><span class="n">text0</span><span class="o">.</span><span class="n">unobserve</span><span class="p">(</span><span class="n">text0_subscription_id</span><span class="p">)</span>
+</code></pre></div>
+<p>For container data types like <code>Array</code> and <code>Map</code>, it can be useful to observe changes that are deeply nested in the hierarchy.
+For instance, you may want to observe all changes that happen in <code>array0</code>, including changes in <code>map1</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">array0</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;foo&quot;</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;bar&quot;</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">map1</span><span class="p">:</span>
+<span class="w">    </span><span class="s">&quot;baz&quot;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+</code></pre></div>
+<p>Using the <code>observe</code> method will only notify for changes happening at the top-level of the container, for instance when the value
+at index 2 is deleted, but not for changes happening in <code>map1</code>. Use the <code>observe_deep</code> method instead, with a callback that accepts
+a list of events.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pycrdt</span> <span class="kn">import</span> <span class="n">ArrayEvent</span>
+
+<span class="k">def</span> <span class="nf">handle_deep_changes</span><span class="p">(</span><span class="n">events</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ArrayEvent</span><span class="p">]):</span>
+    <span class="c1"># process the events</span>
+    <span class="o">...</span>
+
+<span class="n">array0_subscription_id</span> <span class="o">=</span> <span class="n">array0</span><span class="o">.</span><span class="n">observe_deep</span><span class="p">(</span><span class="n">handle_deep_changes</span><span class="p">)</span>
+</code></pre></div>
+<p>Unregistering the callback is done with the same <code>unobserve</code> method.</p>
+<h3 id="document-events">Document events</h3>
+<p>Observing changes made to a document is mostly meant to send the changes to another document, usually over the wire to a remote machine.
+Changes can be serialized to binary by calling <code>get_update()</code> on the event:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pycrdt</span> <span class="kn">import</span> <span class="n">TransactionEvent</span>
+
+<span class="k">def</span> <span class="nf">handle_doc_changes</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">TransactionEvent</span><span class="p">):</span>
+    <span class="n">update</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">get_update</span><span class="p">()</span>
+    <span class="c1"># send binary update on the wire</span>
+
+<span class="n">doc</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="n">handle_doc_changes</span><span class="p">)</span>
+</code></pre></div>
+<p>Changes can be applied to a remote document at the other end of the wire:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># receive binary update from e.g. a WebSocket</span>
+<span class="n">update</span><span class="p">:</span> <span class="nb">bytes</span>
+
+<span class="n">remote_doc</span><span class="o">.</span><span class="n">apply_update</span><span class="p">(</span><span class="n">update</span><span class="p">)</span>
+</code></pre></div>
 
 
 
