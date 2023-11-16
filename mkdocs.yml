@@ -1,0 +1,37 @@
+site_name: pycrdt
+site_description: CRDTs based on Yrs
+repo_url: https://github.com/davidbrochart/pycrdt
+
+theme:
+  name: 'material'
+  palette:
+    - scheme: default
+      primary: 'black'
+      accent: 'black'
+      toggle:
+          icon: material/lightbulb-outline
+          name: Switch to dark mode
+    - scheme: slate
+      primary: 'black'
+      accent: 'black'
+      toggle:
+          icon: material/lightbulb
+          name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.top
+    - navigation.sections
+    - search.suggest
+    - search.highlight
+    - content.code.annotate
+    - content.code.copy
+
+nav:
+- Overview: index.md
+- install.md
+- usage.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences

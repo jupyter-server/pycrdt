@@ -34,6 +34,7 @@ test = [
   "y-py >=0.7.0a1,<0.8",
   "mypy",
 ]
+docs = [ "mkdocs", "mkdocs-material" ]
 
 [project.urls]
 Homepage = "https://github.com/davidbrochart/pycrdt"
