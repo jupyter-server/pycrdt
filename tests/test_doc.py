@@ -1,6 +1,5 @@
 from functools import partial
 
-import pytest
 from pycrdt import Array, Doc, Map, Text
 
 

@@ -28,29 +28,31 @@ impl Text {
 #[pymethods]
 impl Text {
     fn len(&self, txn: &mut Transaction)  -> PyResult<u32> {
-        let mut _t = txn.transaction();
-        let t = _t.as_mut().unwrap();
+        let mut t0 = txn.transaction();
+        let t1 = t0.as_mut().unwrap();
+        let t = t1.as_ref();
         let len = self.text.len(t);
         Ok(len)
     }
 
     fn insert(&self, txn: &mut Transaction, index: u32, chunk: &str) -> PyResult<()> {
         let mut _t = txn.transaction();
-        let mut t = _t.as_mut().unwrap();
+        let mut t = _t.as_mut().unwrap().as_mut();
         self.text.insert(&mut t, index, chunk);
         Ok(())
     }
 
     fn remove_range(&self, txn: &mut Transaction, index: u32, len: u32) -> PyResult<()> {
         let mut _t = txn.transaction();
-        let mut t = _t.as_mut().unwrap();
+        let mut t = _t.as_mut().unwrap().as_mut();
         self.text.remove_range(&mut t, index, len);
         Ok(())
     }
 
     fn get_string(&mut self, txn: &mut Transaction) -> PyObject {
-        let mut _t = txn.transaction();
-        let t = _t.as_mut().unwrap();
+        let mut t0 = txn.transaction();
+        let t1 = t0.as_mut().unwrap();
+        let t = t1.as_ref();
         let s = self.text.get_string(t);
         Python::with_gil(|py| PyString::new(py, &s).into())
     }
@@ -81,6 +83,7 @@ pub struct TextEvent {
     target: Option<PyObject>,
     delta: Option<PyObject>,
     path: Option<PyObject>,
+    transaction: Option<PyObject>,
 }
 
 impl TextEvent {
@@ -93,6 +96,7 @@ impl TextEvent {
             target: None,
             delta: None,
             path: None,
+            transaction: None,
         };
         text_event.target();
         text_event.path();
@@ -111,6 +115,17 @@ impl TextEvent {
 
 #[pymethods]
 impl TextEvent {
+    #[getter]
+    pub fn transaction(&mut self) -> PyObject {
+        if let Some(transaction) = self.transaction.as_ref() {
+            transaction.clone()
+        } else {
+            let transaction: PyObject = Python::with_gil(|py| Transaction::from(self.txn()).into_py(py));
+            self.transaction = Some(transaction.clone());
+            transaction
+        }
+    }
+
     #[getter]
     pub fn target(&mut self) -> PyObject {
         if let Some(target) = self.target.as_ref() {

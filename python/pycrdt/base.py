@@ -20,7 +20,10 @@ class BaseDoc:
     _txn: Transaction | None
 
     def __init__(
-        self, *, client_id: int | None = None, doc: _Doc | None = None
+        self,
+        *,
+        client_id: int | None = None,
+        doc: _Doc | None = None,
     ) -> None:
         if doc is None:
             doc = _Doc(client_id)
@@ -66,7 +69,8 @@ class BaseType(ABC):
             raise RuntimeError("Not associated with a document")
         if self._doc._txn is None:
             raise RuntimeError("No current transaction")
-        return self._doc._txn._txn
+        res = cast(_Transaction, self._doc._txn._txn)
+        return res
 
     def _integrate(self, doc: Doc, integrated: Any) -> Any:
         prelim = self._prelim
@@ -132,29 +136,25 @@ class BaseEvent:
     def __init__(self, event: Any, doc: Doc):
         slot: str
         for slot in self.__slots__:
-            processed = process_event(getattr(event, slot), doc)
+            processed = process_event(getattr(event, slot), doc, event.transaction)
             setattr(self, slot, processed)
 
     def __str__(self):
         str_list = []
         for slot in self.__slots__:
-            val = getattr(self, slot)
-            try:
-                val = str(getattr(self, slot))
-            except Exception:
-                val = repr(getattr(self, slot))
+            val = str(getattr(self, slot))
             str_list.append(f"{slot}: {val}")
         ret = ", ".join(str_list)
         return "{" + ret + "}"
 
 
-def process_event(value: Any, doc: Doc) -> Any:
+def process_event(value: Any, doc: Doc, txn) -> Any:
     if isinstance(value, list):
         for idx, val in enumerate(value):
-            value[idx] = process_event(val, doc)
+            value[idx] = process_event(val, doc, txn)
     elif isinstance(value, dict):
         for key, val in value.items():
-            value[key] = process_event(val, doc)
+            value[key] = process_event(val, doc, txn)
     else:
         val_type = type(value)
         if val_type in base_types:
@@ -164,4 +164,5 @@ def process_event(value: Any, doc: Doc) -> Any:
             else:
                 base_type = cast(Type[BaseType], base_types[val_type])
                 value = base_type(_integrated=value, _doc=doc)
+                doc._txn = Transaction(doc=doc, _txn=txn)
     return value

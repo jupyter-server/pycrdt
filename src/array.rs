@@ -35,15 +35,16 @@ impl Array {
 #[pymethods]
 impl Array {
     fn len(&self, txn: &mut Transaction)  -> PyResult<u32> {
-        let mut _t = txn.transaction();
-        let t = _t.as_mut().unwrap();
+        let mut t0 = txn.transaction();
+        let t1 = t0.as_mut().unwrap();
+        let t = t1.as_ref();
         let len = self.array.len(t);
         Ok(len)
     }
 
     fn insert(&self, txn: &mut Transaction, index: u32, value: &PyAny) -> PyResult<()> {
         let mut _t = txn.transaction();
-        let mut t = _t.as_mut().unwrap();
+        let mut t = _t.as_mut().unwrap().as_mut();
         match py_to_any(value) {
             Any::Undefined => Err(PyTypeError::new_err("Type not supported")),
             v => {
@@ -55,7 +56,7 @@ impl Array {
 
     fn insert_text_prelim(&self, txn: &mut Transaction, index: u32) -> PyResult<PyObject> {
         let mut _t = txn.transaction();
-        let mut t = _t.as_mut().unwrap();
+        let mut t = _t.as_mut().unwrap().as_mut();
         let integrated = self.array.insert(&mut t, index, TextPrelim::new(""));
         let shared = Text::from(integrated);
         Python::with_gil(|py| { Ok(shared.into_py(py)) })
@@ -63,7 +64,7 @@ impl Array {
 
     fn insert_array_prelim(&self, txn: &mut Transaction, index: u32) -> PyResult<PyObject> {
         let mut _t = txn.transaction();
-        let mut t = _t.as_mut().unwrap();
+        let mut t = _t.as_mut().unwrap().as_mut();
         let integrated = self.array.insert(&mut t, index, ArrayPrelim::<_, Any>::from([]));
         let shared = Array::from(integrated);
         Python::with_gil(|py| { Ok(shared.into_py(py)) })
@@ -71,7 +72,7 @@ impl Array {
 
     fn insert_map_prelim(&self, txn: &mut Transaction, index: u32) -> PyResult<PyObject> {
         let mut _t = txn.transaction();
-        let mut t = _t.as_mut().unwrap();
+        let mut t = _t.as_mut().unwrap().as_mut();
         let integrated = self.array.insert(&mut t, index, MapPrelim::<Any>::new());
         let shared = Map::from(integrated);
         Python::with_gil(|py| { Ok(shared.into_py(py)) })
@@ -79,7 +80,7 @@ impl Array {
 
     fn insert_doc(&self, txn: &mut Transaction, index: u32, doc: &PyAny) -> PyResult<()> {
         let mut _t = txn.transaction();
-        let mut t = _t.as_mut().unwrap();
+        let mut t = _t.as_mut().unwrap().as_mut();
         let d1: Doc = doc.extract().unwrap();
         let d2: _Doc = d1.doc;
         let doc_ref = self.array.insert(&mut t, index, d2);
@@ -89,21 +90,22 @@ impl Array {
 
     fn move_to(&self, txn: &mut Transaction, source: u32, target: u32) -> PyResult<()> {
         let mut _t = txn.transaction();
-        let mut t = _t.as_mut().unwrap();
+        let mut t = _t.as_mut().unwrap().as_mut();
         self.array.move_to(&mut t, source, target);
         Ok(())
     }
 
     fn remove_range(&self, txn: &mut Transaction, index: u32, len: u32) -> PyResult<()> {
         let mut _t = txn.transaction();
-        let mut t = _t.as_mut().unwrap();
+        let mut t = _t.as_mut().unwrap().as_mut();
         self.array.remove_range(&mut t, index, len);
         Ok(())
     }
 
     fn get(&self, txn: &mut Transaction, index: u32) -> PyResult<PyObject> {
-        let mut _t = txn.transaction();
-        let t = _t.as_mut().unwrap();
+        let mut t0 = txn.transaction();
+        let t1 = t0.as_mut().unwrap();
+        let t = t1.as_ref();
         let v = self.array.get(t, index);
         if v == None {
             Err(PyValueError::new_err("Index error"))
@@ -113,8 +115,9 @@ impl Array {
     }
 
     fn to_json(&mut self, txn: &mut Transaction) -> PyObject {
-        let mut _t = txn.transaction();
-        let t = _t.as_mut().unwrap();
+        let mut t0 = txn.transaction();
+        let t1 = t0.as_mut().unwrap();
+        let t = t1.as_ref();
         let mut s = String::new();
         self.array.to_json(t).to_json(&mut s);
         Python::with_gil(|py| PyString::new(py, s.as_str()).into())
@@ -166,6 +169,7 @@ pub struct ArrayEvent {
     target: Option<PyObject>,
     delta: Option<PyObject>,
     path: Option<PyObject>,
+    transaction: Option<PyObject>,
 }
 
 impl ArrayEvent {
@@ -178,6 +182,7 @@ impl ArrayEvent {
             target: None,
             delta: None,
             path: None,
+            transaction: None,
         };
         array_event.target();
         array_event.path();
@@ -196,6 +201,17 @@ impl ArrayEvent {
 
 #[pymethods]
 impl ArrayEvent {
+    #[getter]
+    pub fn transaction(&mut self) -> PyObject {
+        if let Some(transaction) = self.transaction.as_ref() {
+            transaction.clone()
+        } else {
+            let transaction: PyObject = Python::with_gil(|py| Transaction::from(self.txn()).into_py(py));
+            self.transaction = Some(transaction.clone());
+            transaction
+        }
+    }
+
     #[getter]
     pub fn target(&mut self) -> PyObject {
         if let Some(target) = self.target.as_ref() {

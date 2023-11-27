@@ -9,6 +9,17 @@ from .transaction import Transaction
 
 
 class Doc(BaseDoc):
+    def __init__(
+        self,
+        init: dict[str, BaseType] = {},
+        *,
+        client_id: int | None = None,
+        doc: _Doc | None = None,
+    ) -> None:
+        super().__init__(client_id=client_id, doc=doc)
+        for k, v in init.items():
+            self[k] = v
+
     @property
     def guid(self) -> int:
         return self._doc.guid()
