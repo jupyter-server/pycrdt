@@ -35,15 +35,16 @@ impl Map {
 #[pymethods]
 impl Map {
     fn len(&self, txn: &mut Transaction)  -> PyResult<u32> {
-        let mut _t = txn.transaction();
-        let t = _t.as_mut().unwrap();
+        let mut t0 = txn.transaction();
+        let t1 = t0.as_mut().unwrap();
+        let t = t1.as_ref();
         let len = self.map.len(t);
         Ok(len)
     }
 
     fn insert(&self, txn: &mut Transaction, key: &str, value: &PyAny) -> PyResult<()> {
         let mut _t = txn.transaction();
-        let mut t = _t.as_mut().unwrap();
+        let mut t = _t.as_mut().unwrap().as_mut();
         match py_to_any(value) {
             Any::Undefined => Err(PyTypeError::new_err("Type not supported")),
             v => {
@@ -55,7 +56,7 @@ impl Map {
 
     fn insert_text_prelim(&self, txn: &mut Transaction, key: &str) -> PyResult<PyObject> {
         let mut _t = txn.transaction();
-        let mut t = _t.as_mut().unwrap();
+        let mut t = _t.as_mut().unwrap().as_mut();
         let integrated = self.map.insert(&mut t, key, TextPrelim::new(""));
         let shared = Text::from(integrated);
         Python::with_gil(|py| { Ok(shared.into_py(py)) })
@@ -63,7 +64,7 @@ impl Map {
 
     fn insert_array_prelim(&self, txn: &mut Transaction, key: &str) -> PyResult<PyObject> {
         let mut _t = txn.transaction();
-        let mut t = _t.as_mut().unwrap();
+        let mut t = _t.as_mut().unwrap().as_mut();
         let integrated = self.map.insert(&mut t, key, ArrayPrelim::<_, Any>::from([]));
         let shared = Array::from(integrated);
         Python::with_gil(|py| { Ok(shared.into_py(py)) })
@@ -71,7 +72,7 @@ impl Map {
 
     fn insert_map_prelim(&self, txn: &mut Transaction, key: &str) -> PyResult<PyObject> {
         let mut _t = txn.transaction();
-        let mut t = _t.as_mut().unwrap();
+        let mut t = _t.as_mut().unwrap().as_mut();
         let integrated = self.map.insert(&mut t, key, MapPrelim::<Any>::new());
         let shared = Map::from(integrated);
         Python::with_gil(|py| { Ok(shared.into_py(py)) })
@@ -79,7 +80,7 @@ impl Map {
 
     fn insert_doc(&self, txn: &mut Transaction, key: &str, doc: &PyAny) -> PyResult<()> {
         let mut _t = txn.transaction();
-        let mut t = _t.as_mut().unwrap();
+        let mut t = _t.as_mut().unwrap().as_mut();
         let d1: Doc = doc.extract().unwrap();
         let d2: _Doc = d1.doc;
         let doc_ref = self.map.insert(&mut t, key, d2);
@@ -89,14 +90,15 @@ impl Map {
 
     fn remove(&self, txn: &mut Transaction, key: &str) -> PyResult<()> {
         let mut _t = txn.transaction();
-        let mut t = _t.as_mut().unwrap();
+        let mut t = _t.as_mut().unwrap().as_mut();
         self.map.remove(&mut t, key);
         Ok(())
     }
 
     fn get(&self, txn: &mut Transaction, key: &str) -> PyResult<PyObject> {
-        let mut _t = txn.transaction();
-        let t = _t.as_mut().unwrap();
+        let mut t0 = txn.transaction();
+        let t1 = t0.as_mut().unwrap();
+        let t = t1.as_ref();
         let v = self.map.get(t, key);
         if v == None {
             Err(PyValueError::new_err("Key error"))
@@ -106,8 +108,9 @@ impl Map {
     }
 
     fn keys(&self, txn: &mut Transaction) -> PyObject {
-        let mut _t = txn.transaction();
-        let t = _t.as_mut().unwrap();
+        let mut t0 = txn.transaction();
+        let t1 = t0.as_mut().unwrap();
+        let t = t1.as_ref();
         let it = self.map.keys(t);
         let mut v: Vec<String> = Vec::new();
         for k in it {
@@ -117,8 +120,9 @@ impl Map {
     }
 
     fn to_json(&mut self, txn: &mut Transaction) -> PyObject {
-        let mut _t = txn.transaction();
-        let t = _t.as_mut().unwrap();
+        let mut t0 = txn.transaction();
+        let t1 = t0.as_mut().unwrap();
+        let t = t1.as_ref();
         let mut s = String::new();
         self.map.to_json(t).to_json(&mut s);
         Python::with_gil(|py| PyString::new(py, s.as_str()).into())
@@ -170,6 +174,7 @@ pub struct MapEvent {
     target: Option<PyObject>,
     keys: Option<PyObject>,
     path: Option<PyObject>,
+    transaction: Option<PyObject>,
 }
 
 impl MapEvent {
@@ -182,6 +187,7 @@ impl MapEvent {
             target: None,
             keys: None,
             path: None,
+            transaction: None,
         };
         map_event.target();
         map_event.path();
@@ -200,6 +206,17 @@ impl MapEvent {
 
 #[pymethods]
 impl MapEvent {
+    #[getter]
+    pub fn transaction(&mut self) -> PyObject {
+        if let Some(transaction) = self.transaction.as_ref() {
+            transaction.clone()
+        } else {
+            let transaction: PyObject = Python::with_gil(|py| Transaction::from(self.txn()).into_py(py));
+            self.transaction = Some(transaction.clone());
+            transaction
+        }
+    }
+
     #[getter]
     pub fn target(&mut self) -> PyObject {
         if let Some(target) = self.target.as_ref() {
