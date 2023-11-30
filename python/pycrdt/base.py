@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Type, cast
 
 from ._pycrdt import Doc as _Doc
 from ._pycrdt import Transaction as _Transaction
-from .transaction import Transaction
+from .transaction import ReadTransaction, Transaction
 
 if TYPE_CHECKING:
     from .doc import Doc
@@ -64,12 +64,12 @@ class BaseType(ABC):
     def _init(self, value: Any | None) -> None:
         ...
 
-    def _current_transaction(self) -> _Transaction:
+    def _current_transaction(self) -> Transaction:
         if self._doc is None:
             raise RuntimeError("Not associated with a document")
         if self._doc._txn is None:
             raise RuntimeError("No current transaction")
-        res = cast(_Transaction, self._doc._txn._txn)
+        res = cast(Transaction, self._doc._txn)
         return res
 
     def _integrate(self, doc: Doc, integrated: Any) -> Any:
@@ -164,5 +164,5 @@ def process_event(value: Any, doc: Doc, txn) -> Any:
             else:
                 base_type = cast(Type[BaseType], base_types[val_type])
                 value = base_type(_integrated=value, _doc=doc)
-                doc._txn = Transaction(doc=doc, _txn=txn)
+                doc._txn = ReadTransaction(doc=doc, _txn=txn)
     return value

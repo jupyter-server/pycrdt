@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Callable
 from ._pycrdt import Map as _Map
 from ._pycrdt import MapEvent as _MapEvent
 from .base import BaseDoc, BaseEvent, BaseType, base_types, event_types
+from .transaction import ReadTransaction
 
 if TYPE_CHECKING:
     from .doc import Doc
@@ -37,44 +38,56 @@ class Map(BaseType):
 
     def _set(self, key: str, value: Any) -> None:
         with self.doc.transaction() as txn:
+            if isinstance(txn, ReadTransaction):
+                raise RuntimeError(
+                    "Read-only transaction cannot be used to modify document structure"
+                )
             if isinstance(value, BaseDoc):
                 # subdoc
-                self.integrated.insert_doc(txn, key, value._doc)
+                self.integrated.insert_doc(txn._txn, key, value._doc)
             elif isinstance(value, BaseType):
                 # shared type
-                self._do_and_integrate("insert", value, txn, key)
+                assert txn._txn is not None
+                self._do_and_integrate("insert", value, txn._txn, key)
             else:
                 # primitive type
-                self.integrated.insert(txn, key, value)
+                self.integrated.insert(txn._txn, key, value)
 
     def _get_or_insert(self, name: str, doc: Doc) -> _Map:
         return doc._doc.get_or_insert_map(name)
 
     def __len__(self) -> int:
         with self.doc.transaction() as txn:
-            return self.integrated.len(txn)
+            return self.integrated.len(txn._txn)
 
     def __str__(self) -> str:
         with self.doc.transaction() as txn:
-            return self.integrated.to_json(txn)
+            return self.integrated.to_json(txn._txn)
 
     def __delitem__(self, key: str) -> None:
         if not isinstance(key, str):
             raise RuntimeError("Key must be of type string")
-        txn = self._current_transaction()
-        self.integrated.remove(txn, key)
+        with self.doc.transaction() as txn:
+            if isinstance(txn, ReadTransaction):
+                raise RuntimeError(
+                    "Read-only transaction cannot be used to modify document structure"
+                )
+            self.integrated.remove(txn._txn, key)
 
     def __getitem__(self, key: str) -> Any:
         with self.doc.transaction() as txn:
             if not isinstance(key, str):
                 raise RuntimeError("Key must be of type string")
-            return self._maybe_as_type_or_doc(self.integrated.get(txn, key))
+            return self._maybe_as_type_or_doc(self.integrated.get(txn._txn, key))
 
     def __setitem__(self, key: str, value: Any) -> None:
         if not isinstance(key, str):
             raise RuntimeError("Key must be of type string")
         with self.doc.transaction():
             self._set(key, value)
+
+    def __iter__(self):
+        return self.keys()
 
     def get(self, key: str, default_value: Any | None = None) -> Any | None:
         with self.doc.transaction():
@@ -96,21 +109,21 @@ class Map(BaseType):
 
     def keys(self):
         with self.doc.transaction() as txn:
-            return iter(self.integrated.keys(txn))
+            return iter(self.integrated.keys(txn._txn))
 
     def values(self):
         with self.doc.transaction() as txn:
-            for k in self.integrated.keys(txn):
+            for k in self.integrated.keys(txn._txn):
                 yield self[k]
 
     def items(self):
         with self.doc.transaction() as txn:
-            for k in self.integrated.keys(txn):
+            for k in self.integrated.keys(txn._txn):
                 yield k, self[k]
 
     def clear(self) -> None:
         with self.doc.transaction() as txn:
-            for k in self.integrated.keys(txn):
+            for k in self.integrated.keys(txn._txn):
                 del self[k]
 
     def update(self, value: dict[str, Any]) -> None:

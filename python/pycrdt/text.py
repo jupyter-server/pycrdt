@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Callable
 from ._pycrdt import Text as _Text
 from ._pycrdt import TextEvent as _TextEvent
 from .base import BaseEvent, BaseType, base_types, event_types
+from .transaction import ReadTransaction
 
 if TYPE_CHECKING:
     from .doc import Doc
@@ -32,29 +33,36 @@ class Text(BaseType):
         if value is None:
             return
         with self.doc.transaction() as txn:
-            self.integrated.insert(txn, 0, value)
+            self.integrated.insert(txn._txn, 0, value)
 
     def _get_or_insert(self, name: str, doc: Doc) -> _Text:
         return doc._doc.get_or_insert_text(name)
 
     def __len__(self) -> int:
         with self.doc.transaction() as txn:
-            return self.integrated.len(txn)
+            return self.integrated.len(txn._txn)
 
     def __str__(self) -> str:
-        with self.doc.transaction():
-            txn = self._current_transaction()
-            return self.integrated.get_string(txn)
+        with self.doc.transaction() as txn:
+            return self.integrated.get_string(txn._txn)
 
     def __iadd__(self, value: str) -> Text:
         with self.doc.transaction() as txn:
-            self.integrated.insert(txn, len(self), value)
+            if isinstance(txn, ReadTransaction):
+                raise RuntimeError(
+                    "Read-only transaction cannot be used to modify document structure"
+                )
+            self.integrated.insert(txn._txn, len(self), value)
             return self
 
     def __delitem__(self, key: int | slice) -> None:
         with self.doc.transaction() as txn:
+            if isinstance(txn, ReadTransaction):
+                raise RuntimeError(
+                    "Read-only transaction cannot be used to modify document structure"
+                )
             if isinstance(key, int):
-                self.integrated.remove_range(txn, key, 1)
+                self.integrated.remove_range(txn._txn, key, 1)
             elif isinstance(key, slice):
                 if key.step is not None:
                     raise RuntimeError("Step not supported")
@@ -70,12 +78,16 @@ class Text(BaseType):
                     raise RuntimeError("Negative stop not supported")
                 else:
                     n = key.stop - i
-                self.integrated.remove_range(txn, i, n)
+                self.integrated.remove_range(txn._txn, i, n)
             else:
                 raise RuntimeError(f"Index not supported: {key}")
 
     def __setitem__(self, key: int | slice, value: str) -> None:
         with self.doc.transaction() as txn:
+            if isinstance(txn, ReadTransaction):
+                raise RuntimeError(
+                    "Read-only transaction cannot be used to modify document structure"
+                )
             if isinstance(key, int):
                 raise RuntimeError("Single item assignment not supported")
             elif isinstance(key, slice):
@@ -85,7 +97,7 @@ class Text(BaseType):
                     raise RuntimeError("Start and stop should be equal")
                 if len(self) <= key.start < 0:
                     raise RuntimeError("Index out of range")
-                self.integrated.insert(txn, key.start, value)
+                self.integrated.insert(txn._txn, key.start, value)
             else:
                 raise RuntimeError(f"Index not supported: {key}")
 
