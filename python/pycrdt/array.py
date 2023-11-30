@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Callable
 from ._pycrdt import Array as _Array
 from ._pycrdt import ArrayEvent as _ArrayEvent
 from .base import BaseDoc, BaseEvent, BaseType, base_types, event_types
+from .transaction import ReadTransaction
 
 if TYPE_CHECKING:
     from .doc import Doc
@@ -37,22 +38,27 @@ class Array(BaseType):
 
     def _set(self, index: int, value: Any) -> None:
         with self.doc.transaction() as txn:
+            if isinstance(txn, ReadTransaction):
+                raise RuntimeError(
+                    "Read-only transaction cannot be used to modify document structure"
+                )
             if isinstance(value, BaseDoc):
                 # subdoc
-                self.integrated.insert_doc(txn, index, value._doc)
+                self.integrated.insert_doc(txn._txn, index, value._doc)
             elif isinstance(value, BaseType):
                 # shared type
-                self._do_and_integrate("insert", value, txn, index)
+                assert txn._txn is not None
+                self._do_and_integrate("insert", value, txn._txn, index)
             else:
                 # primitive type
-                self.integrated.insert(txn, index, value)
+                self.integrated.insert(txn._txn, index, value)
 
     def _get_or_insert(self, name: str, doc: Doc) -> _Array:
         return doc._doc.get_or_insert_array(name)
 
     def __len__(self) -> int:
         with self.doc.transaction() as txn:
-            return self.integrated.len(txn)
+            return self.integrated.len(txn._txn)
 
     def append(self, value: Any) -> None:
         with self.doc.transaction():
@@ -76,7 +82,11 @@ class Array(BaseType):
 
     def move(self, source_index: int, destination_index: int) -> None:
         with self.doc.transaction() as txn:
-            self.integrated.move_to(txn, source_index, destination_index)
+            if isinstance(txn, ReadTransaction):
+                raise RuntimeError(
+                    "Read-only transaction cannot be used to modify document structure"
+                )
+            self.integrated.move_to(txn._txn, source_index, destination_index)
 
     def __add__(self, value: list[Any]) -> Array:
         with self.doc.transaction():
@@ -113,13 +123,17 @@ class Array(BaseType):
 
     def __delitem__(self, key: int | slice) -> None:
         with self.doc.transaction() as txn:
+            if isinstance(txn, ReadTransaction):
+                raise RuntimeError(
+                    "Read-only transaction cannot be used to modify document structure"
+                )
             if isinstance(key, int):
                 length = len(self)
                 if length == 0:
                     raise IndexError("Array index out of range")
                 if key < 0:
                     key += length
-                self.integrated.remove_range(txn, key, 1)
+                self.integrated.remove_range(txn._txn, key, 1)
             elif isinstance(key, slice):
                 if key.step is not None:
                     raise RuntimeError("Step not supported")
@@ -135,7 +149,7 @@ class Array(BaseType):
                     raise RuntimeError("Negative stop not supported")
                 else:
                     n = key.stop - i
-                self.integrated.remove_range(txn, i, n)
+                self.integrated.remove_range(txn._txn, i, n)
             else:
                 raise RuntimeError(f"Index not supported: {key}")
 
@@ -147,7 +161,7 @@ class Array(BaseType):
                     raise IndexError("Array index out of range")
                 if key < 0:
                     key += length
-                return self._maybe_as_type_or_doc(self.integrated.get(txn, key))
+                return self._maybe_as_type_or_doc(self.integrated.get(txn._txn, key))
             elif isinstance(key, slice):
                 i0 = 0 if key.start is None else key.start
                 i1 = len(self) if key.stop is None else key.stop
@@ -159,7 +173,7 @@ class Array(BaseType):
 
     def __str__(self) -> str:
         with self.doc.transaction() as txn:
-            return self.integrated.to_json(txn)
+            return self.integrated.to_json(txn._txn)
 
     def observe(self, callback: Callable[[Any], None]) -> str:
         _callback = partial(observe_callback, callback, self.doc)

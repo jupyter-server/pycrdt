@@ -18,12 +18,12 @@ class Transaction:
         self._txn = _txn
         self._nb = 0
 
-    def __enter__(self) -> _Transaction:
+    def __enter__(self) -> Transaction:
         self._nb += 1
         if self._txn is None:
             self._txn = self._doc._doc.create_transaction()
         self._doc._txn = self
-        return self._txn
+        return self
 
     def __exit__(self, exc_type, exc_value, exc_tb) -> None:
         self._nb -= 1
@@ -36,3 +36,7 @@ class Transaction:
             self._txn.drop()
             self._txn = None
             self._doc._txn = None
+
+
+class ReadTransaction(Transaction):
+    pass
