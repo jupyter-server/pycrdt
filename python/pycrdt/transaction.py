@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from types import TracebackType
 from typing import TYPE_CHECKING
 
 from ._pycrdt import Transaction as _Transaction
@@ -25,7 +26,12 @@ class Transaction:
         self._doc._txn = self
         return self
 
-    def __exit__(self, exc_type, exc_value, exc_tb) -> None:
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         self._nb -= 1
         # only drop the transaction when exiting root context manager
         # since nested transactions reuse the root transaction

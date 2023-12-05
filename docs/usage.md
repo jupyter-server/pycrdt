@@ -156,13 +156,13 @@ Unregistering the callback is done with the same `unobserve` method.
 ### Document events
 
 Observing changes made to a document is mostly meant to send the changes to another document, usually over the wire to a remote machine.
-Changes can be serialized to binary by calling `get_update()` on the event:
+Changes can be serialized to binary by getting the event's `update`:
 
 ```py
 from pycrdt import TransactionEvent
 
 def handle_doc_changes(event: TransactionEvent):
-    update: bytes = event.get_update()
+    update: bytes = event.update
     # send binary update on the wire
 
 doc.observe(handle_doc_changes)

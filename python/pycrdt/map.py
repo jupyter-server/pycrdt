@@ -64,6 +64,11 @@ class Map(BaseType):
         with self.doc.transaction() as txn:
             return self.integrated.to_json(txn._txn)
 
+    def to_py(self) -> dict | None:
+        if self._integrated is None:
+            return self._prelim
+        return dict(self)
+
     def __delitem__(self, key: str) -> None:
         if not isinstance(key, str):
             raise RuntimeError("Key must be of type string")
@@ -147,7 +152,9 @@ class Map(BaseType):
 
 def observe_callback(callback: Callable[[Any], None], doc: Doc, event: Any):
     _event = event_types[type(event)](event, doc)
+    doc._txn = ReadTransaction(doc=doc, _txn=event.transaction)
     callback(_event)
+    doc._txn = None
 
 
 def observe_deep_callback(callback: Callable[[Any], None], doc: Doc, events: list[Any]):

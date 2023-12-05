@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Type, cast
 
 from ._pycrdt import Doc as _Doc
 from ._pycrdt import Transaction as _Transaction
-from .transaction import ReadTransaction, Transaction
+from .transaction import Transaction
 
 if TYPE_CHECKING:
     from .doc import Doc
@@ -17,18 +17,26 @@ event_types: dict[Any, Type[BaseEvent]] = {}
 
 class BaseDoc:
     _doc: _Doc
+    _twin_doc: BaseDoc | None
     _txn: Transaction | None
+    _Model: Any
+    _dict: dict[str, BaseType]
 
     def __init__(
         self,
         *,
         client_id: int | None = None,
         doc: _Doc | None = None,
+        Model=None,
+        **data,
     ) -> None:
+        super().__init__(**data)
         if doc is None:
             doc = _Doc(client_id)
         self._doc = doc
         self._txn = None
+        self._Model = Model
+        self._dict = {}
 
 
 class BaseType(ABC):
@@ -55,6 +63,10 @@ class BaseType(ABC):
         self._doc = None
         self._prelim = init
         self._integrated = None
+
+    @abstractmethod
+    def to_py(self) -> Any:
+        ...
 
     @abstractmethod
     def _get_or_insert(self, name: str, doc: Doc) -> Any:
@@ -136,7 +148,7 @@ class BaseEvent:
     def __init__(self, event: Any, doc: Doc):
         slot: str
         for slot in self.__slots__:
-            processed = process_event(getattr(event, slot), doc, event.transaction)
+            processed = process_event(getattr(event, slot), doc)
             setattr(self, slot, processed)
 
     def __str__(self):
@@ -148,13 +160,13 @@ class BaseEvent:
         return "{" + ret + "}"
 
 
-def process_event(value: Any, doc: Doc, txn) -> Any:
+def process_event(value: Any, doc: Doc) -> Any:
     if isinstance(value, list):
         for idx, val in enumerate(value):
-            value[idx] = process_event(val, doc, txn)
+            value[idx] = process_event(val, doc)
     elif isinstance(value, dict):
         for key, val in value.items():
-            value[key] = process_event(val, doc, txn)
+            value[key] = process_event(val, doc)
     else:
         val_type = type(value)
         if val_type in base_types:
@@ -164,5 +176,4 @@ def process_event(value: Any, doc: Doc, txn) -> Any:
             else:
                 base_type = cast(Type[BaseType], base_types[val_type])
                 value = base_type(_integrated=value, _doc=doc)
-                doc._txn = ReadTransaction(doc=doc, _txn=txn)
     return value

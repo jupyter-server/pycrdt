@@ -46,6 +46,11 @@ class Text(BaseType):
         with self.doc.transaction() as txn:
             return self.integrated.get_string(txn._txn)
 
+    def to_py(self) -> str | None:
+        if self._integrated is None:
+            return self._prelim
+        return str(self)
+
     def __iadd__(self, value: str) -> Text:
         with self.doc.transaction() as txn:
             if isinstance(txn, ReadTransaction):
@@ -89,7 +94,13 @@ class Text(BaseType):
                     "Read-only transaction cannot be used to modify document structure"
                 )
             if isinstance(key, int):
-                raise RuntimeError("Single item assignment not supported")
+                value_len = len(value)
+                if value_len != 1:
+                    raise RuntimeError(
+                        f"Single item assigned value must have a length of 1, not {value_len}"
+                    )
+                del self[key]
+                self.integrated.insert(txn._txn, key, value)
             elif isinstance(key, slice):
                 if key.step is not None:
                     raise RuntimeError("Step not supported")
@@ -118,7 +129,9 @@ class Text(BaseType):
 
 def observe_callback(callback: Callable[[Any], None], doc: Doc, event: Any):
     _event = event_types[type(event)](event, doc)
+    doc._txn = ReadTransaction(doc=doc, _txn=event.transaction)
     callback(_event)
+    doc._txn = None
 
 
 class TextEvent(BaseEvent):

@@ -86,8 +86,7 @@ def test_transaction_event():
 
     remote_doc = Doc()
     for event in events:
-        update = event.get_update()
-        remote_doc.apply_update(update)
+        remote_doc.apply_update(event.update)
 
     remote_text = Text()
     remote_doc["text"] = remote_text

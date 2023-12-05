@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable
+from typing import Callable, cast
 
 from ._pycrdt import Doc as _Doc
 from ._pycrdt import SubdocsEvent, TransactionEvent
@@ -9,16 +9,20 @@ from .transaction import Transaction
 
 
 class Doc(BaseDoc):
+
     def __init__(
         self,
         init: dict[str, BaseType] = {},
         *,
         client_id: int | None = None,
         doc: _Doc | None = None,
+        Model=None,
     ) -> None:
-        super().__init__(client_id=client_id, doc=doc)
+        super().__init__(client_id=client_id, doc=doc, Model=Model)
         for k, v in init.items():
             self[k] = v
+        if Model is not None:
+            self._twin_doc = Doc(init)
 
     @property
     def guid(self) -> int:
@@ -42,6 +46,15 @@ class Doc(BaseDoc):
         return self._doc.get_update(state)
 
     def apply_update(self, update: bytes) -> None:
+        if self._Model is not None:
+            twin_doc = cast(Doc, self._twin_doc)
+            twin_doc.apply_update(update)
+            d = {k: twin_doc[k].to_py() for k in self._Model.model_fields}
+            try:
+                self._Model(**d)
+            except Exception as e:
+                self._twin_doc = Doc(self._dict)
+                raise e
         self._doc.apply_update(update)
 
     def __setitem__(self, key: str, value: BaseType) -> None:
@@ -50,6 +63,10 @@ class Doc(BaseDoc):
         integrated = value._get_or_insert(key, self)
         prelim = value._integrate(self, integrated)
         value._init(prelim)
+        self._dict[key] = value
+
+    def __getitem__(self, key: str) -> BaseType:
+        return self._dict[key]
 
     def observe(self, callback: Callable[[TransactionEvent], None]) -> int:
         return self._doc.observe(callback)

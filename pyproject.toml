@@ -23,6 +23,7 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
@@ -30,9 +31,10 @@ classifiers = [
 
 [project.optional-dependencies]
 test = [
-  "pytest >=7.4.2,<8",
-  "y-py >=0.7.0a1,<0.8",
-  "mypy",
+    "pytest >=7.4.2,<8",
+    "y-py >=0.7.0a1,<0.8",
+    "pydantic >=2.5.2,<3",
+    "mypy",
 ]
 docs = [ "mkdocs", "mkdocs-material" ]
 
