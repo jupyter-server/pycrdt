@@ -133,52 +133,99 @@ impl Doc {
 
 #[pyclass(unsendable)]
 pub struct TransactionEvent {
-    before_state: PyObject,
-    after_state: PyObject,
-    delete_set: PyObject,
-    update: PyObject,
+    event: *const TransactionCleanupEvent,
+    txn: *const TransactionMut<'static>,
+    before_state: Option<PyObject>,
+    after_state: Option<PyObject>,
+    delete_set: Option<PyObject>,
+    update: Option<PyObject>,
+    transaction: Option<PyObject>,
 }
 
 impl TransactionEvent {
     fn new(event: &TransactionCleanupEvent, txn: &TransactionMut) -> Self {
-        // Convert all event data into Python objects eagerly, so that we don't have to hold
-        // on to the transaction.
-        let before_state = event.before_state.encode_v1();
-        let before_state: PyObject = Python::with_gil(|py| PyBytes::new(py, &before_state).into());
-        let after_state = event.after_state.encode_v1();
-        let after_state: PyObject = Python::with_gil(|py| PyBytes::new(py, &after_state).into());
-        let delete_set = event.delete_set.encode_v1();
-        let delete_set: PyObject = Python::with_gil(|py| PyBytes::new(py, &delete_set).into());
-        let update = txn.encode_update_v1();
-        let update = Python::with_gil(|py| PyBytes::new(py, &update).into());
-        TransactionEvent {
-            before_state,
-            after_state,
-            delete_set,
-            update,
-        }
+        let event = event as *const TransactionCleanupEvent;
+        let txn = unsafe { std::mem::transmute::<&TransactionMut, &TransactionMut<'static>>(txn) };
+        let mut transaction_event = TransactionEvent {
+            event,
+            txn,
+            before_state: None,
+            after_state: None,
+            delete_set: None,
+            update: None,
+            transaction: None,
+        };
+        transaction_event.update();
+        transaction_event
+    }
+
+    fn event(&self) -> &TransactionCleanupEvent {
+        unsafe { self.event.as_ref().unwrap() }
+    }
+    fn txn(&self) -> &TransactionMut {
+        unsafe { self.txn.as_ref().unwrap() }
     }
 }
 
 #[pymethods]
 impl TransactionEvent {
     #[getter]
+    pub fn transaction(&mut self) -> PyObject {
+        if let Some(transaction) = self.transaction.as_ref() {
+            transaction.clone()
+        } else {
+            let transaction: PyObject = Python::with_gil(|py| Transaction::from(self.txn()).into_py(py));
+            self.transaction = Some(transaction.clone());
+            transaction
+        }
+    }
+
+    #[getter]
     pub fn before_state(&mut self) -> PyObject {
-        self.before_state.clone()
+        if let Some(before_state) = &self.before_state {
+            before_state.clone()
+        } else {
+            let before_state = self.event().before_state.encode_v1();
+            let before_state: PyObject = Python::with_gil(|py| PyBytes::new(py, &before_state).into());
+            self.before_state = Some(before_state.clone());
+            before_state
+        }
     }
 
     #[getter]
     pub fn after_state(&mut self) -> PyObject {
-        self.after_state.clone()
+        if let Some(after_state) = &self.after_state {
+            after_state.clone()
+        } else {
+            let after_state = self.event().after_state.encode_v1();
+            let after_state: PyObject = Python::with_gil(|py| PyBytes::new(py, &after_state).into());
+            self.after_state = Some(after_state.clone());
+            after_state
+        }
     }
 
     #[getter]
     pub fn delete_set(&mut self) -> PyObject {
-        self.delete_set.clone()
+        if let Some(delete_set) = &self.delete_set {
+            delete_set.clone()
+        } else {
+            let delete_set = self.event().delete_set.encode_v1();
+            let delete_set: PyObject = Python::with_gil(|py| PyBytes::new(py, &delete_set).into());
+            self.delete_set = Some(delete_set.clone());
+            delete_set
+        }
     }
 
-    pub fn get_update(&self) -> PyObject {
-        self.update.clone()
+    #[getter]
+    pub fn update(&mut self) -> PyObject {
+        if let Some(update) = &self.update {
+            update.clone()
+        } else {
+            let update = self.txn().encode_update_v1();
+            let update: PyObject = Python::with_gil(|py| PyBytes::new(py, &update).into());
+            self.update = Some(update.clone());
+            update
+        }
     }
 }
 
