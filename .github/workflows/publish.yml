@@ -29,7 +29,7 @@ jobs:
       - name: Test built wheel - x86_64
         run: |
           pip install pycrdt --no-index --find-links dist --force-reinstall
-          pip install pytest y-py
+          pip install pytest "y-py>=0.7.0a1,<0.8" "pydantic>=2.5.2,<3"
           pytest
       - name: Build wheels - universal2
         uses: PyO3/maturin-action@v1
@@ -70,7 +70,7 @@ jobs:
       - name: Test built wheel
         run: |
           pip install pycrdt --no-index --find-links dist --force-reinstall
-          pip install pytest y-py
+          pip install pytest "y-py>=0.7.0a1,<0.8" "pydantic>=2.5.2,<3"
           pytest
       - name: Upload wheels
         uses: actions/upload-artifact@v2
@@ -100,7 +100,7 @@ jobs:
         if: matrix.target == 'x86_64'
         run: |
           pip install pycrdt --no-index --find-links dist --force-reinstall
-          pip install pytest y-py
+          pip install pytest "y-py>=0.7.0a1,<0.8" "pydantic>=2.5.2,<3"
           pytest
       - name: Upload wheels
         uses: actions/upload-artifact@v2
@@ -136,7 +136,7 @@ jobs:
           install: |
             apt-get update
             apt-get install -y --no-install-recommends python3 python3-pip
-            pip3 install -U pip pytest y-py
+            pip3 install -U pip pytest "y-py>=0.7.0a1,<0.8" "pydantic>=2.5.2,<3"
           run: |
             pip3 install pycrdt --no-index --find-links dist/ --force-reinstall
             pytest
