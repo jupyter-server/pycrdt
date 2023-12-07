@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable, cast
+from typing import Callable, Type, cast
 
 from ._pycrdt import Doc as _Doc
 from ._pycrdt import SubdocsEvent, TransactionEvent
@@ -9,7 +9,6 @@ from .transaction import Transaction
 
 
 class Doc(BaseDoc):
-
     def __init__(
         self,
         init: dict[str, BaseType] = {},
@@ -53,7 +52,7 @@ class Doc(BaseDoc):
             try:
                 self._Model(**d)
             except Exception as e:
-                self._twin_doc = Doc(self._dict)
+                self._twin_doc = Doc(dict(self))
                 raise e
         self._doc.apply_update(update)
 
@@ -63,10 +62,32 @@ class Doc(BaseDoc):
         integrated = value._get_or_insert(key, self)
         prelim = value._integrate(self, integrated)
         value._init(prelim)
-        self._dict[key] = value
 
     def __getitem__(self, key: str) -> BaseType:
-        return self._dict[key]
+        return self._roots[key]
+
+    def __iter__(self):
+        return self.keys()
+
+    def keys(self):
+        return self._roots.keys()
+
+    def values(self):
+        return self._roots.values()
+
+    def items(self):
+        return self._roots.items()
+
+    @property
+    def _roots(self) -> dict[str, BaseType]:
+        with self.transaction() as txn:
+            assert txn._txn is not None
+            return {
+                key: cast(Type[BaseType], base_types[type(val)])(
+                    _integrated=val, _doc=self
+                )
+                for key, val in self._doc.roots(txn._txn).items()
+            }
 
     def observe(self, callback: Callable[[TransactionEvent], None]) -> int:
         return self._doc.observe(callback)

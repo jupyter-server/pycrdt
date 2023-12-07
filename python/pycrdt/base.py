@@ -20,7 +20,6 @@ class BaseDoc:
     _twin_doc: BaseDoc | None
     _txn: Transaction | None
     _Model: Any
-    _dict: dict[str, BaseType]
 
     def __init__(
         self,
@@ -36,7 +35,6 @@ class BaseDoc:
         self._doc = doc
         self._txn = None
         self._Model = Model
-        self._dict = {}
 
 
 class BaseType(ABC):
