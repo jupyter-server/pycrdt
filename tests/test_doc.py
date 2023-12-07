@@ -109,3 +109,28 @@ def test_client_id():
     b = encode_client_id(client_id_bytes)
 
     assert update[2 : 2 + len(b)] == b
+
+
+def test_roots():
+    remote_doc = Doc(
+        {
+            "a": Text("foo"),
+            "b": Array([5, 2, 8]),
+            "c": Map({"k1": 1, "k2": 2}),
+        }
+    )
+    roots = dict(remote_doc)
+    assert str(roots["a"]) == "foo"
+    assert list(roots["b"]) == [5, 2, 8]
+    assert dict(roots["c"]) == {"k1": 1, "k2": 2}
+
+    # need to update to yrs v0.17.2
+    # see https://github.com/y-crdt/y-crdt/issues/364#issuecomment-1839791409
+
+    # local_doc = Doc()
+    # update = remote_doc.get_update()
+    # local_doc.apply_update(update)
+    # roots = dict(local_doc)
+    # assert str(roots["a"]) == "foo"
+    # assert list(roots["b"]) == [5, 2, 8]
+    # assert dict(roots["c"]) == {"k1": 1, "k2": 2}

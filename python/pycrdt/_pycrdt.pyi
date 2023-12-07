@@ -24,6 +24,8 @@ class Doc:
         """Get the update from the given state to the current state."""
     def apply_update(self, update: bytes) -> None:
         """Apply the update to the document."""
+    def roots(self, txn: Transaction) -> dict[str, Text | Array | Map]:
+        """Get top-level (root) shared types available in current document."""
     def observe(self, callback: Callable[[TransactionEvent], None]) -> int:
         """Subscribes a callback to be called with the shared document change event.
         Returns a subscription ID that can be used to unsubscribe."""

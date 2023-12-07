@@ -1,5 +1,5 @@
 use pyo3::prelude::*;
-use pyo3::types::{PyBytes, PyLong, PyList};
+use pyo3::types::{PyBytes, PyDict, PyLong, PyList};
 use yrs::{
     Doc as _Doc,
     ReadTxn,
@@ -16,6 +16,7 @@ use crate::text::Text;
 use crate::array::Array;
 use crate::map::Map;
 use crate::transaction::Transaction;
+use crate::type_conversions::ToPython;
 
 
 #[pyclass(unsendable)]
@@ -98,6 +99,17 @@ impl Doc {
         txn.apply_update(u);
         drop(txn);
         Ok(())
+    }
+
+    fn roots(&self, py: Python<'_>, txn: &mut Transaction) -> PyObject {
+        let mut t0 = txn.transaction();
+        let t1 = t0.as_mut().unwrap();
+        let t = t1.as_ref();
+        let result = PyDict::new(py);
+        for (k, v) in t.root_refs() {
+            result.set_item(k, v.into_py(py)).unwrap();
+        }
+        result.into()
     }
 
     pub fn observe(&mut self, f: PyObject) -> PyResult<u32> {
