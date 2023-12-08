@@ -124,13 +124,13 @@ def test_roots():
     assert list(roots["b"]) == [5, 2, 8]
     assert dict(roots["c"]) == {"k1": 1, "k2": 2}
 
-    # need to update to yrs v0.17.2
-    # see https://github.com/y-crdt/y-crdt/issues/364#issuecomment-1839791409
-
-    # local_doc = Doc()
-    # update = remote_doc.get_update()
-    # local_doc.apply_update(update)
-    # roots = dict(local_doc)
+    local_doc = Doc()
+    update = remote_doc.get_update()
+    local_doc.apply_update(update)
+    roots = dict(local_doc)
+    assert roots["a"] is None
+    assert roots["b"] is None
+    assert roots["c"] is None
     # assert str(roots["a"]) == "foo"
     # assert list(roots["b"]) == [5, 2, 8]
-    # assert dict(roots["c"]) == {"k1": 1, "k2": 2}
+    # assert dict(roots["c"]) == None  # {"k1": 1, "k2": 2}

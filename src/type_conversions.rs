@@ -1,8 +1,7 @@
-use lib0::any::Any;
 use pyo3::prelude::*;
 use pyo3::types::{IntoPyDict, PyAny, PyBool, PyByteArray, PyDict, PyFloat, PyList, PyLong, PyString};
 use yrs::types::{Attrs, Change, EntryChange, Delta, Events, Path, PathSegment, Value};
-use yrs::TransactionMut;
+use yrs::{Any, TransactionMut};
 use std::ops::Deref;
 use std::collections::{VecDeque, HashMap};
 use crate::text::{Text, TextEvent};
@@ -221,7 +220,7 @@ pub fn py_to_any(value: &PyAny) -> Any {
             let a = py_to_any(i);
             items.push(a);
         }
-        Any::Array(Box::from(items))
+        Any::Array(items.into())
     } else if value.is_instance_of::<PyDict>() {
         let val = value.downcast::<PyDict>().unwrap();
         let mut items: HashMap<String, Any> = HashMap::new();
@@ -230,7 +229,7 @@ pub fn py_to_any(value: &PyAny) -> Any {
             let v = py_to_any(v);
             items.insert(k, v);
         }
-        Any::Map(Box::from(items))
+        Any::Map(items.into())
     } else {
         Any::Undefined
     }

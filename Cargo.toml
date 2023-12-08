@@ -8,8 +8,7 @@ name = "pycrdt"
 crate-type = ["cdylib"]
 
 [dependencies]
-lib0 = "0.16.10"
-yrs = "0.16.10"
+yrs = "0.17.2"
 
 [dependencies.pyo3]
 version = "0.19.2"
