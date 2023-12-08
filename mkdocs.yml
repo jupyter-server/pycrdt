@@ -1,6 +1,6 @@
 site_name: pycrdt
 site_description: CRDTs based on Yrs
-repo_url: https://github.com/davidbrochart/pycrdt
+repo_url: https://github.com/jupyter-server/pycrdt
 
 theme:
   name: 'material'

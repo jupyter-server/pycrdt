@@ -39,7 +39,7 @@ test = [
 docs = [ "mkdocs", "mkdocs-material" ]
 
 [project.urls]
-Homepage = "https://github.com/davidbrochart/pycrdt"
+Homepage = "https://github.com/jupyter-server/pycrdt"
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
