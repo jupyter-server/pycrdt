@@ -3,8 +3,7 @@ from typing import Tuple
 
 import pytest
 from pycrdt import Array, Doc, Text
-from pydantic import BaseModel
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 
 def test_model():
@@ -33,7 +32,9 @@ def test_model():
     update = remote_doc.get_update()
     with pytest.raises(ValidationError) as exc_info:
         local_doc.apply_update(update)
-    assert str(exc_info.value).startswith("1 validation error for Delivery\ndimensions.1\n")
+    assert str(exc_info.value).startswith(
+        "1 validation error for Delivery\ndimensions.1\n"
+    )
 
     remote_doc["timestamp"][6] = "0"  # invalid "00" month
     update = remote_doc.get_update()
@@ -45,7 +46,9 @@ def test_model():
     update = remote_doc.get_update()
     with pytest.raises(ValidationError) as exc_info:
         local_doc.apply_update(update)
-    assert str(exc_info.value).startswith("1 validation error for Delivery\ntimestamp\n")
+    assert str(exc_info.value).startswith(
+        "1 validation error for Delivery\ntimestamp\n"
+    )
 
     remote_doc["timestamp"][6] = "2"  # revert invalid change, and make a change
     update = remote_doc.get_update()
