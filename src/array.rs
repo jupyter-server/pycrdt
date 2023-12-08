@@ -2,6 +2,7 @@ use pyo3::prelude::*;
 use pyo3::exceptions::{PyValueError, PyTypeError};
 use pyo3::types::{PyList, PyString};
 use yrs::{
+    Any,
     ArrayRef,
     Array as _Array,
     Doc as _Doc,
@@ -13,7 +14,6 @@ use yrs::types::ToJson;
 use yrs::types::text::TextPrelim;
 use yrs::types::array::{ArrayPrelim, ArrayEvent as _ArrayEvent};
 use yrs::types::map::MapPrelim;
-use lib0::any::Any;
 use crate::transaction::Transaction;
 use crate::type_conversions::{events_into_py, py_to_any, ToPython};
 use crate::text::Text;
