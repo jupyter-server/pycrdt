@@ -25,7 +25,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: x86_64
-          args: --release --out dist --sdist -i 3.7 3.8 3.9 3.10 3.11 3.12 pypy3.8 pypy3.9
+          args: --release --out dist --sdist -i 3.8 3.9 3.10 3.11 3.12 pypy3.8 pypy3.9
       - name: Test built wheel - x86_64
         run: |
           pip install pycrdt --no-index --find-links dist --force-reinstall
@@ -52,9 +52,9 @@ jobs:
       matrix:
         platform:
           - target: x64
-            interpreter: 3.7 3.8 3.9 3.10 3.11
+            interpreter: 3.8 3.9 3.10 3.11 3.12
           - target: x86
-            interpreter: 3.7 3.8 3.9 3.10 3.11
+            interpreter: 3.8 3.9 3.10 3.11 3.12
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -95,7 +95,7 @@ jobs:
           rust-toolchain: stable
           target: ${{ matrix.target }}
           manylinux: auto
-          args: --release --out dist -i 3.7 3.8 3.9 3.10 3.11 3.12 pypy3.8 pypy3.9
+          args: --release --out dist -i 3.8 3.9 3.10 3.11 3.12 pypy3.8 pypy3.9
       - name: Test built wheel
         if: matrix.target == 'x86_64'
         run: |
@@ -124,7 +124,7 @@ jobs:
           rust-toolchain: stable
           target: ${{ matrix.target }}
           manylinux: auto
-          args: --release --out dist -i 3.7 3.8 3.9 3.10 3.11 3.12 pypy3.8 pypy3.9
+          args: --release --out dist -i 3.8 3.9 3.10 3.11 3.12 pypy3.8 pypy3.9
 
       - uses: uraimo/run-on-arch-action@v2.3.0
         if: matrix.target != 'ppc64'
