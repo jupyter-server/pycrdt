@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Type, cast
 
 from ._pycrdt import Doc as _Doc
 from ._pycrdt import Transaction as _Transaction
-from .transaction import Transaction
+from .transaction import ReadTransaction, Transaction
 
 if TYPE_CHECKING:
     from .doc import Doc
@@ -73,6 +73,12 @@ class BaseType(ABC):
     @abstractmethod
     def _init(self, value: Any | None) -> None:
         ...
+
+    def _forbid_read_transaction(self, txn: Transaction):
+        if isinstance(txn, ReadTransaction):
+            raise RuntimeError(
+                "Read-only transaction cannot be used to modify document structure"
+            )
 
     def _current_transaction(self) -> Transaction:
         if self._doc is None:
