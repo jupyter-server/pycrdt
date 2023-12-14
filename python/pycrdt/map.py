@@ -38,10 +38,7 @@ class Map(BaseType):
 
     def _set(self, key: str, value: Any) -> None:
         with self.doc.transaction() as txn:
-            if isinstance(txn, ReadTransaction):
-                raise RuntimeError(
-                    "Read-only transaction cannot be used to modify document structure"
-                )
+            self._forbid_read_transaction(txn)
             if isinstance(value, BaseDoc):
                 # subdoc
                 self.integrated.insert_doc(txn._txn, key, value._doc)
@@ -70,19 +67,14 @@ class Map(BaseType):
         return dict(self)
 
     def __delitem__(self, key: str) -> None:
-        if not isinstance(key, str):
-            raise RuntimeError("Key must be of type string")
         with self.doc.transaction() as txn:
-            if isinstance(txn, ReadTransaction):
-                raise RuntimeError(
-                    "Read-only transaction cannot be used to modify document structure"
-                )
+            self._forbid_read_transaction(txn)
+            self._check_key(key)
             self.integrated.remove(txn._txn, key)
 
     def __getitem__(self, key: str) -> Any:
         with self.doc.transaction() as txn:
-            if not isinstance(key, str):
-                raise RuntimeError("Key must be of type string")
+            self._check_key(key)
             return self._maybe_as_type_or_doc(self.integrated.get(txn._txn, key))
 
     def __setitem__(self, key: str, value: Any) -> None:
@@ -111,6 +103,12 @@ class Map(BaseType):
             res = self[key]
             del self[key]
             return res
+
+    def _check_key(self, key: str):
+        if not isinstance(key, str):
+            raise RuntimeError("Key must be of type string")
+        if key not in self.keys():
+            raise KeyError(f"KeyError: {key}")
 
     def keys(self):
         with self.doc.transaction() as txn:

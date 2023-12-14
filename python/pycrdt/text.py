@@ -53,19 +53,13 @@ class Text(BaseType):
 
     def __iadd__(self, value: str) -> Text:
         with self.doc.transaction() as txn:
-            if isinstance(txn, ReadTransaction):
-                raise RuntimeError(
-                    "Read-only transaction cannot be used to modify document structure"
-                )
+            self._forbid_read_transaction(txn)
             self.integrated.insert(txn._txn, len(self), value)
             return self
 
     def __delitem__(self, key: int | slice) -> None:
         with self.doc.transaction() as txn:
-            if isinstance(txn, ReadTransaction):
-                raise RuntimeError(
-                    "Read-only transaction cannot be used to modify document structure"
-                )
+            self._forbid_read_transaction(txn)
             if isinstance(key, int):
                 self.integrated.remove_range(txn._txn, key, 1)
             elif isinstance(key, slice):
@@ -89,10 +83,7 @@ class Text(BaseType):
 
     def __setitem__(self, key: int | slice, value: str) -> None:
         with self.doc.transaction() as txn:
-            if isinstance(txn, ReadTransaction):
-                raise RuntimeError(
-                    "Read-only transaction cannot be used to modify document structure"
-                )
+            self._forbid_read_transaction(txn)
             if isinstance(key, int):
                 value_len = len(value)
                 if value_len != 1:

@@ -38,10 +38,7 @@ class Array(BaseType):
 
     def _set(self, index: int, value: Any) -> None:
         with self.doc.transaction() as txn:
-            if isinstance(txn, ReadTransaction):
-                raise RuntimeError(
-                    "Read-only transaction cannot be used to modify document structure"
-                )
+            self._forbid_read_transaction(txn)
             if isinstance(value, BaseDoc):
                 # subdoc
                 self.integrated.insert_doc(txn._txn, index, value._doc)
@@ -76,16 +73,16 @@ class Array(BaseType):
 
     def pop(self, index: int = -1) -> Any:
         with self.doc.transaction():
+            index = self._check_index(index)
             res = self[index]
             del self[index]
             return res
 
     def move(self, source_index: int, destination_index: int) -> None:
         with self.doc.transaction() as txn:
-            if isinstance(txn, ReadTransaction):
-                raise RuntimeError(
-                    "Read-only transaction cannot be used to modify document structure"
-                )
+            self._forbid_read_transaction(txn)
+            source_index = self._check_index(source_index)
+            destination_index = self._check_index(destination_index)
             self.integrated.move_to(txn._txn, source_index, destination_index)
 
     def __add__(self, value: list[Any]) -> Array:
@@ -102,11 +99,7 @@ class Array(BaseType):
     def __setitem__(self, key: int | slice, value: Any | list[Any]) -> None:
         with self.doc.transaction():
             if isinstance(key, int):
-                length = len(self)
-                if length == 0:
-                    raise IndexError("Array index out of range")
-                if key < 0:
-                    key += length
+                key = self._check_index(key)
                 del self[key]
                 self[key:key] = [value]
             elif isinstance(key, slice):
@@ -121,18 +114,21 @@ class Array(BaseType):
             else:
                 raise RuntimeError(f"Index not supported: {key}")
 
+    def _check_index(self, idx: int) -> int:
+        if not isinstance(idx, int):
+            raise RuntimeError("Index must be of type int")
+        length = len(self)
+        if idx < 0:
+            idx += length
+        if idx < 0 or idx >= length:
+            raise IndexError("Array index out of range")
+        return idx
+
     def __delitem__(self, key: int | slice) -> None:
         with self.doc.transaction() as txn:
-            if isinstance(txn, ReadTransaction):
-                raise RuntimeError(
-                    "Read-only transaction cannot be used to modify document structure"
-                )
+            self._forbid_read_transaction(txn)
             if isinstance(key, int):
-                length = len(self)
-                if length == 0:
-                    raise IndexError("Array index out of range")
-                if key < 0:
-                    key += length
+                key = self._check_index(key)
                 self.integrated.remove_range(txn._txn, key, 1)
             elif isinstance(key, slice):
                 if key.step is not None:
@@ -156,11 +152,7 @@ class Array(BaseType):
     def __getitem__(self, key: int) -> BaseType:
         with self.doc.transaction() as txn:
             if isinstance(key, int):
-                length = len(self)
-                if length == 0:
-                    raise IndexError("Array index out of range")
-                if key < 0:
-                    key += length
+                key = self._check_index(key)
                 return self._maybe_as_type_or_doc(self.integrated.get(txn._txn, key))
             elif isinstance(key, slice):
                 i0 = 0 if key.start is None else key.start
