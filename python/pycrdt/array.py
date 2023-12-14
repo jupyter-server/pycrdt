@@ -206,7 +206,11 @@ def observe_callback(callback: Callable[[Any], None], doc: Doc, event: Any):
 def observe_deep_callback(callback: Callable[[Any], None], doc: Doc, events: list[Any]):
     for idx, event in enumerate(events):
         events[idx] = event_types[type(event)](event, doc)
+        if idx == 0:
+            _event = event
+    doc._txn = ReadTransaction(doc=doc, _txn=_event.transaction)
     callback(events)
+    doc._txn = None
 
 
 class ArrayEvent(BaseEvent):

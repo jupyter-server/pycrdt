@@ -35,7 +35,7 @@ class Transaction:
         self._nb -= 1
         # only drop the transaction when exiting root context manager
         # since nested transactions reuse the root transaction
-        if self._nb == 0:
+        if self._nb == 0 and not isinstance(self, ReadTransaction):
             # dropping the transaction will commit, no need to do it
             # self._txn.commit()
             assert self._txn is not None
