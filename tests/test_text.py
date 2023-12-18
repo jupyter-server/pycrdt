@@ -35,3 +35,7 @@ def test_api():
     assert str(text) == hello + world + punct
     text.clear()
     assert len(text) == 0
+    text[:] = hello + world + punct
+    assert str(text) == hello + world + punct
+    text[len(hello) : len(hello) + len(world)] = " Sir"
+    assert str(text) == hello + " Sir" + punct

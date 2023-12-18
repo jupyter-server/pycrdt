@@ -57,27 +57,32 @@ class Text(BaseType):
             self.integrated.insert(txn._txn, len(self), value)
             return self
 
+    def _check_slice(self, key: slice) -> tuple[int, int]:
+        if key.step is not None:
+            raise RuntimeError("Step not supported")
+        if key.start is None:
+            start = 0
+        elif key.start < 0:
+            raise RuntimeError("Negative start not supported")
+        else:
+            start = key.start
+        if key.stop is None:
+            stop = len(self) - start
+        elif key.stop < 0:
+            raise RuntimeError("Negative stop not supported")
+        else:
+            stop = key.stop - start
+        return start, stop
+
     def __delitem__(self, key: int | slice) -> None:
         with self.doc.transaction() as txn:
             self._forbid_read_transaction(txn)
             if isinstance(key, int):
                 self.integrated.remove_range(txn._txn, key, 1)
             elif isinstance(key, slice):
-                if key.step is not None:
-                    raise RuntimeError("Step not supported")
-                if key.start is None:
-                    i = 0
-                elif key.start < 0:
-                    raise RuntimeError("Negative start not supported")
-                else:
-                    i = key.start
-                if key.stop is None:
-                    n = len(self) - i
-                elif key.stop < 0:
-                    raise RuntimeError("Negative stop not supported")
-                else:
-                    n = key.stop - i
-                self.integrated.remove_range(txn._txn, i, n)
+                start, stop = self._check_slice(key)
+                if start != stop:
+                    self.integrated.remove_range(txn._txn, start, stop)
             else:
                 raise RuntimeError(f"Index not supported: {key}")
 
@@ -93,13 +98,10 @@ class Text(BaseType):
                 del self[key]
                 self.integrated.insert(txn._txn, key, value)
             elif isinstance(key, slice):
-                if key.step is not None:
-                    raise RuntimeError("Step not supported")
-                if key.start != key.stop:
-                    raise RuntimeError("Start and stop should be equal")
-                if len(self) <= key.start < 0:
-                    raise RuntimeError("Index out of range")
-                self.integrated.insert(txn._txn, key.start, value)
+                start, stop = self._check_slice(key)
+                if start != stop:
+                    self.integrated.remove_range(txn._txn, start, stop)
+                self.integrated.insert(txn._txn, start, value)
             else:
                 raise RuntimeError(f"Index not supported: {key}")
 
