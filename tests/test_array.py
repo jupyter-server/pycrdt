@@ -20,7 +20,7 @@ def test_str():
     map1 = Map({"foo": array1})
     array0 = Array([0, 1, None, map1])
     doc["array"] = array0
-    assert str(array0) == '[0,1,null,{"foo":[2,3,{"key":"val"}]}]'
+    assert str(array0) == '[0.0,1.0,null,{"foo":[2.0,3.0,{"key":"val"}]}]'
 
 
 def test_nested():
@@ -120,18 +120,18 @@ def test_api():
     assert v == 3
     v = array.pop(0)
     assert v == 1
-    assert str(array) == "[2]"
+    assert str(array) == "[2.0]"
 
     # insert
     doc = Doc()
     array = Array([1, 2, 3])
     doc["array"] = array
     array.insert(1, 4)
-    assert str(array) == "[1,4,2,3]"
+    assert str(array) == "[1.0,4.0,2.0,3.0]"
 
 
 def test_move():
     doc = Doc()
     doc["array"] = array = Array([1, 2, 3, 4])
     array.move(1, 3)
-    assert str(array) == "[1,3,2,4]"
+    assert str(array) == "[1.0,3.0,2.0,4.0]"

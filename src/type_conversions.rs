@@ -208,8 +208,13 @@ pub fn py_to_any(value: &PyAny) -> Any {
         let v: bool = value.extract().unwrap();
         Any::Bool(v)
     } else if value.is_instance_of::<PyLong>() {
+        const MAX_JS_NUMBER: i64 = 2_i64.pow(53) - 1;
         let v: i64 = value.extract().unwrap();
-        Any::BigInt(v)
+        if v > MAX_JS_NUMBER {
+            Any::BigInt(v)
+        } else {
+            Any::Number(v as f64)
+        }
     } else if value.is_instance_of::<PyFloat>() {
         let v: f64 = value.extract().unwrap();
         Any::Number(v)
