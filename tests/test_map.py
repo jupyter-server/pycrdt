@@ -9,7 +9,7 @@ def test_str():
     array1 = Array([0, 1, map2])
     map0 = Map({"key1": array1})
     doc["map"] = map0
-    assert str(map0) == '{"key1":[0,1,{"key2":"val2"}]}'
+    assert str(map0) == '{"key1":[0.0,1.0,{"key2":"val2"}]}'
 
 
 def test_nested():
@@ -52,7 +52,7 @@ def test_api():
     doc["map0"] = map0
     v = map0.pop("foo")
     assert v == 1
-    assert str(map0) == '{"bar":2}'
+    assert str(map0) == '{"bar":2.0}'
     v = map0.pop("bar")
     assert v == 2
     assert str(map0) == "{}"

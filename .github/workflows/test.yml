@@ -40,4 +40,4 @@ jobs:
       run: mypy python
 
     - name: Run tests
-      run: pytest -v tests
+      run: pytest --color=yes -v tests
