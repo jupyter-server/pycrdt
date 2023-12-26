@@ -59,4 +59,5 @@ class ReadTransaction(Transaction):
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
     ) -> None:
-        pass
+        self._txn = None
+        self._doc._txn = None
