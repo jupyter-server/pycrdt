@@ -4,8 +4,9 @@ from typing import Callable, Type, cast
 
 from ._pycrdt import Doc as _Doc
 from ._pycrdt import SubdocsEvent, TransactionEvent
+from ._pycrdt import Transaction as _Transaction
 from .base import BaseDoc, BaseType, base_types
-from .transaction import Transaction
+from .transaction import ReadTransaction, Transaction
 
 
 class Doc(BaseDoc):
@@ -35,6 +36,9 @@ class Doc(BaseDoc):
         if self._txn is not None:
             return self._txn
         return Transaction(self)
+
+    def _read_transaction(self, _txn: _Transaction) -> ReadTransaction:
+        return ReadTransaction(self, _txn)
 
     def get_state(self) -> bytes:
         return self._doc.get_state()

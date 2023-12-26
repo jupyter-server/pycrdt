@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any, Callable
 from ._pycrdt import Map as _Map
 from ._pycrdt import MapEvent as _MapEvent
 from .base import BaseDoc, BaseEvent, BaseType, base_types, event_types
-from .transaction import ReadTransaction
 
 if TYPE_CHECKING:
     from .doc import Doc
@@ -150,19 +149,15 @@ class Map(BaseType):
 
 def observe_callback(callback: Callable[[Any], None], doc: Doc, event: Any):
     _event = event_types[type(event)](event, doc)
-    doc._txn = ReadTransaction(doc=doc, _txn=event.transaction)
-    callback(_event)
-    doc._txn = None
+    with doc._read_transaction(event.transaction):
+        callback(_event)
 
 
 def observe_deep_callback(callback: Callable[[Any], None], doc: Doc, events: list[Any]):
     for idx, event in enumerate(events):
         events[idx] = event_types[type(event)](event, doc)
-        if idx == 0:
-            _event = event
-    doc._txn = ReadTransaction(doc=doc, _txn=_event.transaction)
-    callback(events)
-    doc._txn = None
+    with doc._read_transaction(event.transaction):
+        callback(events)
 
 
 class MapEvent(BaseEvent):
