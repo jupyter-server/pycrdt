@@ -39,3 +39,9 @@ def test_api():
     assert str(text) == hello + world + punct
     text[len(hello) : len(hello) + len(world)] = " Sir"
     assert str(text) == hello + " Sir" + punct
+
+
+def test_to_py():
+    doc = Doc()
+    doc["text"] = text = Text(hello)
+    assert text.to_py() == hello

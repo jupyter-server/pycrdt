@@ -135,3 +135,11 @@ def test_move():
     doc["array"] = array = Array([1, 2, 3, 4])
     array.move(1, 3)
     assert str(array) == "[1.0,3.0,2.0,4.0]"
+
+
+def test_to_py():
+    doc = Doc()
+    submap = Map({"foo": "bar"})
+    subarray = Array([1, submap])
+    doc["array"] = array = Array([0, subarray])
+    assert array.to_py() == [0, [1, {"foo": "bar"}]]

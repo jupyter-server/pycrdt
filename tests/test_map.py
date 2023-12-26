@@ -56,3 +56,11 @@ def test_api():
     v = map0.pop("bar")
     assert v == 2
     assert str(map0) == "{}"
+
+
+def test_to_py():
+    doc = Doc()
+    submap = Map({"foo": "bar"})
+    subarray = Array([0, submap])
+    doc["map_"] = map_ = Map({"key0": "val0", "key1": subarray})
+    assert map_.to_py() == {"key0": "val0", "key1": [0, {"foo": "bar"}]}
