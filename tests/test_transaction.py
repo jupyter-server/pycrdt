@@ -20,7 +20,9 @@ def test_callback_transaction():
     text.observe(callback)
     array.observe(callback)
     map_.observe(callback)
-    text += "hello"
+    with text.doc.transaction():
+        text += "hello"
+        text += " world"
     array.append(1)
     map_["foo"] = "bar"
-    assert events == ["hello", "[1.0]", '{"foo":"bar"}']
+    assert events == ["hello world", "[1.0]", '{"foo":"bar"}']

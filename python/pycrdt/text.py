@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any, Callable
 from ._pycrdt import Text as _Text
 from ._pycrdt import TextEvent as _TextEvent
 from .base import BaseEvent, BaseType, base_types, event_types
-from .transaction import ReadTransaction
 
 if TYPE_CHECKING:
     from .doc import Doc
@@ -122,9 +121,8 @@ class Text(BaseType):
 
 def observe_callback(callback: Callable[[Any], None], doc: Doc, event: Any):
     _event = event_types[type(event)](event, doc)
-    doc._txn = ReadTransaction(doc=doc, _txn=event.transaction)
-    callback(_event)
-    doc._txn = None
+    with doc._read_transaction(event.transaction):
+        callback(_event)
 
 
 class TextEvent(BaseEvent):
