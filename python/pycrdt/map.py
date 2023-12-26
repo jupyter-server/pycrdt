@@ -62,8 +62,15 @@ class Map(BaseType):
 
     def to_py(self) -> dict | None:
         if self._integrated is None:
-            return self._prelim
-        return dict(self)
+            py = self._prelim
+            if py is None:
+                return None
+        else:
+            py = dict(self)
+        for key, val in py.items():
+            if isinstance(val, BaseType):
+                py[key] = val.to_py()
+        return py
 
     def __delitem__(self, key: str) -> None:
         with self.doc.transaction() as txn:

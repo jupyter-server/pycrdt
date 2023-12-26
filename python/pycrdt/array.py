@@ -168,8 +168,15 @@ class Array(BaseType):
 
     def to_py(self) -> list | None:
         if self._integrated is None:
-            return self._prelim
-        return list(self)
+            py = self._prelim
+            if py is None:
+                return None
+        else:
+            py = list(self)
+        for idx, val in enumerate(py):
+            if isinstance(val, BaseType):
+                py[idx] = val.to_py()
+        return py
 
     def observe(self, callback: Callable[[Any], None]) -> str:
         _callback = partial(observe_callback, callback, self.doc)
