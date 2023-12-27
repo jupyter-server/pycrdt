@@ -2,6 +2,22 @@
 name = "pycrdt"
 version = "0.8.1"
 edition = "2021"
+license = "MIT"
+homepage = "https://github.com/jupyter-server/pycrdt"
+repository = "https://github.com/jupyter-server/pycrdt/pycrdt.git"
+readme = "README.md"
+include = [
+    "/pyproject.toml",
+    "/README.md",
+    "/LICENSE",
+    "/src",
+    "/python/pycrdt",
+    "/tests",
+    "!__pycache__",
+    "!tests/.mypy_cache",
+    "!tests/.pytest_cache",
+    "!*.so",
+]
 
 [lib]
 name = "pycrdt"
