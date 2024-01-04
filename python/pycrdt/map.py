@@ -92,6 +92,9 @@ class Map(BaseType):
     def __iter__(self):
         return self.keys()
 
+    def __contains__(self, item: str) -> bool:
+        return item in self.keys()
+
     def get(self, key: str, default_value: Any | None = None) -> Any | None:
         with self.doc.transaction():
             if key in self.keys():

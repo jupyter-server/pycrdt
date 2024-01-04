@@ -37,6 +37,12 @@ class Text(BaseType):
     def _get_or_insert(self, name: str, doc: Doc) -> _Text:
         return doc._doc.get_or_insert_text(name)
 
+    def __iter__(self):
+        return TextIterator(self)
+
+    def __contains__(self, item: str) -> bool:
+        return item in str(self)
+
     def __len__(self) -> int:
         with self.doc.transaction() as txn:
             return self.integrated.len(txn._txn)
@@ -127,6 +133,21 @@ def observe_callback(callback: Callable[[Any], None], doc: Doc, event: Any):
 
 class TextEvent(BaseEvent):
     __slots__ = "target", "delta", "path"
+
+
+class TextIterator:
+    def __init__(self, text: Text):
+        self.text = text
+        self.length = len(text)
+        self.idx = 0
+
+    def __next__(self):
+        if self.idx == self.length:
+            raise StopIteration
+
+        res = self.text[self.idx]
+        self.idx += 1
+        return res
 
 
 base_types[_Text] = Text
