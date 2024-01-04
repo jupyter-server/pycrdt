@@ -162,6 +162,9 @@ class Array(BaseType):
     def __iter__(self):
         return ArrayIterator(self)
 
+    def __contains__(self, item: Any) -> bool:
+        return item in iter(self)
+
     def __str__(self) -> str:
         with self.doc.transaction() as txn:
             return self.integrated.to_json(txn._txn)
