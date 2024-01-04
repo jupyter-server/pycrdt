@@ -30,4 +30,11 @@ def test_callback_transaction():
         text += " world"
     array.append(1)
     map_["foo"] = "bar"
-    assert events == ["hello world", "hello world", [1.0], "[1.0]", {"foo": "bar"}, '{"foo":"bar"}']
+    assert events == [
+        "hello world",
+        "hello world",
+        [1.0],
+        "[1.0]",
+        {"foo": "bar"},
+        '{"foo":"bar"}',
+    ]
