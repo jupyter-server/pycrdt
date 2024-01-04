@@ -98,14 +98,13 @@ class Map(BaseType):
                 return self[key]
             return default_value
 
-    def pop(self, key: str, default_value: Any | None = None) -> Any:
+    def pop(self, *args) -> Any:
+        key, *default_value = args
         with self.doc.transaction():
             if key not in self.keys():
-                if (
-                    default_value is None
-                ):  # FIXME: how to know if default_value was passed?
+                if not default_value:
                     raise KeyError
-                return default_value
+                return default_value[0]
             res = self[key]
             del self[key]
             return res
