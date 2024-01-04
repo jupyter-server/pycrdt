@@ -14,9 +14,9 @@ class Transaction:
     _txn: _Transaction | None
     _nb: int
 
-    def __init__(self, doc: Doc) -> None:
+    def __init__(self, doc: Doc, _txn: _Transaction | None = None) -> None:
         self._doc = doc
-        self._txn = None
+        self._txn = _txn
         self._nb = 0
 
     def __enter__(self) -> Transaction:
@@ -45,19 +45,4 @@ class Transaction:
 
 
 class ReadTransaction(Transaction):
-    def __init__(self, doc: Doc, _txn: _Transaction) -> None:
-        self._doc = doc
-        self._txn = _txn
-
-    def __enter__(self) -> Transaction:
-        self._doc._txn = self
-        return self
-
-    def __exit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
-    ) -> None:
-        self._txn = None
-        self._doc._txn = None
+    pass
