@@ -1,5 +1,5 @@
 use pyo3::prelude::*;
-use pyo3::types::{IntoPyDict, PyAny, PyBool, PyByteArray, PyDict, PyFloat, PyList, PyLong, PyString};
+use pyo3::types::{IntoPyDict, PyAny, PyBool, PyByteArray, PyDict, PyFloat, PyList, PyLong, PyString, PyBytes};
 use yrs::types::{Attrs, Change, EntryChange, Delta, Events, Path, PathSegment, Value};
 use yrs::{Any, TransactionMut};
 use std::ops::Deref;
@@ -201,6 +201,9 @@ impl ToPython for Any {
 pub fn py_to_any(value: &PyAny) -> Any {
     if value.is_none() {
         Any::Null
+    } else if value.is_instance_of::<PyBytes>() {
+        let v: &[u8] = value.extract().unwrap();
+        Any::Buffer(v.into())
     } else if value.is_instance_of::<PyString>() {
         let v: &str = value.extract().unwrap();
         Any::String(v.into())

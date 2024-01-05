@@ -3,6 +3,11 @@ import json
 from pycrdt import Array, Doc, Map, Text
 
 
+def test_binary_entry():
+    doc = Doc({"m": Map({"bytes": b"012"})})
+    assert doc["m"]["bytes"] == b"012"
+
+
 def test_str():
     doc = Doc()
     map2 = Map({"key2": "val2"})
