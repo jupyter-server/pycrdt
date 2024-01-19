@@ -95,8 +95,7 @@ class Text(BaseType):
         with self.doc.transaction() as txn:
             self._forbid_read_transaction(txn)
             if isinstance(key, int):
-                value_len = len(value)
-                if value_len != 1:
+                if len(value) != 1:
                     raise RuntimeError(
                         f"Single item assigned value must have a length of 1, not {value_len}"
                     )
