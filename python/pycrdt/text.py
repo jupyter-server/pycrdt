@@ -72,12 +72,12 @@ class Text(BaseType):
         else:
             start = key.start
         if key.stop is None:
-            stop = len(self) - start
+            length = len(self) - start
         elif key.stop < 0:
             raise RuntimeError("Negative stop not supported")
         else:
-            stop = key.stop - start
-        return start, stop
+            length = key.stop - start
+        return start, length
 
     def __delitem__(self, key: int | slice) -> None:
         with self.doc.transaction() as txn:
@@ -85,9 +85,9 @@ class Text(BaseType):
             if isinstance(key, int):
                 self.integrated.remove_range(txn._txn, key, 1)
             elif isinstance(key, slice):
-                start, stop = self._check_slice(key)
-                if start != stop:
-                    self.integrated.remove_range(txn._txn, start, stop)
+                start, length = self._check_slice(key)
+                if length > 0:
+                    self.integrated.remove_range(txn._txn, start, length)
             else:
                 raise RuntimeError(f"Index not supported: {key}")
 
@@ -103,9 +103,9 @@ class Text(BaseType):
                 del self[key]
                 self.integrated.insert(txn._txn, key, value)
             elif isinstance(key, slice):
-                start, stop = self._check_slice(key)
-                if start != stop:
-                    self.integrated.remove_range(txn._txn, start, stop)
+                start, length = self._check_slice(key)
+                if length > 0:
+                    self.integrated.remove_range(txn._txn, start, length)
                 self.integrated.insert(txn._txn, start, value)
             else:
                 raise RuntimeError(f"Index not supported: {key}")
