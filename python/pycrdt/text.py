@@ -114,7 +114,7 @@ class Text(BaseType):
         del self[start:stop]
         self[start:start] = value
 
-    def remove_range(self, start: int, stop:int ) -> None:
+    def remove_range(self, start: int, stop: int) -> None:
         """Remove the range of characters in the interval ['start', 'stop')."""
         del self[start:stop]
 
