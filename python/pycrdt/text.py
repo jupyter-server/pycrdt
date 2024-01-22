@@ -72,11 +72,11 @@ class Text(BaseType):
         else:
             start = key.start
         if key.stop is None:
-            stop = len(self) - start
+            stop = len(self)
         elif key.stop < 0:
             raise RuntimeError("Negative stop not supported")
         else:
-            stop = key.stop - start
+            stop = key.stop
         return start, stop
 
     def __delitem__(self, key: int | slice) -> None:
@@ -86,8 +86,9 @@ class Text(BaseType):
                 self.integrated.remove_range(txn._txn, key, 1)
             elif isinstance(key, slice):
                 start, stop = self._check_slice(key)
-                if start != stop:
-                    self.integrated.remove_range(txn._txn, start, stop)
+                length = stop - start
+                if length > 0:
+                    self.integrated.remove_range(txn._txn, start, length)
             else:
                 raise RuntimeError(f"Index not supported: {key}")
 
@@ -104,17 +105,20 @@ class Text(BaseType):
                 self.integrated.insert(txn._txn, key, value)
             elif isinstance(key, slice):
                 start, stop = self._check_slice(key)
-                if start != stop:
-                    self.integrated.remove_range(txn._txn, start, stop)
+                length = stop - start
+                if length > 0:
+                    self.integrated.remove_range(txn._txn, start, length)
                 self.integrated.insert(txn._txn, start, value)
             else:
                 raise RuntimeError(f"Index not supported: {key}")
 
     def clear(self) -> None:
+        """Remove the entire range of characters."""
         del self[:]
 
-    def insert(self, index, text: str) -> None:
-        self[index:index] = text
+    def insert(self, index: int, value: str) -> None:
+        """Insert 'value' at character position 'index'."""
+        self[index:index] = value
 
     def observe(self, callback: Callable[[Any], None]) -> str:
         _callback = partial(observe_callback, callback, self.doc)
