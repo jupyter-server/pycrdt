@@ -112,8 +112,7 @@ class Text(BaseType):
 
     def replace_range(self, value: str, start: int, stop: int) -> None:
         """Replace the range of characters in the interval ['start', 'stop') with 'value'."""
-        del self[start:stop]
-        self[start:start] = value
+        self[start:stop] = value
 
     def remove_range(self, start: int, stop: int) -> None:
         """Remove the range of characters in the interval ['start', 'stop')."""
