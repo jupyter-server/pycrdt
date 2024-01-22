@@ -51,8 +51,9 @@ def test_api():
     del text[len(hello) : 2 * len(hello)]
     assert str(text) == hello
     # deletion with a range of 0
-    del text[len(hello):len(hello)]
+    del text[len(hello) : len(hello)]
     assert str(text) == hello
+
 
 def test_to_py():
     doc = Doc()
