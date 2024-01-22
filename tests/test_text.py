@@ -2,6 +2,7 @@ from pycrdt import Array, Doc, Map, Text
 
 hello = "Hello"
 world = ", World"
+sir = " Sir"
 punct = "!"
 
 
@@ -31,15 +32,27 @@ def test_api():
     text = Text(hello + punct)
     doc["text"] = text
     assert str(text) == hello + punct
-    text.insert(len(hello), world)
+    text.insert(world, len(hello))
     assert str(text) == hello + world + punct
     text.clear()
     assert len(text) == 0
     text[:] = hello + world + punct
     assert str(text) == hello + world + punct
-    text[len(hello) : len(hello) + len(world)] = " Sir"
-    assert str(text) == hello + " Sir" + punct
-
+    text[len(hello) : len(hello) + len(world)] = sir
+    assert str(text) == hello + sir + punct
+    # deletion with only an index
+    del text[len(text) - 1]
+    assert str(text) == hello + sir
+    # deletion of an arbitrary range
+    del text[len(hello) : len(hello) + len(sir)]
+    assert str(text) == hello
+    # deletion with start index == range length
+    text += str(text)
+    del text[len(hello) : 2 * len(hello)]
+    assert str(text) == hello
+    # deletion with a range of 0
+    del text[len(hello):len(hello)]
+    assert str(text) == hello
 
 def test_to_py():
     doc = Doc()
