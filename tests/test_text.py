@@ -32,7 +32,7 @@ def test_api():
     text = Text(hello + punct)
     doc["text"] = text
     assert str(text) == hello + punct
-    text.insert(world, len(hello))
+    text.insert(len(hello), world)
     assert str(text) == hello + world + punct
     text.clear()
     assert len(text) == 0

@@ -112,21 +112,13 @@ class Text(BaseType):
             else:
                 raise RuntimeError(f"Index not supported: {key}")
 
-    def replace_range(self, value: str, start: int, stop: int) -> None:
-        """Replace the range of characters in the interval ['start', 'stop') with 'value'."""
-        self[start:stop] = value
-
-    def remove_range(self, start: int, stop: int) -> None:
-        """Remove the range of characters in the interval ['start', 'stop')."""
-        del self[start:stop]
-
-    def insert(self, value: str, index: int) -> None:
-        """Insert 'value' at character position 'index'."""
-        self[index:index] = value
-
     def clear(self) -> None:
         """Remove the entire range of characters."""
         del self[:]
+
+    def insert(self, index: int, value: str) -> None:
+        """Insert 'value' at character position 'index'."""
+        self[index:index] = value
 
     def observe(self, callback: Callable[[Any], None]) -> str:
         _callback = partial(observe_callback, callback, self.doc)
