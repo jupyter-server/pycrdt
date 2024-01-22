@@ -40,6 +40,9 @@ def test_api():
     assert str(text) == hello + world + punct
     text[len(hello) : len(hello) + len(world)] = sir
     assert str(text) == hello + sir + punct
+    # single character replacement
+    text[len(text) - 1] = "?"
+    assert str(text) == hello + sir + "?"
     # deletion with only an index
     del text[len(text) - 1]
     assert str(text) == hello + sir
