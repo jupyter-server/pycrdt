@@ -87,10 +87,12 @@ class Doc(BaseDoc):
         with self.transaction() as txn:
             assert txn._txn is not None
             return {
-                key: None
-                if val is None
-                else cast(Type[BaseType], base_types[type(val)])(
-                    _integrated=val, _doc=self
+                key: (
+                    None
+                    if val is None
+                    else cast(Type[BaseType], base_types[type(val)])(
+                        _integrated=val, _doc=self
+                    )
                 )
                 for key, val in self._doc.roots(txn._txn).items()
             }
