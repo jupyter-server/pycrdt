@@ -63,16 +63,13 @@ class BaseType(ABC):
         self._integrated = None
 
     @abstractmethod
-    def to_py(self) -> Any:
-        ...
+    def to_py(self) -> Any: ...
 
     @abstractmethod
-    def _get_or_insert(self, name: str, doc: Doc) -> Any:
-        ...
+    def _get_or_insert(self, name: str, doc: Doc) -> Any: ...
 
     @abstractmethod
-    def _init(self, value: Any | None) -> None:
-        ...
+    def _init(self, value: Any | None) -> None: ...
 
     def _forbid_read_transaction(self, txn: Transaction):
         if isinstance(txn, ReadTransaction):
