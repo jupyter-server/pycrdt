@@ -8,6 +8,10 @@ on:
     branches:
     - main
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   test:
     name: ${{ matrix.os }} python-${{ matrix.python-version }}
@@ -34,10 +38,16 @@ jobs:
         create-args: python=${{ matrix.python-version }}
 
     - name: Build and install pycrdt
-      run: pip install .[test]
+      run: pip install -e ".[test]"
 
     - name: Check types
       run: mypy python
 
     - name: Run tests
       run: pytest --color=yes -v tests
+
+    - name: Run code coverage
+      if: ${{ (matrix.python-version == '3.12') && (matrix.os == 'ubuntu-latest') }}
+      run: |
+        coverage run -m pytest tests
+        coverage report --show-missing --fail-under=100

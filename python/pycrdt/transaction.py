@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from ._pycrdt import Transaction as _Transaction
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from .doc import Doc
 
 

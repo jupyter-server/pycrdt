@@ -1,3 +1,4 @@
+import pytest
 from pycrdt import Array, Doc, Map, Text
 
 hello = "Hello"
@@ -30,6 +31,19 @@ def test_str():
 def test_api():
     doc = Doc()
     text = Text(hello + punct)
+
+    with pytest.raises(RuntimeError) as excinfo:
+        text.integrated
+    assert str(excinfo.value) == "Not integrated in a document yet"
+
+    with pytest.raises(RuntimeError) as excinfo:
+        text.doc
+    assert str(excinfo.value) == "Not integrated in a document yet"
+
+    assert text.is_prelim
+    assert text.prelim == hello + punct
+    assert not text.is_integrated
+
     doc["text"] = text
     assert str(text) == hello + punct
     text.insert(len(hello), world)
@@ -56,9 +70,70 @@ def test_api():
     # deletion with a range of 0
     del text[len(hello) : len(hello)]
     assert str(text) == hello
+    assert "".join([char for char in text]) == hello
+    assert "el" in text
+
+    with pytest.raises(RuntimeError) as excinfo:
+        del text["a"]
+    assert str(excinfo.value) == "Index not supported: a"
+
+    with pytest.raises(RuntimeError) as excinfo:
+        text["a"] = "b"
+    assert str(excinfo.value) == "Index not supported: a"
+
+    with pytest.raises(RuntimeError) as excinfo:
+        text[1] = "ab"
+    assert (
+        str(excinfo.value)
+        == "Single item assigned value must have a length of 1, not 2"
+    )
 
 
 def test_to_py():
     doc = Doc()
     doc["text"] = text = Text(hello)
     assert text.to_py() == hello
+
+
+def test_prelim():
+    text = Text(hello)
+    assert text.to_py() == hello
+
+
+def test_slice():
+    doc = Doc()
+    doc["text"] = text = Text(hello)
+
+    with pytest.raises(RuntimeError) as excinfo:
+        text[1::2] = "a"
+    assert str(excinfo.value) == "Step not supported"
+
+    with pytest.raises(RuntimeError) as excinfo:
+        text[-1:] = "a"
+    assert str(excinfo.value) == "Negative start not supported"
+
+    with pytest.raises(RuntimeError) as excinfo:
+        text[:-1] = "a"
+    assert str(excinfo.value) == "Negative stop not supported"
+
+
+def test_observe():
+    doc = Doc()
+    doc["text"] = text = Text()
+    events = []
+
+    def callback(event):
+        nonlocal text
+        with pytest.raises(RuntimeError) as excinfo:
+            text += world
+        assert (
+            str(excinfo.value)
+            == "Read-only transaction cannot be used to modify document structure"
+        )
+        events.append(event)
+
+    text.observe(callback)
+    text += hello
+    assert (
+        str(events[0]) == """{target: Hello, delta: [{'insert': 'Hello'}], path: []}"""
+    )

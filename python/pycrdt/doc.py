@@ -71,7 +71,7 @@ class Doc(BaseDoc):
         return self._roots[key]
 
     def __iter__(self):
-        return self.keys()
+        return iter(self.keys())
 
     def keys(self):
         return self._roots.keys()

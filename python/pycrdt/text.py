@@ -7,7 +7,7 @@ from ._pycrdt import Text as _Text
 from ._pycrdt import TextEvent as _TextEvent
 from .base import BaseEvent, BaseType, base_types, event_types
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from .doc import Doc
 
 
@@ -91,6 +91,10 @@ class Text(BaseType):
                     self.integrated.remove_range(txn._txn, start, length)
             else:
                 raise RuntimeError(f"Index not supported: {key}")
+
+    def __getitem__(self, key: int | slice) -> str:
+        value = str(self)
+        return value[key]
 
     def __setitem__(self, key: int | slice, value: str) -> None:
         with self.doc.transaction() as txn:

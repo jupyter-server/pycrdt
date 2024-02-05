@@ -7,7 +7,7 @@ from ._pycrdt import Array as _Array
 from ._pycrdt import ArrayEvent as _ArrayEvent
 from .base import BaseDoc, BaseEvent, BaseType, base_types, event_types
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from .doc import Doc
 
 
@@ -106,16 +106,16 @@ class Array(BaseType):
                     raise RuntimeError("Step not supported")
                 if key.start != key.stop:
                     raise RuntimeError("Start and stop must be equal")
-                if len(self) <= key.start < 0:
+                if key.start > len(self) or key.start < 0:
                     raise RuntimeError("Index out of range")
                 for i, v in enumerate(value):
                     self._set(i + key.start, v)
             else:
-                raise RuntimeError(f"Index not supported: {key}")
+                raise RuntimeError("Index must be of type integer")
 
     def _check_index(self, idx: int) -> int:
         if not isinstance(idx, int):
-            raise RuntimeError("Index must be of type int")
+            raise RuntimeError("Index must be of type integer")
         length = len(self)
         if idx < 0:
             idx += length
@@ -146,7 +146,9 @@ class Array(BaseType):
                     n = key.stop - i
                 self.integrated.remove_range(txn._txn, i, n)
             else:
-                raise RuntimeError(f"Index not supported: {key}")
+                raise TypeError(
+                    f"array indices must be integers or slices, not {type(key).__name__}"
+                )
 
     def __getitem__(self, key: int) -> BaseType:
         with self.doc.transaction() as txn:
@@ -163,7 +165,7 @@ class Array(BaseType):
         return ArrayIterator(self)
 
     def __contains__(self, item: Any) -> bool:
-        return item in iter(self)
+        return item in list(self)
 
     def __str__(self) -> str:
         with self.doc.transaction() as txn:
