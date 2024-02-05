@@ -35,6 +35,7 @@ test = [
     "y-py >=0.7.0a1,<0.8",
     "pydantic >=2.5.2,<3",
     "mypy",
+    "coverage[toml] >=7",
 ]
 docs = [ "mkdocs", "mkdocs-material" ]
 
@@ -49,3 +50,9 @@ module-name = "pycrdt._pycrdt"
 [tool.ruff]
 line-length = 100
 select = ["F", "E", "W", "I001"]
+
+[tool.coverage.run]
+source = ["python", "tests"]
+
+[tool.coverage.report]
+show_missing = true

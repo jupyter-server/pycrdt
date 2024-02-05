@@ -1,5 +1,6 @@
 from functools import partial
 
+import pytest
 from pycrdt import Array, Doc, Map, Text
 
 
@@ -16,6 +17,25 @@ def encode_client_id(client_id_bytes):
             j |= 0x80
         b.append(j)
     return bytes(b)
+
+
+def test_api():
+    doc = Doc()
+
+    with pytest.raises(RuntimeError) as excinfo:
+        doc[0] = Array()
+    assert str(excinfo.value) == "Key must be of type string"
+
+    doc["a0"] = a0 = Array()
+    doc["m0"] = m0 = Map()
+    doc["t0"] = t0 = Text()
+    assert set((key for key in doc)) == set(("a0", "m0", "t0"))
+    assert set([type(value) for value in doc.values()]) == set(
+        [type(value) for value in (a0, m0, t0)]
+    )
+    assert set([(key, type(value)) for key, value in doc.items()]) == set(
+        [(key, type(value)) for key, value in (("a0", a0), ("m0", m0), ("t0", t0))]
+    )
 
 
 def test_subdoc():
@@ -75,6 +95,15 @@ def test_subdoc():
     assert doc1.guid != doc2.guid
     assert event.removed == []
     assert event.loaded == []
+
+
+def test_doc_in_event():
+    doc = Doc()
+    doc["array"] = array = Array()
+    events = []
+    array.observe(partial(callback, events))
+    array.append(Doc())
+    assert isinstance(events[0].delta[0]["insert"][0], Doc)
 
 
 def test_transaction_event():

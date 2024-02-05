@@ -1,6 +1,7 @@
 import json
 from functools import partial
 
+import pytest
 from pycrdt import Array, Doc, Map, Text
 
 
@@ -47,7 +48,7 @@ def test_array():
     doc["array"] = array
     events = []
 
-    array.observe(partial(callback, events))
+    idx = array.observe(partial(callback, events))
     ref = [
         -1,
         -2,
@@ -62,6 +63,7 @@ def test_array():
         -3,
         -4,
         -6,
+        -7,
     ]
     with doc.transaction():
         array.append("foo")
@@ -79,6 +81,7 @@ def test_array():
         array = array + [-3, -4]
         array += [-5]
         array[-1] = -6
+        array.extend([-7])
 
     assert json.loads(str(array)) == ref
     assert len(array) == len(ref)
@@ -92,23 +95,44 @@ def test_array():
         }
     ]
 
+    array.clear()
+    assert array.to_py() == []
+
+    events.clear()
+    array.unobserve(idx)
+    array.append("foo")
+    assert events == []
+
 
 def test_observe():
     doc = Doc()
     array = Array()
     doc["array"] = array
 
-    def callback(e):
-        pass
-
-    sid0 = array.observe(callback)
-    sid1 = array.observe(callback)
-    sid2 = array.observe_deep(callback)
-    sid3 = array.observe_deep(callback)
+    sid0 = array.observe(lambda x: x)
+    sid1 = array.observe(lambda x: x)
+    sid2 = array.observe_deep(lambda x: x)
+    sid3 = array.observe_deep(lambda x: x)
     assert sid0 == "o_0"
     assert sid1 == "o_1"
     assert sid2 == "od0"
     assert sid3 == "od1"
+
+    deep_events = []
+
+    def cb(events):
+        deep_events.append(events)
+
+    sid4 = array.observe_deep(cb)
+    array.append("bar")
+    assert (
+        str(deep_events[0][0])
+        == """{target: ["bar"], delta: [{'insert': ['bar']}], path: []}"""
+    )
+    deep_events.clear()
+    array.unobserve(sid4)
+    array.append("baz")
+    assert deep_events == []
 
 
 def test_api():
@@ -128,6 +152,50 @@ def test_api():
     doc["array"] = array
     array.insert(1, 4)
     assert str(array) == "[1.0,4.0,2.0,3.0]"
+
+    # slices
+    doc = Doc()
+    array = Array([i for i in range(10)])
+    doc["array"] = array
+    with pytest.raises(RuntimeError) as excinfo:
+        array[::2] = 1
+    assert str(excinfo.value) == "Step not supported"
+    with pytest.raises(RuntimeError) as excinfo:
+        array[1:2] = 1
+    assert str(excinfo.value) == "Start and stop must be equal"
+    with pytest.raises(RuntimeError) as excinfo:
+        array[-1:-1] = 1
+    assert str(excinfo.value) == "Index out of range"
+    with pytest.raises(RuntimeError) as excinfo:
+        array["a"] = 1
+    assert str(excinfo.value) == "Index must be of type integer"
+    with pytest.raises(RuntimeError) as excinfo:
+        array.pop("a")
+    assert str(excinfo.value) == "Index must be of type integer"
+    with pytest.raises(IndexError) as excinfo:
+        array.pop(len(array))
+    assert str(excinfo.value) == "Array index out of range"
+    with pytest.raises(RuntimeError) as excinfo:
+        del array[::2]
+    assert str(excinfo.value) == "Step not supported"
+    with pytest.raises(RuntimeError) as excinfo:
+        del array[-1:]
+    assert str(excinfo.value) == "Negative start not supported"
+    with pytest.raises(RuntimeError) as excinfo:
+        del array[:-1]
+    assert str(excinfo.value) == "Negative stop not supported"
+    with pytest.raises(TypeError) as excinfo:
+        del array["a"]
+    assert str(excinfo.value) == "array indices must be integers or slices, not str"
+
+    assert [value for value in array] == [value for value in range(10)]
+    assert 1 in array
+
+    array = Array([0, 1, 2])
+    assert array.to_py() == [0, 1, 2]
+
+    array = Array()
+    assert array.to_py() is None
 
 
 def test_move():

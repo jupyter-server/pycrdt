@@ -7,7 +7,7 @@ from ._pycrdt import Map as _Map
 from ._pycrdt import MapEvent as _MapEvent
 from .base import BaseDoc, BaseEvent, BaseType, base_types, event_types
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from .doc import Doc
 
 
@@ -116,7 +116,7 @@ class Map(BaseType):
         if not isinstance(key, str):
             raise RuntimeError("Key must be of type string")
         if key not in self.keys():
-            raise KeyError(f"KeyError: {key}")
+            raise KeyError(key)
 
     def keys(self):
         with self.doc.transaction() as txn:

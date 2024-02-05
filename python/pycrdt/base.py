@@ -7,7 +7,7 @@ from ._pycrdt import Doc as _Doc
 from ._pycrdt import Transaction as _Transaction
 from .transaction import ReadTransaction, Transaction
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from .doc import Doc
 
 
@@ -77,14 +77,6 @@ class BaseType(ABC):
                 "Read-only transaction cannot be used to modify document structure"
             )
 
-    def _current_transaction(self) -> Transaction:
-        if self._doc is None:
-            raise RuntimeError("Not associated with a document")
-        if self._doc._txn is None:
-            raise RuntimeError("No current transaction")
-        res = cast(Transaction, self._doc._txn)
-        return res
-
     def _integrate(self, doc: Doc, integrated: Any) -> Any:
         prelim = self._prelim
         self._doc = doc
@@ -95,8 +87,6 @@ class BaseType(ABC):
     def _do_and_integrate(
         self, action: str, value: BaseType, txn: _Transaction, *args
     ) -> None:
-        if value.is_integrated:
-            raise RuntimeError("Already integrated")
         method = getattr(self._integrated, f"{action}_{value.type_name}_prelim")
         integrated = method(txn, *args)
         assert self._doc is not None
