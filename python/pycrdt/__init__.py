@@ -1,9 +1,9 @@
-from ._pycrdt import TransactionEvent as TransactionEvent
 from ._array import Array as Array
 from ._array import ArrayEvent as ArrayEvent
 from ._doc import Doc as Doc
 from ._map import Map as Map
 from ._map import MapEvent as MapEvent
+from ._pycrdt import TransactionEvent as TransactionEvent
 from ._text import Text as Text
 from ._text import TextEvent as TextEvent
 from ._transaction import ReadTransaction as ReadTransaction

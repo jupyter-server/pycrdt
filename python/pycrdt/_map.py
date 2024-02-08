@@ -3,9 +3,9 @@ from __future__ import annotations
 from functools import partial
 from typing import TYPE_CHECKING, Any, Callable
 
+from ._base import BaseDoc, BaseEvent, BaseType, base_types, event_types
 from ._pycrdt import Map as _Map
 from ._pycrdt import MapEvent as _MapEvent
-from ._base import BaseDoc, BaseEvent, BaseType, base_types, event_types
 
 if TYPE_CHECKING:  # pragma: no cover
     from ._doc import Doc
