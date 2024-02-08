@@ -5,8 +5,8 @@ from typing import Callable, Type, cast
 from ._pycrdt import Doc as _Doc
 from ._pycrdt import SubdocsEvent, TransactionEvent
 from ._pycrdt import Transaction as _Transaction
-from .base import BaseDoc, BaseType, base_types
-from .transaction import ReadTransaction, Transaction
+from ._base import BaseDoc, BaseType, base_types
+from ._transaction import ReadTransaction, Transaction
 
 
 class Doc(BaseDoc):

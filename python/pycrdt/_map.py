@@ -5,10 +5,10 @@ from typing import TYPE_CHECKING, Any, Callable
 
 from ._pycrdt import Map as _Map
 from ._pycrdt import MapEvent as _MapEvent
-from .base import BaseDoc, BaseEvent, BaseType, base_types, event_types
+from ._base import BaseDoc, BaseEvent, BaseType, base_types, event_types
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .doc import Doc
+    from ._doc import Doc
 
 
 class Map(BaseType):

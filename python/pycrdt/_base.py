@@ -5,10 +5,10 @@ from typing import TYPE_CHECKING, Any, Type, cast
 
 from ._pycrdt import Doc as _Doc
 from ._pycrdt import Transaction as _Transaction
-from .transaction import ReadTransaction, Transaction
+from ._transaction import ReadTransaction, Transaction
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .doc import Doc
+    from ._doc import Doc
 
 
 base_types: dict[Any, Type[BaseType | BaseDoc]] = {}

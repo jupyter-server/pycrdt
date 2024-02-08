@@ -5,10 +5,10 @@ from typing import TYPE_CHECKING, Any, Callable
 
 from ._pycrdt import Array as _Array
 from ._pycrdt import ArrayEvent as _ArrayEvent
-from .base import BaseDoc, BaseEvent, BaseType, base_types, event_types
+from ._base import BaseDoc, BaseEvent, BaseType, base_types, event_types
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .doc import Doc
+    from ._doc import Doc
 
 
 class Array(BaseType):
