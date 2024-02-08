@@ -3,12 +3,12 @@ from __future__ import annotations
 from functools import partial
 from typing import TYPE_CHECKING, Any, Callable
 
+from ._base import BaseEvent, BaseType, base_types, event_types
 from ._pycrdt import Text as _Text
 from ._pycrdt import TextEvent as _TextEvent
-from .base import BaseEvent, BaseType, base_types, event_types
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .doc import Doc
+    from ._doc import Doc
 
 
 class Text(BaseType):
