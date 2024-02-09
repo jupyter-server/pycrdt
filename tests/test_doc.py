@@ -37,14 +37,17 @@ def test_api():
         [type(value) for value in (a0, m0, t0, a1, m1, t1)]
     )
     assert set([(key, type(value)) for key, value in doc.items()]) == set(
-        [(key, type(value)) for key, value in (
-            ("a0", a0),
-            ("m0", m0),
-            ("t0", t0),
-            ("a1", a1),
-            ("m1", m1),
-            ("t1", t1),
-        )]
+        [
+            (key, type(value))
+            for key, value in (
+                ("a0", a0),
+                ("m0", m0),
+                ("t0", t0),
+                ("a1", a1),
+                ("m1", m1),
+                ("t1", t1),
+            )
+        ]
     )
 
 
