@@ -29,12 +29,25 @@ def test_api():
     doc["a0"] = a0 = Array()
     doc["m0"] = m0 = Map()
     doc["t0"] = t0 = Text()
-    assert set((key for key in doc)) == set(("a0", "m0", "t0"))
+    a1 = doc.get("a1", type=Array)
+    m1 = doc.get("m1", type=Map)
+    t1 = doc.get("t1", type=Text)
+    assert set((key for key in doc)) == set(("a0", "m0", "t0", "a1", "m1", "t1"))
     assert set([type(value) for value in doc.values()]) == set(
-        [type(value) for value in (a0, m0, t0)]
+        [type(value) for value in (a0, m0, t0, a1, m1, t1)]
     )
     assert set([(key, type(value)) for key, value in doc.items()]) == set(
-        [(key, type(value)) for key, value in (("a0", a0), ("m0", m0), ("t0", t0))]
+        [
+            (key, type(value))
+            for key, value in (
+                ("a0", a0),
+                ("m0", m0),
+                ("t0", t0),
+                ("a1", a1),
+                ("m1", m1),
+                ("t1", t1),
+            )
+        ]
     )
 
 
