@@ -1,12 +1,15 @@
 from __future__ import annotations
 
-from typing import Callable, Type, cast
+from typing import Callable, TypeVar, Type, cast
 
 from ._base import BaseDoc, BaseType, base_types
 from ._pycrdt import Doc as _Doc
 from ._pycrdt import SubdocsEvent, TransactionEvent
 from ._pycrdt import Transaction as _Transaction
 from ._transaction import ReadTransaction, Transaction
+
+
+T_BaseType = TypeVar("T_BaseType", bound=BaseType)
 
 
 class Doc(BaseDoc):
@@ -73,7 +76,7 @@ class Doc(BaseDoc):
     def __iter__(self):
         return iter(self.keys())
 
-    def get(self, key: str, *, type: Type[BaseType]) -> BaseType:
+    def get(self, key: str, *, type: Type[T_BaseType]) -> T_BaseType:
         value = type()
         self[key] = value
         return value
