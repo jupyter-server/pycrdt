@@ -8,6 +8,7 @@ use yrs::{
     TransactionCleanupEvent,
     SubdocsEvent as _SubdocsEvent,
     StateVector,
+    Subscription,
     Update,
 };
 use yrs::updates::encoder::Encode;
@@ -113,7 +114,7 @@ impl Doc {
     }
 
     pub fn observe(&mut self, f: PyObject) -> PyResult<u32> {
-        let id: u32 = self.doc
+        let sub = self.doc
             .observe_transaction_cleanup(move |txn, event| {
                 Python::with_gil(|py| {
                     let event = TransactionEvent::new(event, txn);
@@ -122,13 +123,13 @@ impl Doc {
                     }
                 })
             })
-            .unwrap()
-            .into();
+            .unwrap();
+        let id: u32 = (&sub as *const Subscription) as u32;
         Ok(id)
     }
 
     pub fn observe_subdocs(&mut self, f: PyObject) -> PyResult<u32> {
-        let id: u32 = self.doc
+        let sub = self.doc
             .observe_subdocs(move |_, event| {
                 Python::with_gil(|py| {
                     let event = SubdocsEvent::new(event);
@@ -137,8 +138,8 @@ impl Doc {
                     }
                 })
             })
-            .unwrap()
-            .into();
+            .unwrap();
+        let id: u32 = (&sub as *const Subscription) as u32;
         Ok(id)
     }
 }

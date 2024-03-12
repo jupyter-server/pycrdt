@@ -8,6 +8,7 @@ use yrs::{
     Map as _Map,
     DeepObservable,
     Observable,
+    Subscription,
     TransactionMut,
 };
 use yrs::types::ToJson;
@@ -129,7 +130,7 @@ impl Map {
     }
 
     pub fn observe(&mut self, f: PyObject) -> PyResult<u32> {
-        let id: u32 = self.map
+        let sub = self.map
             .observe(move |txn, e| {
                 Python::with_gil(|py| {
                     let e = MapEvent::new(e, txn);
@@ -137,13 +138,13 @@ impl Map {
                         err.restore(py)
                     }
                 })
-            })
-            .into();
+            });
+        let id: u32 = (&sub as *const Subscription) as u32;
         Ok(id)
     }
 
     pub fn observe_deep(&mut self, f: PyObject) -> PyResult<u32> {
-        let id: u32 = self.map
+        let sub = self.map
             .observe_deep(move |txn, events| {
                 Python::with_gil(|py| {
                     let events = events_into_py(txn, events);
@@ -151,18 +152,20 @@ impl Map {
                         err.restore(py)
                     }
                 })
-            })
-            .into();
+            });
+        let id: u32 = (&sub as *const Subscription) as u32;
         Ok(id)
     }
 
     pub fn unobserve(&mut self, subscription_id: u32) -> PyResult<()> {
-        self.map.unobserve(subscription_id);
+        let sub = subscription_id as *mut Subscription;
+        drop(unsafe { Box::from_raw(sub) });
         Ok(())
     }
 
     pub fn unobserve_deep(&mut self, subscription_id: u32) -> PyResult<()> {
-        self.map.unobserve_deep(subscription_id);
+        let sub = subscription_id as *mut Subscription;
+        drop(unsafe { Box::from_raw(sub) });
         Ok(())
     }
 }

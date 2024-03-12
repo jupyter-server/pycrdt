@@ -8,6 +8,7 @@ use yrs::{
     Doc as _Doc,
     DeepObservable,
     Observable,
+    Subscription,
     TransactionMut,
 };
 use yrs::types::ToJson;
@@ -124,7 +125,7 @@ impl Array {
     }
 
     pub fn observe(&mut self, f: PyObject) -> PyResult<u32> {
-        let id: u32 = self.array
+        let sub = self.array
             .observe(move |txn, e| {
                 Python::with_gil(|py| {
                     let event = ArrayEvent::new(e, txn);
@@ -132,13 +133,13 @@ impl Array {
                         err.restore(py)
                     }
                 })
-            })
-            .into();
+            });
+        let id: u32 = (&sub as *const Subscription) as u32;
         Ok(id)
     }
 
     pub fn observe_deep(&mut self, f: PyObject) -> PyResult<u32> {
-        let id: u32 = self.array
+        let sub = self.array
             .observe_deep(move |txn, events| {
                 Python::with_gil(|py| {
                     let events = events_into_py(txn, events);
@@ -146,18 +147,20 @@ impl Array {
                         err.restore(py)
                     }
                 })
-            })
-            .into();
+            });
+        let id: u32 = (&sub as *const Subscription) as u32;
         Ok(id)
     }
 
     pub fn unobserve(&mut self, subscription_id: u32) -> PyResult<()> {
-        self.array.unobserve(subscription_id);
+        let sub = subscription_id as *mut Subscription;
+        drop(unsafe { Box::from_raw(sub) });
         Ok(())
     }
 
     pub fn unobserve_deep(&mut self, subscription_id: u32) -> PyResult<()> {
-        self.array.unobserve_deep(subscription_id);
+        let sub = subscription_id as *mut Subscription;
+        drop(unsafe { Box::from_raw(sub) });
         Ok(())
     }
 }

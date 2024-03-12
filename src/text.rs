@@ -3,6 +3,7 @@ use pyo3::types::{PyList, PyString};
 use yrs::{
     GetString,
     Observable,
+    Subscription,
     TextRef,
     Text as _Text,
     TransactionMut,
@@ -58,20 +59,21 @@ impl Text {
     }
 
     fn observe(&mut self, f: PyObject) -> PyResult<u32> {
-        let id: u32 = self.text.observe(move |txn, e| {
+        let sub = self.text.observe(move |txn, e| {
             Python::with_gil(|py| {
                 let e = TextEvent::new(e, txn);
                 if let Err(err) = f.call1(py, (e,)) {
                     err.restore(py)
                 }
             });
-        })
-        .into();
+        });
+        let id: u32 = (&sub as *const Subscription) as u32;
         Ok(id)
     }
 
     fn unobserve(&self, subscription_id: u32) -> PyResult<()> {
-        self.text.unobserve(subscription_id);
+        let sub = subscription_id as *mut Subscription;
+        drop(unsafe { Box::from_raw(sub) });
         Ok(())
     }
 }
