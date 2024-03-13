@@ -3,13 +3,13 @@ use pyo3::types::{PyList, PyString};
 use yrs::{
     GetString,
     Observable,
-    Subscription,
     TextRef,
     Text as _Text,
     TransactionMut,
 };
 use yrs::types::text::TextEvent as _TextEvent;
 use crate::transaction::Transaction;
+use crate::subscription::Subscription;
 use crate::type_conversions::ToPython;
 
 
@@ -58,7 +58,7 @@ impl Text {
         Python::with_gil(|py| PyString::new(py, &s).into())
     }
 
-    fn observe(&mut self, f: PyObject) -> PyResult<u32> {
+    fn observe(&mut self, py: Python<'_>, f: PyObject) -> PyResult<Py<Subscription>> {
         let sub = self.text.observe(move |txn, e| {
             Python::with_gil(|py| {
                 let e = TextEvent::new(e, txn);
@@ -67,14 +67,12 @@ impl Text {
                 }
             });
         });
-        let id: u32 = (&sub as *const Subscription) as u32;
-        Ok(id)
+        let s: Py<Subscription> = Py::new(py, Subscription::from(sub))?;
+        Ok(s)
     }
 
-    fn unobserve(&self, subscription_id: u32) -> PyResult<()> {
-        let sub = subscription_id as *mut Subscription;
-        drop(unsafe { Box::from_raw(sub) });
-        Ok(())
+    pub fn observe_deep(&mut self, py: Python<'_>, f: PyObject) -> PyResult<Py<Subscription>> {
+        self.observe(py, f)
     }
 }
 

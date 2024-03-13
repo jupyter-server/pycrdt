@@ -48,7 +48,7 @@ def test_array():
     doc["array"] = array
     events = []
 
-    idx = array.observe(partial(callback, events))
+    sub = array.observe(partial(callback, events))
     ref = [
         -1,
         -2,
@@ -99,7 +99,7 @@ def test_array():
     assert array.to_py() == []
 
     events.clear()
-    array.unobserve(idx)
+    array.unobserve(sub)
     array.append("foo")
     assert events == []
 
@@ -109,14 +109,10 @@ def test_observe():
     array = Array()
     doc["array"] = array
 
-    sid0 = array.observe(lambda x: x)
-    sid1 = array.observe(lambda x: x)
-    sid2 = array.observe_deep(lambda x: x)
-    sid3 = array.observe_deep(lambda x: x)
-    assert sid0 == "o_0"
-    assert sid1 == "o_1"
-    assert sid2 == "od0"
-    assert sid3 == "od1"
+    sub0 = array.observe(lambda x: x)
+    sub1 = array.observe(lambda x: x)
+    sub2 = array.observe_deep(lambda x: x)
+    sub3 = array.observe_deep(lambda x: x)
 
     deep_events = []
 

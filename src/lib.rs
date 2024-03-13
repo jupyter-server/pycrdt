@@ -4,6 +4,7 @@ mod text;
 mod array;
 mod map;
 mod transaction;
+mod subscription;
 mod type_conversions;
 use crate::doc::Doc;
 use crate::doc::TransactionEvent;
@@ -12,6 +13,7 @@ use crate::text::{Text, TextEvent};
 use crate::array::{Array, ArrayEvent};
 use crate::map::{Map, MapEvent};
 use crate::transaction::Transaction;
+use crate::subscription::Subscription;
 
 #[pymodule]
 fn _pycrdt(_py: Python, m: &PyModule) -> PyResult<()> {
@@ -25,5 +27,6 @@ fn _pycrdt(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Map>()?;
     m.add_class::<MapEvent>()?;
     m.add_class::<Transaction>()?;
+    m.add_class::<Subscription>()?;
     Ok(())
 }

@@ -8,7 +8,6 @@ use yrs::{
     Map as _Map,
     DeepObservable,
     Observable,
-    Subscription,
     TransactionMut,
 };
 use yrs::types::ToJson;
@@ -16,6 +15,7 @@ use yrs::types::text::TextPrelim;
 use yrs::types::array::ArrayPrelim;
 use yrs::types::map::{MapPrelim, MapEvent as _MapEvent};
 use crate::transaction::Transaction;
+use crate::subscription::Subscription;
 use crate::type_conversions::{EntryChangeWrapper, events_into_py, py_to_any, ToPython};
 use crate::text::Text;
 use crate::array::Array;
@@ -129,7 +129,7 @@ impl Map {
         Python::with_gil(|py| PyString::new(py, s.as_str()).into())
     }
 
-    pub fn observe(&mut self, f: PyObject) -> PyResult<u32> {
+    pub fn observe(&mut self, py: Python<'_>, f: PyObject) -> PyResult<Py<Subscription>> {
         let sub = self.map
             .observe(move |txn, e| {
                 Python::with_gil(|py| {
@@ -139,11 +139,11 @@ impl Map {
                     }
                 })
             });
-        let id: u32 = (&sub as *const Subscription) as u32;
-        Ok(id)
+        let s: Py<Subscription> = Py::new(py, Subscription::from(sub))?;
+        Ok(s)
     }
 
-    pub fn observe_deep(&mut self, f: PyObject) -> PyResult<u32> {
+    pub fn observe_deep(&mut self, py: Python<'_>, f: PyObject) -> PyResult<Py<Subscription>> {
         let sub = self.map
             .observe_deep(move |txn, events| {
                 Python::with_gil(|py| {
@@ -153,20 +153,8 @@ impl Map {
                     }
                 })
             });
-        let id: u32 = (&sub as *const Subscription) as u32;
-        Ok(id)
-    }
-
-    pub fn unobserve(&mut self, subscription_id: u32) -> PyResult<()> {
-        let sub = subscription_id as *mut Subscription;
-        drop(unsafe { Box::from_raw(sub) });
-        Ok(())
-    }
-
-    pub fn unobserve_deep(&mut self, subscription_id: u32) -> PyResult<()> {
-        let sub = subscription_id as *mut Subscription;
-        drop(unsafe { Box::from_raw(sub) });
-        Ok(())
+        let s: Py<Subscription> = Py::new(py, Subscription::from(sub))?;
+        Ok(s)
     }
 }
 

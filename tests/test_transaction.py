@@ -22,9 +22,9 @@ def test_callback_transaction():
             with doc.transaction():
                 events.append(str(target))
 
-    text.observe(callback)
-    array.observe(callback)
-    map_.observe(callback)
+    sub0 = text.observe(callback)
+    sub1 = array.observe(callback)
+    sub2 = map_.observe(callback)
     with text.doc.transaction():
         text += "hello"
         text += " world"

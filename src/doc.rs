@@ -8,7 +8,6 @@ use yrs::{
     TransactionCleanupEvent,
     SubdocsEvent as _SubdocsEvent,
     StateVector,
-    Subscription,
     Update,
 };
 use yrs::updates::encoder::Encode;
@@ -17,6 +16,7 @@ use crate::text::Text;
 use crate::array::Array;
 use crate::map::Map;
 use crate::transaction::Transaction;
+use crate::subscription::Subscription;
 use crate::type_conversions::ToPython;
 
 
@@ -113,7 +113,7 @@ impl Doc {
         result.into()
     }
 
-    pub fn observe(&mut self, f: PyObject) -> PyResult<u32> {
+    pub fn observe(&mut self, py: Python<'_>, f: PyObject) -> PyResult<Py<Subscription>> {
         let sub = self.doc
             .observe_transaction_cleanup(move |txn, event| {
                 Python::with_gil(|py| {
@@ -124,11 +124,11 @@ impl Doc {
                 })
             })
             .unwrap();
-        let id: u32 = (&sub as *const Subscription) as u32;
-        Ok(id)
+        let s: Py<Subscription> = Py::new(py, Subscription::from(sub))?;
+        Ok(s)
     }
 
-    pub fn observe_subdocs(&mut self, f: PyObject) -> PyResult<u32> {
+    pub fn observe_subdocs(&mut self, py: Python<'_>, f: PyObject) -> PyResult<Py<Subscription>> {
         let sub = self.doc
             .observe_subdocs(move |_, event| {
                 Python::with_gil(|py| {
@@ -139,8 +139,8 @@ impl Doc {
                 })
             })
             .unwrap();
-        let id: u32 = (&sub as *const Subscription) as u32;
-        Ok(id)
+        let s: Py<Subscription> = Py::new(py, Subscription::from(sub))?;
+        Ok(s)
     }
 }
 

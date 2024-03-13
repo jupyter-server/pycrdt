@@ -132,7 +132,7 @@ def test_observe():
         )
         events.append(event)
 
-    text.observe(callback)
+    sub = text.observe(callback)
     text += hello
     assert (
         str(events[0]) == """{target: Hello, delta: [{'insert': 'Hello'}], path: []}"""
