@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING
 
 from ._base import BaseEvent, BaseType, base_types, event_types
 from ._pycrdt import Text as _Text
