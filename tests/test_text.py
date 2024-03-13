@@ -132,7 +132,7 @@ def test_observe():
         )
         events.append(event)
 
-    sub = text.observe(callback)
+    sub = text.observe(callback)  # noqa: F841
     text += hello
     assert (
         str(events[0]) == """{target: Hello, delta: [{'insert': 'Hello'}], path: []}"""

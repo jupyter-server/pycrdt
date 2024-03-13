@@ -49,7 +49,7 @@ module-name = "pycrdt._pycrdt"
 
 [tool.ruff]
 line-length = 100
-select = ["F", "E", "W", "I001"]
+lint.select = ["F", "E", "W", "I001"]
 
 [tool.coverage.run]
 source = ["python", "tests"]

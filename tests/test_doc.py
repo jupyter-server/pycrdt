@@ -71,7 +71,7 @@ def test_subdoc():
 
     remote_doc = Doc()
     events = []
-    sub = remote_doc.observe_subdocs(partial(callback, events))
+    sub = remote_doc.observe_subdocs(partial(callback, events))  # noqa: F841
     remote_doc.apply_update(update0)
     remote_array0 = Array()
     remote_map0 = Map()
@@ -114,7 +114,7 @@ def test_doc_in_event():
     doc = Doc()
     doc["array"] = array = Array()
     events = []
-    sub = array.observe(partial(callback, events))
+    sub = array.observe(partial(callback, events))  # noqa: F841
     array.append(Doc())
     assert isinstance(events[0].delta[0]["insert"][0], Doc)
 
@@ -122,7 +122,7 @@ def test_doc_in_event():
 def test_transaction_event():
     doc = Doc()
     events = []
-    sub = doc.observe(partial(callback, events))
+    sub = doc.observe(partial(callback, events))  # noqa: F841
     text = Text("Hello, World!")
     doc["text"] = text
 

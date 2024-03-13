@@ -109,10 +109,10 @@ def test_observe():
     array = Array()
     doc["array"] = array
 
-    sub0 = array.observe(lambda x: x)
-    sub1 = array.observe(lambda x: x)
-    sub2 = array.observe_deep(lambda x: x)
-    sub3 = array.observe_deep(lambda x: x)
+    sub0 = array.observe(lambda x: x)  # noqa: F841
+    sub1 = array.observe(lambda x: x)  # noqa: F841
+    sub2 = array.observe_deep(lambda x: x)  # noqa: F841
+    sub3 = array.observe_deep(lambda x: x)  # noqa: F841
 
     deep_events = []
 
