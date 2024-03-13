@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from functools import partial
-from typing import TYPE_CHECKING, Any, Type, cast
+from typing import TYPE_CHECKING, Any, Callable, Type, cast
 
 from ._pycrdt import Doc as _Doc
 from ._pycrdt import Subscription
