@@ -75,9 +75,7 @@ class BaseType(ABC):
 
     def _forbid_read_transaction(self, txn: Transaction):
         if isinstance(txn, ReadTransaction):
-            raise RuntimeError(
-                "Read-only transaction cannot be used to modify document structure"
-            )
+            raise RuntimeError("Read-only transaction cannot be used to modify document structure")
 
     def _integrate(self, doc: Doc, integrated: Any) -> Any:
         prelim = self._prelim
@@ -86,9 +84,7 @@ class BaseType(ABC):
         self._integrated = integrated
         return prelim
 
-    def _do_and_integrate(
-        self, action: str, value: BaseType, txn: _Transaction, *args
-    ) -> None:
+    def _do_and_integrate(self, action: str, value: BaseType, txn: _Transaction, *args) -> None:
         method = getattr(self._integrated, f"{action}_{value.type_name}_prelim")
         integrated = method(txn, *args)
         assert self._doc is not None

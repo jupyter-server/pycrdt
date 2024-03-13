@@ -83,10 +83,7 @@ def test_api():
 
     with pytest.raises(RuntimeError) as excinfo:
         text[1] = "ab"
-    assert (
-        str(excinfo.value)
-        == "Single item assigned value must have a length of 1, not 2"
-    )
+    assert str(excinfo.value) == "Single item assigned value must have a length of 1, not 2"
 
 
 def test_to_py():
@@ -134,6 +131,4 @@ def test_observe():
 
     sub = text.observe(callback)  # noqa: F841
     text += hello
-    assert (
-        str(events[0]) == """{target: Hello, delta: [{'insert': 'Hello'}], path: []}"""
-    )
+    assert str(events[0]) == """{target: Hello, delta: [{'insert': 'Hello'}], path: []}"""
