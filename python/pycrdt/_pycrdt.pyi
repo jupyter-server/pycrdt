@@ -45,6 +45,12 @@ class Doc:
         """Subscribes a callback to be called with the shared document subdoc change event.
         Returns a subscription ID that can be used to unsubscribe."""
 
+class Subscription:
+    """Observer subscription"""
+
+    def drop(self) -> None:
+        """Drop the subscription, effectively unobserving."""
+
 class Transaction:
     """Document transaction"""
 
@@ -94,13 +100,13 @@ class Text:
     def get_string(self, txn: Transaction) -> str:
         """Returns a text representation of the current shared text."""
 
-    def observe(self, callback: Callable[[TextEvent], None]) -> int:
+    def observe(self, callback: Callable[[TextEvent], None]) -> Subscription:
         """Subscribes a callback to be called with the shared text change event.
-        Returns a subscription ID that can be used to unsubscribe."""
+        Returns a subscription that can be used to unsubscribe."""
 
-    def unobserve(self, subscription_id: int) -> None:
+    def unobserve(self, subscription: Subscription) -> None:
         """Unsubscribes previously subscribed event callback identified by given
-        `subscription_id`."""
+        `subscription`."""
 
 class Array:
     """Shared array."""
@@ -123,18 +129,18 @@ class Array:
     def to_json(self, txn: Transaction) -> str:
         """Returns a JSON representation of the current array."""
 
-    def observe(self, callback: Callable[[TextEvent], None]) -> int:
+    def observe(self, callback: Callable[[TextEvent], None]) -> Subscription:
         """Subscribes a callback to be called with the array change event.
-        Returns a subscription ID that can be used to unsubscribe."""
+        Returns a subscription that can be used to unsubscribe."""
 
-    def observe_deep(self, callback: Callable[[TextEvent], None]) -> int:
+    def observe_deep(self, callback: Callable[[TextEvent], None]) -> Subscription:
         """Subscribes a callback to be called with the array change event
         and its nested elements.
-        Returns a subscription ID that can be used to unsubscribe."""
+        Returns a subscription that can be used to unsubscribe."""
 
-    def unobserve(self, subscription_id: int) -> None:
+    def unobserve(self, subscription: Subscription) -> None:
         """Unsubscribes previously subscribed event callback identified by given
-        `subscription_id`."""
+        `subscription`."""
 
 class Map:
     """Shared map."""
@@ -154,15 +160,15 @@ class Map:
     def to_json(self, txn: Transaction) -> str:
         """Returns a JSON representation of the current map."""
 
-    def observe(self, callback: Callable[[TextEvent], None]) -> int:
+    def observe(self, callback: Callable[[TextEvent], None]) -> Subscription:
         """Subscribes a callback to be called with the map change event.
-        Returns a subscription ID that can be used to unsubscribe."""
+        Returns a subscription that can be used to unsubscribe."""
 
-    def observe_deep(self, callback: Callable[[TextEvent], None]) -> int:
+    def observe_deep(self, callback: Callable[[TextEvent], None]) -> Subscription:
         """Subscribes a callback to be called with the map change event
         and its nested elements.
-        Returns a subscription ID that can be used to unsubscribe."""
+        Returns a subscription that can be used to unsubscribe."""
 
-    def unobserve(self, subscription_id: int) -> None:
+    def unobserve(self, subscription: Subscription) -> None:
         """Unsubscribes previously subscribed event callback identified by given
-        `subscription_id`."""
+        `subscription`."""

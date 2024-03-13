@@ -9,6 +9,7 @@ use yrs::{
 };
 use yrs::types::text::TextEvent as _TextEvent;
 use crate::transaction::Transaction;
+use crate::subscription::Subscription;
 use crate::type_conversions::ToPython;
 
 
@@ -57,22 +58,21 @@ impl Text {
         Python::with_gil(|py| PyString::new(py, &s).into())
     }
 
-    fn observe(&mut self, f: PyObject) -> PyResult<u32> {
-        let id: u32 = self.text.observe(move |txn, e| {
+    fn observe(&mut self, py: Python<'_>, f: PyObject) -> PyResult<Py<Subscription>> {
+        let sub = self.text.observe(move |txn, e| {
             Python::with_gil(|py| {
                 let e = TextEvent::new(e, txn);
                 if let Err(err) = f.call1(py, (e,)) {
                     err.restore(py)
                 }
             });
-        })
-        .into();
-        Ok(id)
+        });
+        let s: Py<Subscription> = Py::new(py, Subscription::from(sub))?;
+        Ok(s)
     }
 
-    fn unobserve(&self, subscription_id: u32) -> PyResult<()> {
-        self.text.unobserve(subscription_id);
-        Ok(())
+    pub fn observe_deep(&mut self, py: Python<'_>, f: PyObject) -> PyResult<Py<Subscription>> {
+        self.observe(py, f)
     }
 }
 

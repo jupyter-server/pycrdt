@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Type, cast
+from functools import partial
+from typing import TYPE_CHECKING, Any, Callable, Type, cast
 
 from ._pycrdt import Doc as _Doc
+from ._pycrdt import Subscription
 from ._pycrdt import Transaction as _Transaction
 from ._transaction import ReadTransaction, Transaction
 
@@ -73,9 +75,7 @@ class BaseType(ABC):
 
     def _forbid_read_transaction(self, txn: Transaction):
         if isinstance(txn, ReadTransaction):
-            raise RuntimeError(
-                "Read-only transaction cannot be used to modify document structure"
-            )
+            raise RuntimeError("Read-only transaction cannot be used to modify document structure")
 
     def _integrate(self, doc: Doc, integrated: Any) -> Any:
         prelim = self._prelim
@@ -84,9 +84,7 @@ class BaseType(ABC):
         self._integrated = integrated
         return prelim
 
-    def _do_and_integrate(
-        self, action: str, value: BaseType, txn: _Transaction, *args
-    ) -> None:
+    def _do_and_integrate(self, action: str, value: BaseType, txn: _Transaction, *args) -> None:
         method = getattr(self._integrated, f"{action}_{value.type_name}_prelim")
         integrated = method(txn, *args)
         assert self._doc is not None
@@ -131,6 +129,30 @@ class BaseType(ABC):
     @property
     def type_name(self) -> str:
         return self._type_name
+
+    def observe(self, callback: Callable[[Any], None]) -> Subscription:
+        _callback = partial(observe_callback, callback, self.doc)
+        return self.integrated.observe(_callback)
+
+    def observe_deep(self, callback: Callable[[Any], None]) -> Subscription:
+        _callback = partial(observe_deep_callback, callback, self.doc)
+        return self.integrated.observe_deep(_callback)
+
+    def unobserve(self, subscription: Subscription) -> None:
+        subscription.drop()
+
+
+def observe_callback(callback: Callable[[Any], None], doc: Doc, event: Any):
+    _event = event_types[type(event)](event, doc)
+    with doc._read_transaction(event.transaction):
+        callback(_event)
+
+
+def observe_deep_callback(callback: Callable[[Any], None], doc: Doc, events: list[Any]):
+    for idx, event in enumerate(events):
+        events[idx] = event_types[type(event)](event, doc)
+    with doc._read_transaction(event.transaction):
+        callback(events)
 
 
 class BaseEvent:

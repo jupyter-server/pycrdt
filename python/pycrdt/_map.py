@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from functools import partial
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 
 from ._base import BaseDoc, BaseEvent, BaseType, base_types, event_types
 from ._pycrdt import Map as _Map
@@ -139,34 +138,6 @@ class Map(BaseType):
 
     def update(self, value: dict[str, Any]) -> None:
         self._init(value)
-
-    def observe(self, callback: Callable[[Any], None]) -> str:
-        _callback = partial(observe_callback, callback, self.doc)
-        return f"o_{self.integrated.observe(_callback)}"
-
-    def observe_deep(self, callback: Callable[[Any], None]) -> str:
-        _callback = partial(observe_deep_callback, callback, self.doc)
-        return f"od{self.integrated.observe_deep(_callback)}"
-
-    def unobserve(self, subscription_id: str) -> None:
-        sid = int(subscription_id[2:])
-        if subscription_id.startswith("o_"):
-            self.integrated.unobserve(sid)
-        else:
-            self.integrated.unobserve_deep(sid)
-
-
-def observe_callback(callback: Callable[[Any], None], doc: Doc, event: Any):
-    _event = event_types[type(event)](event, doc)
-    with doc._read_transaction(event.transaction):
-        callback(_event)
-
-
-def observe_deep_callback(callback: Callable[[Any], None], doc: Doc, events: list[Any]):
-    for idx, event in enumerate(events):
-        events[idx] = event_types[type(event)](event, doc)
-    with doc._read_transaction(event.transaction):
-        callback(events)
 
 
 class MapEvent(BaseEvent):

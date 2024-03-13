@@ -15,6 +15,7 @@ use yrs::types::text::TextPrelim;
 use yrs::types::array::{ArrayPrelim, ArrayEvent as _ArrayEvent};
 use yrs::types::map::MapPrelim;
 use crate::transaction::Transaction;
+use crate::subscription::Subscription;
 use crate::type_conversions::{events_into_py, py_to_any, ToPython};
 use crate::text::Text;
 use crate::map::Map;
@@ -123,8 +124,8 @@ impl Array {
         Python::with_gil(|py| PyString::new(py, s.as_str()).into())
     }
 
-    pub fn observe(&mut self, f: PyObject) -> PyResult<u32> {
-        let id: u32 = self.array
+    pub fn observe(&mut self, py: Python<'_>, f: PyObject) -> PyResult<Py<Subscription>> {
+        let sub = self.array
             .observe(move |txn, e| {
                 Python::with_gil(|py| {
                     let event = ArrayEvent::new(e, txn);
@@ -132,13 +133,13 @@ impl Array {
                         err.restore(py)
                     }
                 })
-            })
-            .into();
-        Ok(id)
+            });
+        let s: Py<Subscription> = Py::new(py, Subscription::from(sub))?;
+        Ok(s)
     }
 
-    pub fn observe_deep(&mut self, f: PyObject) -> PyResult<u32> {
-        let id: u32 = self.array
+    pub fn observe_deep(&mut self, py: Python<'_>, f: PyObject) -> PyResult<Py<Subscription>> {
+        let sub = self.array
             .observe_deep(move |txn, events| {
                 Python::with_gil(|py| {
                     let events = events_into_py(txn, events);
@@ -146,19 +147,9 @@ impl Array {
                         err.restore(py)
                     }
                 })
-            })
-            .into();
-        Ok(id)
-    }
-
-    pub fn unobserve(&mut self, subscription_id: u32) -> PyResult<()> {
-        self.array.unobserve(subscription_id);
-        Ok(())
-    }
-
-    pub fn unobserve_deep(&mut self, subscription_id: u32) -> PyResult<()> {
-        self.array.unobserve_deep(subscription_id);
-        Ok(())
+            });
+        let s: Py<Subscription> = Py::new(py, Subscription::from(sub))?;
+        Ok(s)
     }
 }
 

@@ -16,6 +16,7 @@ use crate::text::Text;
 use crate::array::Array;
 use crate::map::Map;
 use crate::transaction::Transaction;
+use crate::subscription::Subscription;
 use crate::type_conversions::ToPython;
 
 
@@ -112,8 +113,8 @@ impl Doc {
         result.into()
     }
 
-    pub fn observe(&mut self, f: PyObject) -> PyResult<u32> {
-        let id: u32 = self.doc
+    pub fn observe(&mut self, py: Python<'_>, f: PyObject) -> PyResult<Py<Subscription>> {
+        let sub = self.doc
             .observe_transaction_cleanup(move |txn, event| {
                 Python::with_gil(|py| {
                     let event = TransactionEvent::new(event, txn);
@@ -122,13 +123,13 @@ impl Doc {
                     }
                 })
             })
-            .unwrap()
-            .into();
-        Ok(id)
+            .unwrap();
+        let s: Py<Subscription> = Py::new(py, Subscription::from(sub))?;
+        Ok(s)
     }
 
-    pub fn observe_subdocs(&mut self, f: PyObject) -> PyResult<u32> {
-        let id: u32 = self.doc
+    pub fn observe_subdocs(&mut self, py: Python<'_>, f: PyObject) -> PyResult<Py<Subscription>> {
+        let sub = self.doc
             .observe_subdocs(move |_, event| {
                 Python::with_gil(|py| {
                     let event = SubdocsEvent::new(event);
@@ -137,9 +138,9 @@ impl Doc {
                     }
                 })
             })
-            .unwrap()
-            .into();
-        Ok(id)
+            .unwrap();
+        let s: Py<Subscription> = Py::new(py, Subscription::from(sub))?;
+        Ok(s)
     }
 }
 
