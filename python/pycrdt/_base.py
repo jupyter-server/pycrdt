@@ -15,7 +15,6 @@ if TYPE_CHECKING:  # pragma: no cover
 
 base_types: dict[Any, Type[BaseType | BaseDoc]] = {}
 event_types: dict[Any, Type[BaseEvent]] = {}
-_subscriptions: list[Subscription] = []
 
 
 class BaseDoc:
@@ -45,6 +44,7 @@ class BaseType(ABC):
     _prelim: Any | None
     _integrated: Any
     _type_name: str
+    _subscriptions: list[Subscription]
 
     def __init__(
         self,
@@ -64,6 +64,7 @@ class BaseType(ABC):
         self._doc = None
         self._prelim = init
         self._integrated = None
+        self._subscriptions = []
 
     @abstractmethod
     def to_py(self) -> Any: ...
@@ -134,18 +135,23 @@ class BaseType(ABC):
     def observe(self, callback: Callable[[Any], None]) -> Subscription:
         _callback = partial(observe_callback, callback, self.doc)
         subscription = self.integrated.observe(_callback)
-        _subscriptions.append(subscription)
+        self._subscriptions.append(subscription)
         return subscription
 
     def observe_deep(self, callback: Callable[[Any], None]) -> Subscription:
         _callback = partial(observe_deep_callback, callback, self.doc)
         subscription = self.integrated.observe_deep(_callback)
-        _subscriptions.append(subscription)
+        self._subscriptions.append(subscription)
         return subscription
 
     def unobserve(self, subscription: Subscription) -> None:
-        _subscriptions.remove(subscription)
+        self._subscriptions.remove(subscription)
         subscription.drop()
+
+    def __del__(self) -> None:
+        for subscription in self._subscriptions:
+            subscription.drop()
+        self._subscriptions.clear()
 
 
 def observe_callback(callback: Callable[[Any], None], doc: Doc, event: Any):
