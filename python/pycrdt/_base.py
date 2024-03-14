@@ -15,6 +15,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 base_types: dict[Any, Type[BaseType | BaseDoc]] = {}
 event_types: dict[Any, Type[BaseEvent]] = {}
+_subscriptions: list[Subscription] = []
 
 
 class BaseDoc:
@@ -132,13 +133,18 @@ class BaseType(ABC):
 
     def observe(self, callback: Callable[[Any], None]) -> Subscription:
         _callback = partial(observe_callback, callback, self.doc)
-        return self.integrated.observe(_callback)
+        subscription = self.integrated.observe(_callback)
+        _subscriptions.append(subscription)
+        return subscription
 
     def observe_deep(self, callback: Callable[[Any], None]) -> Subscription:
         _callback = partial(observe_deep_callback, callback, self.doc)
-        return self.integrated.observe_deep(_callback)
+        subscription = self.integrated.observe_deep(_callback)
+        _subscriptions.append(subscription)
+        return subscription
 
     def unobserve(self, subscription: Subscription) -> None:
+        _subscriptions.remove(subscription)
         subscription.drop()
 
 
