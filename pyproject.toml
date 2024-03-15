@@ -36,6 +36,7 @@ test = [
     "pydantic >=2.5.2,<3",
     "mypy",
     "coverage[toml] >=7",
+    "objsize",
 ]
 docs = [ "mkdocs", "mkdocs-material" ]
 
