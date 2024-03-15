@@ -148,11 +148,6 @@ class BaseType(ABC):
         self._subscriptions.remove(subscription)
         subscription.drop()
 
-    def __del__(self) -> None:
-        for subscription in self._subscriptions:
-            subscription.drop()
-        self._subscriptions.clear()
-
 
 def observe_callback(callback: Callable[[Any], None], doc: Doc, event: Any):
     _event = event_types[type(event)](event, doc)

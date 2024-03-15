@@ -4,10 +4,6 @@ from objsize import get_deep_size
 from pycrdt import Array, Doc, Map, Text
 
 
-def callback(event):
-    pass
-
-
 def test_memory():
     doc = Doc()
     iter = 100
@@ -17,7 +13,7 @@ def test_memory():
         sizes = [size0]
         subscriptions = []
         for i in range(iter):
-            subscriptions.append(type_.observe(callback))
+            subscriptions.append(type_.observe(lambda x: x))
             sizes.append(get_deep_size(type_))
             assert sizes[-1] > sizes[-2]
         sizes.pop()
