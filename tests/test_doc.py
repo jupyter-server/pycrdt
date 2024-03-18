@@ -123,16 +123,21 @@ def test_transaction_event():
     doc = Doc()
     events = []
     sub = doc.observe(partial(callback, events))  # noqa: F841
-    text = Text("Hello, World!")
-    doc["text"] = text
+    doc["text0"] = Text("Hello, World!")
 
     remote_doc = Doc()
     for event in events:
         remote_doc.apply_update(event.update)
+    events.clear()
 
-    remote_text = Text()
-    remote_doc["text"] = remote_text
-    assert str(remote_text) == "Hello, World!"
+    doc.unobserve(sub)
+    doc["text1"] = Text("Goodbye!")
+    assert len(events) == 0
+
+    remote_text0 = remote_doc.get("text0", type=Text)
+    assert str(remote_text0) == "Hello, World!"
+    remote_text1 = remote_doc.get("text1", type=Text)
+    assert str(remote_text1) == ""
 
 
 def test_client_id():

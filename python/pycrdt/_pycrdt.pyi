@@ -37,13 +37,13 @@ class Doc:
     def roots(self, txn: Transaction) -> dict[str, Text | Array | Map]:
         """Get top-level (root) shared types available in current document."""
 
-    def observe(self, callback: Callable[[TransactionEvent], None]) -> int:
+    def observe(self, callback: Callable[[TransactionEvent], None]) -> Subscription:
         """Subscribes a callback to be called with the shared document change event.
-        Returns a subscription ID that can be used to unsubscribe."""
+        Returns a subscription that can be used to unsubscribe."""
 
-    def observe_subdocs(self, callback: Callable[[SubdocsEvent], None]) -> int:
+    def observe_subdocs(self, callback: Callable[[SubdocsEvent], None]) -> Subscription:
         """Subscribes a callback to be called with the shared document subdoc change event.
-        Returns a subscription ID that can be used to unsubscribe."""
+        Returns a subscription that can be used to unsubscribe."""
 
 class Subscription:
     """Observer subscription"""
