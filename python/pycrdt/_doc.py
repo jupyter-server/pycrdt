@@ -112,5 +112,9 @@ class Doc(BaseDoc):
         self._subscriptions.append(subscription)
         return subscription
 
+    def unobserve(self, subscription: Subscription) -> None:
+        self._subscriptions.remove(subscription)
+        subscription.drop()
+
 
 base_types[_Doc] = Doc
