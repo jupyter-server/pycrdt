@@ -56,6 +56,7 @@ class BaseType(ABC):
         _integrated: Any = None,
     ) -> None:
         self._type_name = self.__class__.__name__.lower()
+        self._subscriptions = []
         # private API
         if _integrated is not None:
             self._doc = _doc
@@ -66,7 +67,6 @@ class BaseType(ABC):
         self._doc = None
         self._prelim = init
         self._integrated = None
-        self._subscriptions = []
 
     @abstractmethod
     def to_py(self) -> Any: ...
