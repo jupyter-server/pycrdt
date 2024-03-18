@@ -3,6 +3,7 @@ from ._array import ArrayEvent as ArrayEvent
 from ._doc import Doc as Doc
 from ._map import Map as Map
 from ._map import MapEvent as MapEvent
+from ._pycrdt import Subscription as Subscription
 from ._pycrdt import TransactionEvent as TransactionEvent
 from ._text import Text as Text
 from ._text import TextEvent as TextEvent
