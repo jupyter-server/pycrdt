@@ -4,7 +4,7 @@ from typing import Callable, Type, TypeVar, cast
 
 from ._base import BaseDoc, BaseType, base_types
 from ._pycrdt import Doc as _Doc
-from ._pycrdt import SubdocsEvent, TransactionEvent
+from ._pycrdt import SubdocsEvent, Subscription, TransactionEvent
 from ._pycrdt import Transaction as _Transaction
 from ._transaction import ReadTransaction, Transaction
 
@@ -102,11 +102,15 @@ class Doc(BaseDoc):
                 for key, val in self._doc.roots(txn._txn).items()
             }
 
-    def observe(self, callback: Callable[[TransactionEvent], None]) -> int:
-        return self._doc.observe(callback)
+    def observe(self, callback: Callable[[TransactionEvent], None]) -> Subscription:
+        subscription = self._doc.observe(callback)
+        self._subscriptions.append(subscription)
+        return subscription
 
-    def observe_subdocs(self, callback: Callable[[SubdocsEvent], None]) -> int:
-        return self._doc.observe_subdocs(callback)
+    def observe_subdocs(self, callback: Callable[[SubdocsEvent], None]) -> Subscription:
+        subscription = self._doc.observe_subdocs(callback)
+        self._subscriptions.append(subscription)
+        return subscription
 
 
 base_types[_Doc] = Doc
