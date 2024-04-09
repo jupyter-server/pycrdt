@@ -121,7 +121,10 @@ def test_observe():
 
     sid4 = array.observe_deep(cb)
     array.append("bar")
-    assert str(deep_events[0][0]) == """{target: ["bar"], delta: [{'insert': ['bar']}], path: []}"""
+    assert (
+        str(deep_events[0][0])
+        == """{target: ["bar"], delta: [{'insert': ['bar']}], path: []}"""
+    )
     deep_events.clear()
     array.unobserve(sid4)
     array.append("baz")
@@ -147,7 +150,7 @@ def test_api():
     nested_doc["text"] = Text("text in subdoc")
     array.insert(0, nested_doc)
     v = array.pop()
-    assert str(v["text"]) == 'text in subdoc'
+    assert str(v["text"]) == "text in subdoc"
     assert str(array) == "[]"
 
     nested_text = Text("abc")
