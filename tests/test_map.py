@@ -103,25 +103,19 @@ def test_api():
     nested_text = Text("abc")
     map0.update({"baz": nested_text})
     v = map0.pop("baz")
-    new_doc = Doc()
-    new_doc["v"] = v
-    assert str(v) == "abc"
+    assert v == "abc"
     assert str(map0) == "{}"
 
     nested_array = Array([1, 2, 3])
     map0.update({"baz": nested_array})
     v = map0.pop("baz")
-    new_doc = Doc()
-    new_doc["v"] = v
-    assert str(v) == "[1.0,2.0,3.0]"
+    assert v == [1.0, 2.0, 3.0]
     assert str(map0) == "{}"
 
     nested_map = Map({"x": "y"})
     map0.update({"baz": nested_map})
     v = map0.pop("baz")
-    new_doc = Doc()
-    new_doc["v"] = v
-    assert str(v) == '{"x":"y"}'
+    assert v == {"x": "y"}
     assert str(map0) == "{}"
 
 

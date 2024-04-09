@@ -109,7 +109,7 @@ class Map(BaseType):
                 return default_value[0]
             res = self[key]
             if isinstance(res, BaseType):
-                res = type(res)(res.to_py())
+                res = res.to_py()
             del self[key]
             return res
 

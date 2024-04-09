@@ -73,6 +73,8 @@ class Array(BaseType):
         with self.doc.transaction():
             index = self._check_index(index)
             res = self[index]
+            if isinstance(res, BaseType):
+                res = res.to_py()
             del self[index]
             return res
 
