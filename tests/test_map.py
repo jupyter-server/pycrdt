@@ -58,7 +58,7 @@ def test_api():
     assert len(key_list) == n
     assert len(value_list) == n
     # Yrs Map doesn't keep order
-    assert set([key for key in map0]) == set(keys)
+    assert {key for key in map0} == set(keys)
     assert set(key_list) == set(keys)
     assert set(value_list) == set(values)
     assert dict(map0.items()) == items
