@@ -13,8 +13,8 @@ if TYPE_CHECKING:  # pragma: no cover
     from ._doc import Doc
 
 
-base_types: dict[Any, Type[BaseType | BaseDoc]] = {}
-event_types: dict[Any, Type[BaseEvent]] = {}
+base_types: dict[Any, type[BaseType | BaseDoc]] = {}
+event_types: dict[Any, type[BaseEvent]] = {}
 
 
 class BaseDoc:
@@ -193,7 +193,7 @@ def process_event(value: Any, doc: Doc) -> Any:
         val_type = type(value)
         if val_type in base_types:
             if val_type is _Doc:
-                doc_type: Type[BaseDoc] = cast(Type[BaseDoc], base_types[val_type])
+                doc_type: type[BaseDoc] = cast(Type[BaseDoc], base_types[val_type])
                 value = doc_type(doc=value)
             else:
                 base_type = cast(Type[BaseType], base_types[val_type])

@@ -32,23 +32,21 @@ def test_api():
     a1 = doc.get("a1", type=Array)
     m1 = doc.get("m1", type=Map)
     t1 = doc.get("t1", type=Text)
-    assert set((key for key in doc)) == set(("a0", "m0", "t0", "a1", "m1", "t1"))
-    assert set([type(value) for value in doc.values()]) == set(
-        [type(value) for value in (a0, m0, t0, a1, m1, t1)]
-    )
-    assert set([(key, type(value)) for key, value in doc.items()]) == set(
-        [
-            (key, type(value))
-            for key, value in (
-                ("a0", a0),
-                ("m0", m0),
-                ("t0", t0),
-                ("a1", a1),
-                ("m1", m1),
-                ("t1", t1),
-            )
-        ]
-    )
+    assert {key for key in doc} == {"a0", "m0", "t0", "a1", "m1", "t1"}
+    assert {type(value) for value in doc.values()} == {
+        type(value) for value in (a0, m0, t0, a1, m1, t1)
+    }
+    assert {(key, type(value)) for key, value in doc.items()} == {
+        (key, type(value))
+        for key, value in (
+            ("a0", a0),
+            ("m0", m0),
+            ("t0", t0),
+            ("a1", a1),
+            ("m1", m1),
+            ("t1", t1),
+        )
+    }
 
 
 def test_subdoc():

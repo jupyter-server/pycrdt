@@ -75,7 +75,7 @@ class Doc(BaseDoc):
     def __iter__(self):
         return iter(self.keys())
 
-    def get(self, key: str, *, type: Type[T_BaseType]) -> T_BaseType:
+    def get(self, key: str, *, type: type[T_BaseType]) -> T_BaseType:
         value = type()
         self[key] = value
         return value
