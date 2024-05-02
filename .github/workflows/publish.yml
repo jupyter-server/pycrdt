@@ -25,7 +25,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: x86_64
-          args: --release --out dist --sdist -i 3.8 3.9 3.10 3.11 3.12 pypy3.8 pypy3.9
+          args: --release --out dist -i 3.8 3.9 3.10 3.11 3.12 pypy3.8 pypy3.9
       - name: Test built wheel - x86_64
         run: |
           pip install pycrdt --no-index --find-links dist --force-reinstall
