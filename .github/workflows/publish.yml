@@ -21,16 +21,6 @@ jobs:
           python-version: '3.11'
           architecture: x64
       - uses: dtolnay/rust-toolchain@stable
-      - name: Build wheels - x86_64
-        uses: PyO3/maturin-action@v1
-        with:
-          target: x86_64
-          args: --release --out dist -i 3.8 3.9 3.10 3.11 3.12 pypy3.8 pypy3.9
-      - name: Test built wheel - x86_64
-        run: |
-          pip install pycrdt --no-index --find-links dist --force-reinstall
-          pip install pytest "y-py>=0.7.0a1,<0.8" "pydantic>=2.5.2,<3" "objsize"
-          pytest
       - name: Build wheels - universal2
         uses: PyO3/maturin-action@v1
         with:
@@ -38,6 +28,7 @@ jobs:
       - name: Test built wheel - universal2
         run: |
           pip install pycrdt --no-index --find-links dist --force-reinstall
+          pip install pytest "y-py>=0.7.0a1,<0.8" "pydantic>=2.5.2,<3" "objsize"
           pytest
       - name: Upload wheels
         uses: actions/upload-artifact@v2
