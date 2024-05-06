@@ -116,12 +116,14 @@ impl Doc {
     pub fn observe(&mut self, py: Python<'_>, f: PyObject) -> PyResult<Py<Subscription>> {
         let sub = self.doc
             .observe_transaction_cleanup(move |txn, event| {
-                Python::with_gil(|py| {
-                    let event = TransactionEvent::new(event, txn);
-                    if let Err(err) = f.call1(py, (event,)) {
-                        err.restore(py)
-                    }
-                })
+                if event.before_state != event.after_state {
+                    Python::with_gil(|py| {
+                        let event = TransactionEvent::new(event, txn);
+                        if let Err(err) = f.call1(py, (event,)) {
+                            err.restore(py)
+                        }
+                    })
+                }
             })
             .unwrap();
         let s: Py<Subscription> = Py::new(py, Subscription::from(sub))?;
