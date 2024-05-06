@@ -179,3 +179,15 @@ def test_roots():
     # assert str(roots["a"]) == "foo"
     # assert list(roots["b"]) == [5, 2, 8]
     # assert dict(roots["c"]) == None  # {"k1": 1, "k2": 2}
+
+
+def test_empty_update():
+    doc = Doc()
+    doc["text"] = Text()
+    events = []
+    sub = doc.observe(partial(callback, events))  # noqa: F841
+
+    # this triggers an empty update
+    doc["text"]
+    # empty updates should not emit an event
+    assert not events
