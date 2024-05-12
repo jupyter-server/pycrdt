@@ -80,6 +80,12 @@ jobs:
         with:
           python-version: '3.11'
           architecture: x64
+      - name: Build sdist
+        if: ${{ matrix.target == 'x86_64' }}
+        uses: PyO3/maturin-action@v1
+        with:
+          command: sdist
+          args: --out dist
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
