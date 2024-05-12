@@ -116,7 +116,7 @@ impl Doc {
     pub fn observe(&mut self, py: Python<'_>, f: PyObject) -> PyResult<Py<Subscription>> {
         let sub = self.doc
             .observe_transaction_cleanup(move |txn, event| {
-                if event.before_state != event.after_state {
+                if !event.delete_set.is_empty() || event.before_state != event.after_state {
                     Python::with_gil(|py| {
                         let event = TransactionEvent::new(event, txn);
                         if let Err(err) = f.call1(py, (event,)) {
