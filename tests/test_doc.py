@@ -191,3 +191,15 @@ def test_empty_update():
     doc["text"]
     # empty updates should not emit an event
     assert not events
+
+
+def test_not_empty_update():
+    doc = Doc()
+    doc["text"] = text = Text()
+    events = []
+    sub = doc.observe(partial(callback, events))  # noqa: F841
+
+    text += "helloo"
+    events.clear()
+    del text[5]
+    assert events
