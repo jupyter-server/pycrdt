@@ -13,7 +13,7 @@ use crate::subscription::Subscription;
 use crate::type_conversions::ToPython;
 
 
-#[pyclass(unsendable)]
+#[pyclass]
 pub struct Text {
     text: TextRef,
 }
@@ -76,7 +76,7 @@ impl Text {
     }
 }
 
-#[pyclass(unsendable)]
+#[pyclass]
 pub struct TextEvent {
     event: *const _TextEvent,
     txn: *const TransactionMut<'static>,

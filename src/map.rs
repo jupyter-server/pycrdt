@@ -22,7 +22,7 @@ use crate::array::Array;
 use crate::doc::Doc;
 
 
-#[pyclass(unsendable)]
+#[pyclass]
 pub struct Map {
     map: MapRef,
 }
@@ -158,7 +158,7 @@ impl Map {
     }
 }
 
-#[pyclass(unsendable)]
+#[pyclass]
 pub struct MapEvent {
     event: *const _MapEvent,
     txn: *const TransactionMut<'static>,

@@ -20,7 +20,7 @@ use crate::subscription::Subscription;
 use crate::type_conversions::ToPython;
 
 
-#[pyclass(unsendable)]
+#[pyclass]
 #[derive(Clone)]
 pub struct Doc {
     pub doc: _Doc,
@@ -146,7 +146,7 @@ impl Doc {
     }
 }
 
-#[pyclass(unsendable)]
+#[pyclass]
 pub struct TransactionEvent {
     event: *const TransactionCleanupEvent,
     txn: *const TransactionMut<'static>,
@@ -244,7 +244,7 @@ impl TransactionEvent {
     }
 }
 
-#[pyclass(unsendable)]
+#[pyclass]
 pub struct SubdocsEvent {
     added: PyObject,
     removed: PyObject,

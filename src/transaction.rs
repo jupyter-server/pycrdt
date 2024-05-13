@@ -27,7 +27,7 @@ impl<'a, T> AsMut<T> for Cell<'a, T> {
     }
 }
 
-#[pyclass(unsendable)]
+#[pyclass]
 pub struct Transaction(RefCell<Option<Cell<'static, TransactionMut<'static>>>>);
 
 impl<'doc> From<TransactionMut<'doc>> for Transaction {

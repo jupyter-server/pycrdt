@@ -2,7 +2,7 @@ use pyo3::prelude::*;
 use std::cell::RefCell;
 use yrs::Subscription as _Subscription;
 
-#[pyclass(unsendable)]
+#[pyclass]
 pub struct Subscription(RefCell<Option<_Subscription>>);
 
 impl From<_Subscription> for Subscription {
