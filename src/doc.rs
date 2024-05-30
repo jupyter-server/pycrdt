@@ -1,4 +1,5 @@
 use pyo3::prelude::*;
+use pyo3::exceptions::PyValueError;
 use pyo3::types::{PyBytes, PyDict, PyLong, PyList};
 use yrs::{
     Doc as _Doc,
@@ -87,7 +88,8 @@ impl Doc {
     fn get_update(&mut self, state: &PyBytes) -> PyResult<PyObject> {
         let txn = self.doc.transact_mut();
         let state: &[u8] = FromPyObject::extract(state)?;
-        let update = txn.encode_diff_v1(&StateVector::decode_v1(&state).unwrap());
+        let Ok(state_vector) = StateVector::decode_v1(&state) else { return Err(PyValueError::new_err("Cannot decode state")) };
+        let update = txn.encode_diff_v1(&state_vector);
         drop(txn);
         let bytes: PyObject = Python::with_gil(|py| PyBytes::new(py, &update).into());
         Ok(bytes)
