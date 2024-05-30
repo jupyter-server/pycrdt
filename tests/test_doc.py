@@ -203,3 +203,10 @@ def test_not_empty_update():
     events.clear()
     del text[5]
     assert events
+
+
+def test_get_update_exception():
+    doc = Doc()
+    with pytest.raises(ValueError) as excinfo:
+        doc.get_update(b"\x12")
+    assert str(excinfo.value) == "Cannot decode state"
