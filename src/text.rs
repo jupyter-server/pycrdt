@@ -15,7 +15,7 @@ use crate::type_conversions::ToPython;
 
 #[pyclass(unsendable)]
 pub struct Text {
-    text: TextRef,
+    pub text: TextRef,
 }
 
 impl Text {

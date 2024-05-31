@@ -172,3 +172,21 @@ class Map:
     def unobserve(self, subscription: Subscription) -> None:
         """Unsubscribes previously subscribed event callback identified by given
         `subscription`."""
+
+class UndoManager:
+    """Undo manager."""
+
+    def can_undo(self) -> bool:
+        """Whether there is any change to undo."""
+
+    def undo(self) -> bool:
+        """Undo last action tracked by current undo manager."""
+
+    def can_redo(self) -> bool:
+        """Whether there is any change to redo."""
+
+    def redo(self) -> bool:
+        """Redo last action previously undone by current undo manager."""
+
+    def clear(self) -> None:
+        """Clear all items stored within current undo manager."""
