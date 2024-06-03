@@ -9,3 +9,4 @@ from ._text import Text as Text
 from ._text import TextEvent as TextEvent
 from ._transaction import ReadTransaction as ReadTransaction
 from ._transaction import Transaction as Transaction
+from ._undo import UndoManager as UndoManager

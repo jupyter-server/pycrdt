@@ -24,7 +24,7 @@ use crate::doc::Doc;
 
 #[pyclass(unsendable)]
 pub struct Array {
-    array: ArrayRef,
+    pub array: ArrayRef,
 }
 
 impl Array {

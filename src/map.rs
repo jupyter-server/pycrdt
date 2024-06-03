@@ -24,7 +24,7 @@ use crate::doc::Doc;
 
 #[pyclass(unsendable)]
 pub struct Map {
-    map: MapRef,
+    pub map: MapRef,
 }
 
 impl Map {
