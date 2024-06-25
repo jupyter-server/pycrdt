@@ -10,6 +10,10 @@ class UndoManager:
         method = getattr(undo_manager, f"from_{scope.type_name}")
         self._undo_manager = method(scope.doc._doc, scope._integrated, capture_timeout_millis)
 
+    def expand_scope(self, scope: BaseType) -> None:
+        method = getattr(self._undo_manager, f"expand_scope_{scope.type_name}")
+        method(scope._integrated)
+
     def can_undo(self) -> bool:
         return self._undo_manager.can_undo()
 

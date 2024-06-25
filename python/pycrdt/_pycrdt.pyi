@@ -176,6 +176,9 @@ class Map:
 class UndoManager:
     """Undo manager."""
 
+    def expand_scope(self, scope: Text | Array | Map) -> None:
+        """Extends a list of shared types tracked by current undo manager by a given scope."""
+
     def can_undo(self) -> bool:
         """Whether there is any change to undo."""
 
