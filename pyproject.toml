@@ -33,6 +33,8 @@ classifiers = [
 test = [
     "pytest >=7.4.2,<8",
     "y-py >=0.7.0a1,<0.8",
+    "anyio >=4.4.0,<5",
+    "trio >=0.25.1,<0.26",
     "pydantic >=2.5.2,<3",
     "mypy",
     "coverage[toml] >=7",
