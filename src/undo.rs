@@ -48,6 +48,18 @@ impl UndoManager {
         UndoManager { undo_manager: Some(undo_manager) }
     }
 
+    pub fn expand_scope_text(&mut self, scope: &Text) {
+        self.undo_manager.as_mut().unwrap().expand_scope(&scope.text);
+    }
+
+    pub fn expand_scope_array(&mut self, scope: &Array) {
+        self.undo_manager.as_mut().unwrap().expand_scope(&scope.array);
+    }
+
+    pub fn expand_scope_map(&mut self, scope: &Map) {
+        self.undo_manager.as_mut().unwrap().expand_scope(&scope.map);
+    }
+
     pub fn can_undo(&mut self)  -> bool {
         self.undo_manager.as_ref().unwrap().can_undo()
     }

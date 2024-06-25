@@ -72,3 +72,37 @@ def test_map_undo():
     data.update(val2)
     assert data.to_py() == val3
     undo_redo(data, undo_manager, val0, val1, val3)
+
+
+def test_scopes():
+    doc = Doc()
+    doc["text"] = text = Text()
+    doc["array"] = array = Array()
+    doc["map"] = map = Map()
+    undo_manager = UndoManager(text, capture_timeout_millis=0)
+
+    text += "Hello"
+    text += ", World!"
+    assert str(text) == "Hello, World!"
+    undo_manager.undo()
+    assert str(text) == "Hello"
+
+    array.append(0)
+    assert array.to_py() == [0]
+    undo_manager.undo()
+    assert array.to_py() == [0]
+    undo_manager.expand_scope(array)
+    array.append(1)
+    assert array.to_py() == [0, 1]
+    undo_manager.undo()
+    assert array.to_py() == [0]
+
+    map["key0"] = "val0"
+    assert map.to_py() == {"key0": "val0"}
+    undo_manager.undo()
+    assert map.to_py() == {"key0": "val0"}
+    undo_manager.expand_scope(map)
+    map["key1"] = "val1"
+    assert map.to_py() == {"key0": "val0", "key1": "val1"}
+    undo_manager.undo()
+    assert map.to_py() == {"key0": "val0"}
