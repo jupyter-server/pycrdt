@@ -43,8 +43,7 @@ class Text(BaseType):
         return item in str(self)
 
     def __len__(self) -> int:
-        with self.doc.transaction() as txn:
-            return self.integrated.len(txn._txn)
+        return len(self.__str__())
 
     def __str__(self) -> str:
         with self.doc.transaction() as txn:
