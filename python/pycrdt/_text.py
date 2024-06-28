@@ -60,6 +60,9 @@ class Text(BaseType):
             self.integrated.insert(txn._txn, len(self), value)
             return self
 
+    def _integrated_len(self, index: int = None):
+        return len(str(self)[:index].encode(encoding="utf-8"))
+
     def _check_slice(self, key: slice) -> tuple[int, int]:
         if key.step is not None:
             raise RuntimeError("Step not supported")
@@ -68,13 +71,13 @@ class Text(BaseType):
         elif key.start < 0:
             raise RuntimeError("Negative start not supported")
         else:
-            start = key.start
+            start = self._integrated_len(key.start)
         if key.stop is None:
-            stop = len(self)
+            stop = self._integrated_len()
         elif key.stop < 0:
             raise RuntimeError("Negative stop not supported")
         else:
-            stop = key.stop
+            stop = self._integrated_len(key.stop)
         return start, stop
 
     def __delitem__(self, key: int | slice) -> None:
