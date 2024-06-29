@@ -60,7 +60,7 @@ class Text(BaseType):
             self.integrated.insert(txn._txn, len(self), value)
             return self
 
-    def _integrated_len(self, index: int = None):
+    def _integrated_len(self, index: int | None = None):
         return len(str(self)[:index].encode(encoding="utf-8"))
 
     def _check_slice(self, key: slice) -> tuple[int, int]:
