@@ -176,6 +176,9 @@ class Map:
 class UndoManager:
     """Undo manager."""
 
+    def __init__(self, doc: Doc, capture_timeout_millis: int = 500) -> None:
+        """Creates an undo manager."""
+
     def expand_scope(self, scope: Text | Array | Map) -> None:
         """Extends a list of shared types tracked by current undo manager by a given scope."""
 

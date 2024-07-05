@@ -1,14 +1,31 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from ._base import BaseType
 from ._pycrdt import UndoManager as _UndoManager
 
+if TYPE_CHECKING:  # pragma: no cover
+    from ._doc import Doc
+
 
 class UndoManager:
-    def __init__(self, scope: BaseType, capture_timeout_millis: int = 500) -> None:
-        undo_manager = _UndoManager()
-        method = getattr(undo_manager, f"from_{scope.type_name}")
-        self._undo_manager = method(scope.doc._doc, scope._integrated, capture_timeout_millis)
+    def __init__(
+        self,
+        *,
+        doc: Doc | None = None,
+        scopes: list[BaseType] = [],
+        capture_timeout_millis: int = 500,
+    ) -> None:
+        if doc is None:
+            if not scopes:
+                raise RuntimeError("UndoManager must be created with doc or scopes")
+            doc = scopes[0].doc
+        elif scopes:
+            raise RuntimeError("UndoManager must be created with doc or scopes")
+        self._undo_manager = _UndoManager(doc._doc, capture_timeout_millis)
+        for scope in scopes:
+            self.expand_scope(scope)
 
     def expand_scope(self, scope: BaseType) -> None:
         method = getattr(self._undo_manager, f"expand_scope_{scope.type_name}")

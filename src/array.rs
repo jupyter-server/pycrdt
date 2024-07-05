@@ -66,7 +66,7 @@ impl Array {
     fn insert_array_prelim(&self, txn: &mut Transaction, index: u32) -> PyResult<PyObject> {
         let mut _t = txn.transaction();
         let mut t = _t.as_mut().unwrap().as_mut();
-        let integrated = self.array.insert(&mut t, index, ArrayPrelim::<_, Any>::from([]));
+        let integrated = self.array.insert(&mut t, index, ArrayPrelim::default());
         let shared = Array::from(integrated);
         Python::with_gil(|py| { Ok(shared.into_py(py)) })
     }
@@ -74,7 +74,7 @@ impl Array {
     fn insert_map_prelim(&self, txn: &mut Transaction, index: u32) -> PyResult<PyObject> {
         let mut _t = txn.transaction();
         let mut t = _t.as_mut().unwrap().as_mut();
-        let integrated = self.array.insert(&mut t, index, MapPrelim::<Any>::new());
+        let integrated = self.array.insert(&mut t, index, MapPrelim::default());
         let shared = Map::from(integrated);
         Python::with_gil(|py| { Ok(shared.into_py(py)) })
     }
