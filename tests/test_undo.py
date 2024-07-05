@@ -1,3 +1,4 @@
+import pytest
 from pycrdt import Array, Doc, Map, Text, UndoManager
 
 
@@ -32,7 +33,7 @@ def undo_redo(data, undo_manager, val0, val1, val3):
 def test_text_undo():
     doc = Doc()
     doc["data"] = data = Text()
-    undo_manager = UndoManager(data, capture_timeout_millis=0)
+    undo_manager = UndoManager(scopes=[data], capture_timeout_millis=0)
     val0 = ""
     val1 = "Hello"
     val2 = ", World!"
@@ -47,7 +48,7 @@ def test_text_undo():
 def test_array_undo():
     doc = Doc()
     doc["data"] = data = Array()
-    undo_manager = UndoManager(data, capture_timeout_millis=0)
+    undo_manager = UndoManager(scopes=[data], capture_timeout_millis=0)
     val0 = []
     val1 = ["foo"]
     val2 = ["bar"]
@@ -62,7 +63,7 @@ def test_array_undo():
 def test_map_undo():
     doc = Doc()
     doc["data"] = data = Map()
-    undo_manager = UndoManager(data, capture_timeout_millis=0)
+    undo_manager = UndoManager(scopes=[data], capture_timeout_millis=0)
     val0 = {}
     val1 = {"key0": "val0"}
     val2 = {"key1": "val1"}
@@ -79,7 +80,7 @@ def test_scopes():
     doc["text"] = text = Text()
     doc["array"] = array = Array()
     doc["map"] = map = Map()
-    undo_manager = UndoManager(text, capture_timeout_millis=0)
+    undo_manager = UndoManager(scopes=[text], capture_timeout_millis=0)
 
     text += "Hello"
     text += ", World!"
@@ -106,3 +107,15 @@ def test_scopes():
     assert map.to_py() == {"key0": "val0", "key1": "val1"}
     undo_manager.undo()
     assert map.to_py() == {"key0": "val0"}
+
+
+def test_wrong_creation():
+    with pytest.raises(RuntimeError) as excinfo:
+        UndoManager()
+    assert str(excinfo.value) == "UndoManager must be created with doc or scopes"
+
+    doc = Doc()
+    doc["text"] = text = Text()
+    with pytest.raises(RuntimeError) as excinfo:
+        UndoManager(doc=doc, scopes=[text])
+    assert str(excinfo.value) == "UndoManager must be created with doc or scopes"

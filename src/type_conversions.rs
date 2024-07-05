@@ -1,7 +1,7 @@
 use pyo3::prelude::*;
 use pyo3::types::{IntoPyDict, PyAny, PyBool, PyByteArray, PyDict, PyFloat, PyList, PyLong, PyString, PyBytes};
-use yrs::types::{Attrs, Change, EntryChange, Delta, Events, Path, PathSegment, Value};
-use yrs::{Any, TransactionMut};
+use yrs::types::{Attrs, Change, EntryChange, Delta, Events, Path, PathSegment};
+use yrs::{Any, Out, TransactionMut};
 use std::ops::Deref;
 use std::collections::{VecDeque, HashMap};
 use crate::text::{Text, TextEvent};
@@ -89,17 +89,17 @@ impl ToPython for Delta {
     }
 }
 
-impl ToPython for Value {
+impl ToPython for Out{
     fn into_py(self, py: Python) -> pyo3::PyObject {
         match self {
-            Value::Any(v) => v.into_py(py),
-            Value::YText(v) => Text::from(v).into_py(py),
-            Value::YArray(v) => Array::from(v).into_py(py),
-            Value::YMap(v) => Map::from(v).into_py(py),
-            Value::YDoc(v) => Doc::from(v).into_py(py),
+            Out::Any(v) => v.into_py(py),
+            Out::YText(v) => Text::from(v).into_py(py),
+            Out::YArray(v) => Array::from(v).into_py(py),
+            Out::YMap(v) => Map::from(v).into_py(py),
+            Out::YDoc(v) => Doc::from(v).into_py(py),
             _ => pyo3::IntoPy::into_py(py.None(), py),
-            //Value::YXmlElement(v) => YXmlElement::from(v).into_py(py),
-            //Value::YXmlText(v) => YXmlText::from(v).into_py(py),
+            //Out::YXmlElement(v) => YXmlElement::from(v).into_py(py),
+            //Out::YXmlText(v) => YXmlText::from(v).into_py(py),
         }
     }
 }
@@ -109,7 +109,7 @@ fn attrs_into_py(attrs: &Attrs) -> PyObject {
         let o = PyDict::new(py);
         for (key, value) in attrs.iter() {
             let key = key.as_ref();
-            let value = Value::Any(value.clone()).into_py(py);
+            let value = Out::Any(value.clone()).into_py(py);
             o.set_item(key, value).unwrap();
         }
         o.into()
