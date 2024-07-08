@@ -55,7 +55,7 @@ impl Text {
         let t1 = t0.as_mut().unwrap();
         let t = t1.as_ref();
         let s = self.text.get_string(t);
-        Python::with_gil(|py| PyString::new(py, &s).into())
+        Python::with_gil(|py| PyString::new_bound(py, &s).into())
     }
 
     fn observe(&mut self, py: Python<'_>, f: PyObject) -> PyResult<Py<Subscription>> {
@@ -159,7 +159,7 @@ impl TextEvent {
                         .delta(self.txn())
                         .into_iter()
                         .map(|d| d.clone().into_py(py));
-                PyList::new(py, delta).into()
+                PyList::new_bound(py, delta).into()
             });
             self.delta = Some(delta.clone());
             delta

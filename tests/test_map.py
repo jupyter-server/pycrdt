@@ -24,7 +24,7 @@ def test_str():
     array1 = Array([0, 1, map2])
     map0 = Map({"key1": array1})
     doc["map"] = map0
-    assert str(map0) == '{"key1":[0.0,1.0,{"key2":"val2"}]}'
+    assert str(map0) == '{"key1":[0,1,{"key2":"val2"}]}'
 
 
 def test_nested():
@@ -87,7 +87,7 @@ def test_api():
     doc["map0"] = map0
     v = map0.pop("foo")
     assert v == 1
-    assert str(map0) == '{"bar":2.0}'
+    assert str(map0) == '{"bar":2}'
     v = map0.pop("bar")
     assert v == 2
     assert str(map0) == "{}"
@@ -146,7 +146,7 @@ def test_observe():
     map0["0"] = 0
     assert (
         str(events[0])
-        == """{target: {"0":0.0}, keys: {'0': {'action': 'add', 'newValue': 0.0}}, path: []}"""
+        == """{target: {"0":0}, keys: {'0': {'action': 'add', 'newValue': 0.0}}, path: []}"""
     )
     events.clear()
     map0.unobserve(sub)
@@ -158,7 +158,7 @@ def test_observe():
     map1["1"] = 1
     assert (
         str(deep_events[0][0])
-        == """{target: {"1":1.0}, keys: {'1': {'action': 'add', 'newValue': 1.0}}, path: []}"""
+        == """{target: {"1":1}, keys: {'1': {'action': 'add', 'newValue': 1.0}}, path: []}"""
     )
     deep_events.clear()
     map1.unobserve(sub)
