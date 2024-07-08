@@ -8,6 +8,7 @@ use crate::text::{Text, TextEvent};
 use crate::array::{Array, ArrayEvent};
 use crate::map::{Map, MapEvent};
 use crate::doc::Doc;
+use crate::undo::StackItem;
 
 pub trait ToPython {
     fn into_py(self, py: Python) -> PyObject;
@@ -26,6 +27,13 @@ impl<T: ToPython> ToPython for VecDeque<T> {
         let elements = self.into_iter().map(|v| v.into_py(py));
         let arr: PyObject = PyList::new_bound(py, elements).into();
         return arr;
+    }
+}
+
+impl ToPyObject for StackItem {
+    fn to_object(&self, py: Python) -> PyObject {
+        let obj: PyObject = Py::new(py, self.clone()).unwrap().into_py(py);
+        obj
     }
 }
 

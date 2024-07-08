@@ -3,7 +3,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from ._base import BaseType
-from ._pycrdt import UndoManager as _UndoManager
+from ._pycrdt import (
+    StackItem,
+)
+from ._pycrdt import (
+    UndoManager as _UndoManager,
+)
 
 if TYPE_CHECKING:  # pragma: no cover
     from ._doc import Doc
@@ -45,3 +50,11 @@ class UndoManager:
 
     def clear(self) -> None:
         self._undo_manager.clear()
+
+    @property
+    def undo_stack(self) -> list[StackItem]:
+        return self._undo_manager.undo_stack()
+
+    @property
+    def redo_stack(self) -> list[StackItem]:
+        return self._undo_manager.redo_stack()

@@ -196,3 +196,15 @@ class UndoManager:
 
     def clear(self) -> None:
         """Clear all items stored within current undo manager."""
+
+    def undo_stack(self) -> list[StackItem]:
+        """Returns the undo manager's undo stack."""
+
+    def redo_stack(self) -> list[StackItem]:
+        """Returns the undo manager's redo stack."""
+
+class StackItem:
+    """A unit of work for the undo manager, consisting of
+    compressed information about all updates and
+    deletions tracked by it.
+    """
