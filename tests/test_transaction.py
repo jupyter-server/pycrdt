@@ -33,8 +33,8 @@ def test_callback_transaction():
     assert events == [
         "hello world",
         "hello world",
-        [1.0],
-        "[1.0]",
+        [1],
+        "[1]",
         {"foo": "bar"},
         '{"foo":"bar"}',
     ]

@@ -18,7 +18,7 @@ use crate::subscription::Subscription;
 use crate::undo::UndoManager;
 
 #[pymodule]
-fn _pycrdt(_py: Python, m: &PyModule) -> PyResult<()> {
+fn _pycrdt(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Doc>()?;
     m.add_class::<TransactionEvent>()?;
     m.add_class::<SubdocsEvent>()?;

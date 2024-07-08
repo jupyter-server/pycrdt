@@ -16,7 +16,7 @@ pub trait ToPython {
 impl<T: ToPython> ToPython for Vec<T> {
     fn into_py(self, py: Python) -> PyObject {
         let elements = self.into_iter().map(|v| v.into_py(py));
-        let arr: PyObject = PyList::new(py, elements).into();
+        let arr: PyObject = PyList::new_bound(py, elements).into();
         return arr;
     }
 }
@@ -24,7 +24,7 @@ impl<T: ToPython> ToPython for Vec<T> {
 impl<T: ToPython> ToPython for VecDeque<T> {
     fn into_py(self, py: Python) -> PyObject {
         let elements = self.into_iter().map(|v| v.into_py(py));
-        let arr: PyObject = PyList::new(py, elements).into();
+        let arr: PyObject = PyList::new_bound(py, elements).into();
         return arr;
     }
 }
@@ -35,7 +35,7 @@ impl<T: ToPython> ToPython for VecDeque<T> {
 //    V: ToPython,
 //{
 //    fn into_py(self, py: Python) -> PyObject {
-//        let py_dict = PyDict::new(py);
+//        let py_dict = PyDict::new_bound(py);
 //        for (k, v) in self.into_iter() {
 //            py_dict.set_item(k, v.into_py(py)).unwrap();
 //        }
@@ -45,7 +45,7 @@ impl<T: ToPython> ToPython for VecDeque<T> {
 
 impl ToPython for Path {
     fn into_py(self, py: Python) -> PyObject {
-        let result = PyList::empty(py);
+        let result = PyList::empty_bound(py);
         for segment in self {
             match segment {
                 PathSegment::Key(key) => {
@@ -62,7 +62,7 @@ impl ToPython for Path {
 
 impl ToPython for Delta {
     fn into_py(self, py: Python) -> PyObject {
-        let result = PyDict::new(py);
+        let result = PyDict::new_bound(py);
         match self {
             Delta::Inserted(value, attrs) => {
                 let value = value.clone().into_py(py);
@@ -106,7 +106,7 @@ impl ToPython for Out{
 
 fn attrs_into_py(attrs: &Attrs) -> PyObject {
     Python::with_gil(|py| {
-        let o = PyDict::new(py);
+        let o = PyDict::new_bound(py);
         for (key, value) in attrs.iter() {
             let key = key.as_ref();
             let value = Out::Any(value.clone()).into_py(py);
@@ -118,7 +118,7 @@ fn attrs_into_py(attrs: &Attrs) -> PyObject {
 
 impl ToPython for &Change {
     fn into_py(self, py: Python) -> PyObject {
-        let result = PyDict::new(py);
+        let result = PyDict::new_bound(py);
         match self {
             Change::Added(values) => {
                 let values: Vec<PyObject> =
@@ -141,7 +141,7 @@ pub struct EntryChangeWrapper<'a>(pub &'a EntryChange);
 
 impl<'a> IntoPy<PyObject> for EntryChangeWrapper<'a> {
     fn into_py(self, py: Python) -> PyObject {
-        let result = PyDict::new(py);
+        let result = PyDict::new_bound(py);
         let action = "action";
         match self.0 {
             EntryChange::Inserted(new) => {
@@ -175,7 +175,7 @@ impl ToPython for Any {
             Any::BigInt(v) => v.into_py(py),
             Any::String(v) => v.into_py(py),
             Any::Buffer(v) => {
-                let byte_array = PyByteArray::new(py, v.as_ref());
+                let byte_array = PyByteArray::new_bound(py, v.as_ref());
                 byte_array.into()
             }
             Any::Array(v) => {
@@ -192,13 +192,13 @@ impl ToPython for Any {
                     let value = v.to_owned();
                     a.push((k, value.into_py(py)));
                 }
-                a.into_py_dict(py).into()
+                a.into_py_dict_bound(py).into()
             }
         }
     }
 }
 
-pub fn py_to_any(value: &PyAny) -> Any {
+pub fn py_to_any(value: &Bound<'_, PyAny>) -> Any {
     if value.is_none() {
         Any::Null
     } else if value.is_instance_of::<PyBytes>() {
@@ -221,20 +221,18 @@ pub fn py_to_any(value: &PyAny) -> Any {
     } else if value.is_instance_of::<PyFloat>() {
         let v: f64 = value.extract().unwrap();
         Any::Number(v)
-    } else if value.is_instance_of::<PyList>() {
-        let v: Vec<&_> = value.extract().unwrap();
+    } else if let Ok(v) = value.downcast::<PyList>() {
         let mut items = Vec::new();
         for i in v.iter() {
-            let a = py_to_any(i);
+            let a = py_to_any(&i);
             items.push(a);
         }
         Any::Array(items.into())
-    } else if value.is_instance_of::<PyDict>() {
-        let val = value.downcast::<PyDict>().unwrap();
+    } else if let Ok(val) = value.downcast::<PyDict>() {
         let mut items: HashMap<String, Any> = HashMap::new();
         for (k, v) in val.iter() {
             let k = k.downcast::<PyString>().unwrap().to_str().unwrap().to_string();
-            let v = py_to_any(v);
+            let v = py_to_any(&v);
             items.insert(k, v);
         }
         Any::Map(items.into())
@@ -253,6 +251,6 @@ pub(crate) fn events_into_py(txn: &TransactionMut, events: &Events) -> PyObject 
             //yrs::types::Event::XmlText(e_xml) => YXmlTextEvent::new(e_xml, txn).into_py(py),
             _ => py.None(),
         });
-        PyList::new(py, py_events).into()
+        PyList::new_bound(py, py_events).into()
     })
 }

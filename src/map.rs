@@ -43,7 +43,7 @@ impl Map {
         Ok(len)
     }
 
-    fn insert(&self, txn: &mut Transaction, key: &str, value: &PyAny) -> PyResult<()> {
+    fn insert(&self, txn: &mut Transaction, key: &str, value: &Bound<'_, PyAny>) -> PyResult<()> {
         let mut _t = txn.transaction();
         let mut t = _t.as_mut().unwrap().as_mut();
         match py_to_any(value) {
@@ -79,7 +79,7 @@ impl Map {
         Python::with_gil(|py| { Ok(shared.into_py(py)) })
     }
 
-    fn insert_doc(&self, txn: &mut Transaction, key: &str, doc: &PyAny) -> PyResult<()> {
+    fn insert_doc(&self, txn: &mut Transaction, key: &str, doc: &Bound<'_, PyAny>) -> PyResult<()> {
         let mut _t = txn.transaction();
         let mut t = _t.as_mut().unwrap().as_mut();
         let d1: Doc = doc.extract().unwrap();
@@ -117,7 +117,7 @@ impl Map {
         for k in it {
             v.push(k.into());
         }
-        Python::with_gil(|py| { PyList::new(py, v).into() })
+        Python::with_gil(|py| { PyList::new_bound(py, v).into() })
     }
 
     fn to_json(&mut self, txn: &mut Transaction) -> PyObject {
@@ -126,7 +126,7 @@ impl Map {
         let t = t1.as_ref();
         let mut s = String::new();
         self.map.to_json(t).to_json(&mut s);
-        Python::with_gil(|py| PyString::new(py, s.as_str()).into())
+        Python::with_gil(|py| PyString::new_bound(py, s.as_str()).into())
     }
 
     pub fn observe(&mut self, py: Python<'_>, f: PyObject) -> PyResult<Py<Subscription>> {
@@ -237,7 +237,7 @@ impl MapEvent {
         } else {
             let keys: PyObject = Python::with_gil(|py| {
                 let keys = self.event().keys(self.txn());
-                let result = PyDict::new(py);
+                let result = PyDict::new_bound(py);
                 for (key, value) in keys.iter() {
                     let key = &**key;
                     let value = EntryChangeWrapper(value);

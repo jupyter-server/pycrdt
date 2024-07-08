@@ -43,7 +43,7 @@ impl Array {
         Ok(len)
     }
 
-    fn insert(&self, txn: &mut Transaction, index: u32, value: &PyAny) -> PyResult<()> {
+    fn insert(&self, txn: &mut Transaction, index: u32, value: &Bound<'_, PyAny>) -> PyResult<()> {
         let mut _t = txn.transaction();
         let mut t = _t.as_mut().unwrap().as_mut();
         match py_to_any(value) {
@@ -79,7 +79,7 @@ impl Array {
         Python::with_gil(|py| { Ok(shared.into_py(py)) })
     }
 
-    fn insert_doc(&self, txn: &mut Transaction, index: u32, doc: &PyAny) -> PyResult<()> {
+    fn insert_doc(&self, txn: &mut Transaction, index: u32, doc: &Bound<'_, PyAny>) -> PyResult<()> {
         let mut _t = txn.transaction();
         let mut t = _t.as_mut().unwrap().as_mut();
         let d1: Doc = doc.extract().unwrap();
@@ -121,7 +121,7 @@ impl Array {
         let t = t1.as_ref();
         let mut s = String::new();
         self.array.to_json(t).to_json(&mut s);
-        Python::with_gil(|py| PyString::new(py, s.as_str()).into())
+        Python::with_gil(|py| PyString::new_bound(py, s.as_str()).into())
     }
 
     pub fn observe(&mut self, py: Python<'_>, f: PyObject) -> PyResult<Py<Subscription>> {
@@ -234,7 +234,7 @@ impl ArrayEvent {
                 let delta = self.event().delta(self.txn()).iter().map(|change| {
                     Python::with_gil(|py| change.clone().into_py(py))
                 });
-                PyList::new(py, delta).into()
+                PyList::new_bound(py, delta).into()
             });
             self.delta = Some(delta.clone());
             delta
