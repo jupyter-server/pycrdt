@@ -120,7 +120,7 @@ impl Doc {
             .observe_transaction_cleanup(move |txn, event| {
                 if !event.delete_set.is_empty() || event.before_state != event.after_state {
                     Python::with_gil(|py| {
-                        let event = TransactionEvent::new(event, txn);
+                        let event = TransactionEvent::new(py, event, txn);
                         if let Err(err) = f.call1(py, (event,)) {
                             err.restore(py)
                         }
@@ -160,7 +160,7 @@ pub struct TransactionEvent {
 }
 
 impl TransactionEvent {
-    fn new(event: &TransactionCleanupEvent, txn: &TransactionMut) -> Self {
+    fn new(py: Python<'_>, event: &TransactionCleanupEvent, txn: &TransactionMut) -> Self {
         let event = event as *const TransactionCleanupEvent;
         let txn = unsafe { std::mem::transmute::<&TransactionMut, &TransactionMut<'static>>(txn) };
         let mut transaction_event = TransactionEvent {
@@ -172,7 +172,7 @@ impl TransactionEvent {
             update: None,
             transaction: None,
         };
-        transaction_event.update();
+        transaction_event.update(py);
         transaction_event
     }
 
@@ -187,61 +187,66 @@ impl TransactionEvent {
 #[pymethods]
 impl TransactionEvent {
     #[getter]
-    pub fn transaction(&mut self) -> PyObject {
-        if let Some(transaction) = self.transaction.as_ref() {
-            transaction.clone()
+    pub fn transaction(&mut self, py: Python<'_>) -> PyObject {
+        if let Some(transaction) = &self.transaction {
+            transaction.clone_ref(py)
         } else {
-            let transaction: PyObject = Python::with_gil(|py| Transaction::from(self.txn()).into_py(py));
-            self.transaction = Some(transaction.clone());
-            transaction
+            let transaction: PyObject = Transaction::from(self.txn()).into_py(py);
+            let res = transaction.clone_ref(py);
+            self.transaction = Some(transaction);
+            res
         }
     }
 
     #[getter]
-    pub fn before_state(&mut self) -> PyObject {
+    pub fn before_state(&mut self, py: Python<'_>) -> PyObject {
         if let Some(before_state) = &self.before_state {
-            before_state.clone()
+            before_state.clone_ref(py)
         } else {
             let before_state = self.event().before_state.encode_v1();
-            let before_state: PyObject = Python::with_gil(|py| PyBytes::new_bound(py, &before_state).into());
-            self.before_state = Some(before_state.clone());
-            before_state
+            let before_state: PyObject = PyBytes::new_bound(py, &before_state).into();
+            let res = before_state.clone_ref(py);
+            self.before_state = Some(before_state);
+            res
         }
     }
 
     #[getter]
-    pub fn after_state(&mut self) -> PyObject {
+    pub fn after_state(&mut self, py: Python<'_>) -> PyObject {
         if let Some(after_state) = &self.after_state {
-            after_state.clone()
+            after_state.clone_ref(py)
         } else {
             let after_state = self.event().after_state.encode_v1();
-            let after_state: PyObject = Python::with_gil(|py| PyBytes::new_bound(py, &after_state).into());
-            self.after_state = Some(after_state.clone());
-            after_state
+            let after_state: PyObject = PyBytes::new_bound(py, &after_state).into();
+            let res = after_state.clone_ref(py);
+            self.after_state = Some(after_state);
+            res
         }
     }
 
     #[getter]
-    pub fn delete_set(&mut self) -> PyObject {
+    pub fn delete_set(&mut self, py: Python<'_>) -> PyObject {
         if let Some(delete_set) = &self.delete_set {
-            delete_set.clone()
+            delete_set.clone_ref(py)
         } else {
             let delete_set = self.event().delete_set.encode_v1();
-            let delete_set: PyObject = Python::with_gil(|py| PyBytes::new_bound(py, &delete_set).into());
-            self.delete_set = Some(delete_set.clone());
-            delete_set
+            let delete_set: PyObject = PyBytes::new_bound(py, &delete_set).into();
+            let res = delete_set.clone_ref(py);
+            self.delete_set = Some(delete_set);
+            res
         }
     }
 
     #[getter]
-    pub fn update(&mut self) -> PyObject {
+    pub fn update(&mut self, py: Python<'_>) -> PyObject {
         if let Some(update) = &self.update {
-            update.clone()
+            update.clone_ref(py)
         } else {
             let update = self.txn().encode_update_v1();
-            let update: PyObject = Python::with_gil(|py| PyBytes::new_bound(py, &update).into());
-            self.update = Some(update.clone());
-            update
+            let update: PyObject = PyBytes::new_bound(py, &update).into();
+            let res = update.clone_ref(py);
+            self.update = Some(update);
+            res
         }
     }
 }
@@ -272,17 +277,17 @@ impl SubdocsEvent {
 #[pymethods]
 impl SubdocsEvent {
     #[getter]
-    pub fn added(&mut self) -> PyObject {
-        self.added.clone()
+    pub fn added(&mut self, py: Python<'_>) -> PyObject {
+        self.added.clone_ref(py)
     }
 
     #[getter]
-    pub fn removed(&mut self) -> PyObject {
-        self.removed.clone()
+    pub fn removed(&mut self, py: Python<'_>) -> PyObject {
+        self.removed.clone_ref(py)
     }
 
     #[getter]
-    pub fn loaded(&mut self) -> PyObject {
-        self.loaded.clone()
+    pub fn loaded(&mut self, py: Python<'_>) -> PyObject {
+        self.loaded.clone_ref(py)
     }
 }

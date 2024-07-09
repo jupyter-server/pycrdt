@@ -180,9 +180,11 @@ impl MapEvent {
             path: None,
             transaction: None,
         };
-        map_event.target();
-        map_event.path();
-        map_event.keys();
+        Python::with_gil(|py| {
+            map_event.target(py);
+            map_event.path(py);
+            map_event.keys(py);
+        });
         map_event
     }
 
@@ -198,44 +200,47 @@ impl MapEvent {
 #[pymethods]
 impl MapEvent {
     #[getter]
-    pub fn transaction(&mut self) -> PyObject {
-        if let Some(transaction) = self.transaction.as_ref() {
-            transaction.clone()
+    pub fn transaction(&mut self, py: Python<'_>) -> PyObject {
+        if let Some(transaction) = &self.transaction {
+            transaction.clone_ref(py)
         } else {
-            let transaction: PyObject = Python::with_gil(|py| Transaction::from(self.txn()).into_py(py));
-            self.transaction = Some(transaction.clone());
-            transaction
+            let transaction: PyObject = Transaction::from(self.txn()).into_py(py);
+            let res = transaction.clone_ref(py);
+            self.transaction = Some(transaction);
+            res
         }
     }
 
     #[getter]
-    pub fn target(&mut self) -> PyObject {
-        if let Some(target) = self.target.as_ref() {
-            target.clone()
+    pub fn target(&mut self, py: Python<'_>) -> PyObject {
+        if let Some(target) = &self.target {
+            target.clone_ref(py)
         } else {
-            let target: PyObject = Python::with_gil(|py| Map::from(self.event().target().clone()).into_py(py));
-            self.target = Some(target.clone());
-            target
+            let target: PyObject = Map::from(self.event().target().clone()).into_py(py);
+            let res = target.clone_ref(py);
+            self.target = Some(target);
+            res
         }
     }
 
     #[getter]
-    pub fn path(&mut self) -> PyObject {
+    pub fn path(&mut self, py: Python<'_>) -> PyObject {
         if let Some(path) = &self.path {
-            path.clone()
+            path.clone_ref(py)
         } else {
-            let path: PyObject = Python::with_gil(|py| self.event().path().into_py(py));
-            self.path = Some(path.clone());
-            path
+            let path: PyObject = self.event().path().into_py(py);
+            let res = path.clone_ref(py);
+            self.path = Some(path);
+            res
         }
     }
 
     #[getter]
-    pub fn keys(&mut self) -> PyObject {
+    pub fn keys(&mut self, py: Python<'_>) -> PyObject {
         if let Some(keys) = &self.keys {
-            keys.clone()
+            keys.clone_ref(py)
         } else {
-            let keys: PyObject = Python::with_gil(|py| {
+            let keys: PyObject = {
                 let keys = self.event().keys(self.txn());
                 let result = PyDict::new_bound(py);
                 for (key, value) in keys.iter() {
@@ -244,17 +249,17 @@ impl MapEvent {
                     result.set_item(key, value.into_py(py)).unwrap();
                 }
                 result.into()
-            });
-
-            self.keys = Some(keys.clone());
-            keys
+            };
+            let res = keys.clone_ref(py);
+            self.keys = Some(keys);
+            res
         }
     }
 
-    fn __repr__(&mut self) -> String {
-        let target = self.target();
-        let keys = self.keys();
-        let path = self.path();
+    fn __repr__(&mut self, py: Python<'_>) -> String {
+        let target = self.target(py);
+        let keys = self.keys(py);
+        let path = self.path(py);
         format!("MapEvent(target={target}, keys={keys}, path={path})")
     }
 }
