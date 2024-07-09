@@ -175,9 +175,11 @@ impl ArrayEvent {
             path: None,
             transaction: None,
         };
-        array_event.target();
-        array_event.path();
-        array_event.delta();
+        Python::with_gil(|py| {
+            array_event.target(py);
+            array_event.path(py);
+            array_event.delta(py);
+        });
         array_event
     }
 
@@ -193,58 +195,62 @@ impl ArrayEvent {
 #[pymethods]
 impl ArrayEvent {
     #[getter]
-    pub fn transaction(&mut self) -> PyObject {
-        if let Some(transaction) = self.transaction.as_ref() {
-            transaction.clone()
+    pub fn transaction(&mut self, py: Python<'_>) -> PyObject {
+        if let Some(transaction) = &self.transaction {
+            transaction.clone_ref(py)
         } else {
-            let transaction: PyObject = Python::with_gil(|py| Transaction::from(self.txn()).into_py(py));
-            self.transaction = Some(transaction.clone());
-            transaction
+            let transaction: PyObject = Transaction::from(self.txn()).into_py(py);
+            let res = transaction.clone_ref(py);
+            self.transaction = Some(transaction);
+            res
         }
     }
 
     #[getter]
-    pub fn target(&mut self) -> PyObject {
-        if let Some(target) = self.target.as_ref() {
-            target.clone()
+    pub fn target(&mut self, py: Python<'_>) -> PyObject {
+        if let Some(target) = &self.target {
+            target.clone_ref(py)
         } else {
-            let target: PyObject = Python::with_gil(|py| Array::from(self.event().target().clone()).into_py(py));
-            self.target = Some(target.clone());
-            target
+            let target: PyObject = Array::from(self.event().target().clone()).into_py(py);
+            let res = target.clone_ref(py);
+            self.target = Some(target);
+            res
         }
     }
 
     #[getter]
-    pub fn path(&mut self) -> PyObject {
+    pub fn path(&mut self, py: Python<'_>) -> PyObject {
         if let Some(path) = &self.path {
-            path.clone()
+            path.clone_ref(py)
         } else {
-            let path: PyObject = Python::with_gil(|py| self.event().path().into_py(py));
-            self.path = Some(path.clone());
-            path
+            let path: PyObject = self.event().path().into_py(py);
+            let res = path.clone_ref(py);
+            self.path = Some(path);
+            res
         }
     }
 
     #[getter]
-    pub fn delta(&mut self) -> PyObject {
+    pub fn delta(&mut self, py: Python<'_>) -> PyObject {
         if let Some(delta) = &self.delta {
-            delta.clone()
+            delta.clone_ref(py)
         } else {
-            let delta: PyObject = Python::with_gil(|py| {
+            let delta: PyObject = {
                 let delta = self.event().delta(self.txn()).iter().map(|change| {
-                    Python::with_gil(|py| change.clone().into_py(py))
+                    change.clone().into_py(py)
                 });
                 PyList::new_bound(py, delta).into()
-            });
-            self.delta = Some(delta.clone());
-            delta
+            };
+            let res = delta.clone_ref(py);
+            self.delta = Some(delta);
+            res
         }
     }
 
-    fn __repr__(&mut self) -> String {
-        let target = self.target();
-        let delta = self.delta();
-        let path = self.path();
+    fn __repr__(&mut self, py: Python<'_>) -> String {
+        let target = self.target(py);
+        let delta = self.delta(py);
+        let path = self.path(py);
         format!("ArrayEvent(target={target}, delta={delta}, path={path})")
     }
 }
