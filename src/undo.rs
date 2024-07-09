@@ -1,9 +1,13 @@
 use pyo3::prelude::*;
+use pyo3::types::PyList;
 use pyo3::exceptions::PyRuntimeError;
 use yrs::{
     UndoManager as _UndoManager,
 };
-use yrs::undo::Options;
+use yrs::undo::{
+    Options,
+    StackItem as _StackItem,
+};
 use crate::doc::Doc;
 use crate::text::Text;
 use crate::array::Array;
@@ -58,5 +62,41 @@ impl UndoManager {
     pub fn clear(&mut self)  -> PyResult<()> {
         let Ok(res) = self.undo_manager.clear() else { return Err(PyRuntimeError::new_err("Cannot clear")) };
         Ok(res)
+    }
+
+    pub fn undo_stack(&mut self, py: Python<'_>) -> Py<PyList> {
+        let elements = self.undo_manager.undo_stack().into_iter().map(|v| {
+            StackItem::from(v.clone())
+        });
+        let res = PyList::new_bound(py, elements);
+        res.into()
+    }
+
+    pub fn redo_stack(&mut self, py: Python<'_>) -> Py<PyList> {
+        let elements = self.undo_manager.redo_stack().into_iter().map(|v| {
+            StackItem::from(v.clone())
+        });
+        let res = PyList::new_bound(py, elements);
+        res.into()
+    }
+}
+
+
+#[pyclass]
+#[derive(Clone)]
+pub struct StackItem {
+    stack_item: _StackItem<()>
+}
+
+impl StackItem {
+    pub fn from(stack_item: _StackItem<()>) -> Self {
+        StackItem { stack_item }
+    }
+}
+
+#[pymethods]
+impl StackItem {
+    fn __repr__(&self) -> String {
+        format!("{0}", self.stack_item)
     }
 }

@@ -15,7 +15,7 @@ use crate::array::{Array, ArrayEvent};
 use crate::map::{Map, MapEvent};
 use crate::transaction::Transaction;
 use crate::subscription::Subscription;
-use crate::undo::UndoManager;
+use crate::undo::{StackItem, UndoManager};
 
 #[pymodule]
 fn _pycrdt(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -29,6 +29,7 @@ fn _pycrdt(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Map>()?;
     m.add_class::<MapEvent>()?;
     m.add_class::<Transaction>()?;
+    m.add_class::<StackItem>()?;
     m.add_class::<Subscription>()?;
     m.add_class::<UndoManager>()?;
     Ok(())

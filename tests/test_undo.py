@@ -119,3 +119,23 @@ def test_wrong_creation():
     with pytest.raises(RuntimeError) as excinfo:
         UndoManager(doc=doc, scopes=[text])
     assert str(excinfo.value) == "UndoManager must be created with doc or scopes"
+
+
+def test_undo_redo_stacks():
+    doc = Doc()
+    doc["text"] = text = Text()
+    undo_manager = UndoManager(scopes=[text], capture_timeout_millis=0)
+    assert len(undo_manager.undo_stack) == 0
+    assert len(undo_manager.redo_stack) == 0
+    text += "Hello"
+    assert len(undo_manager.undo_stack) == 1
+    assert len(undo_manager.redo_stack) == 0
+    text += ", World!"
+    assert len(undo_manager.undo_stack) == 2
+    assert len(undo_manager.redo_stack) == 0
+    undo_manager.undo()
+    assert len(undo_manager.undo_stack) == 1
+    assert len(undo_manager.redo_stack) == 1
+    undo_manager.undo()
+    assert len(undo_manager.undo_stack) == 0
+    assert len(undo_manager.redo_stack) == 2
