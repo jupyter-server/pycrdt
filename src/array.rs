@@ -22,7 +22,7 @@ use crate::map::Map;
 use crate::doc::Doc;
 
 
-#[pyclass(unsendable)]
+#[pyclass]
 pub struct Array {
     pub array: ArrayRef,
 }

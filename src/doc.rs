@@ -21,7 +21,7 @@ use crate::subscription::Subscription;
 use crate::type_conversions::ToPython;
 
 
-#[pyclass(unsendable)]
+#[pyclass]
 #[derive(Clone)]
 pub struct Doc {
     pub doc: _Doc,

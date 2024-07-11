@@ -13,7 +13,7 @@ use crate::subscription::Subscription;
 use crate::type_conversions::ToPython;
 
 
-#[pyclass(unsendable)]
+#[pyclass]
 pub struct Text {
     pub text: TextRef,
 }
