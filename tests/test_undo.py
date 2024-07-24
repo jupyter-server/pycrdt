@@ -145,17 +145,22 @@ def test_origin():
     doc = Doc()
     doc["text"] = text = Text()
     undo_manager = UndoManager(scopes=[text], capture_timeout_millis=0)
-    undo_manager.include_origin(456)
+
+    class Origin:
+        pass
+
+    origin = Origin()
+    undo_manager.include_origin(origin)
     text += "Hello"
     assert not undo_manager.can_undo()
-    with doc.transaction(origin=456):
+    with doc.transaction(origin=origin):
         text += ", World!"
     assert str(text) == "Hello, World!"
     assert undo_manager.can_undo()
     undo_manager.undo()
     assert str(text) == "Hello"
     assert not undo_manager.can_undo()
-    undo_manager.exclude_origin(456)
+    undo_manager.exclude_origin(origin)
     text += ", World!"
     assert str(text) == "Hello, World!"
     assert undo_manager.can_undo()
