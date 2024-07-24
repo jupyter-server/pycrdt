@@ -142,7 +142,6 @@ def test_observe():
     events = []
 
     sub = map0.observe(partial(callback, events))
-    print(f"{sub=}")
     map0["0"] = 0
     assert (
         str(events[0])

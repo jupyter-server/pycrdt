@@ -44,18 +44,23 @@ def test_callback_transaction():
 def test_origin():
     doc = Doc()
     doc["text"] = text = Text()
-    origin = None
+
+    class Origin:
+        pass
+
+    origin0 = Origin()
+    origin1 = None
 
     def callback(event, txn):
-        nonlocal origin
-        origin = txn.origin
+        nonlocal origin1
+        origin1 = txn.origin
 
     text.observe(callback)
 
-    with doc.transaction(origin=123) as txn:
+    with doc.transaction(origin=origin0) as txn:
         text += "Hello"
 
-    assert origin == 123
+    assert origin1 is origin0
 
     with pytest.raises(RuntimeError) as excinfo:
         txn.origin()
@@ -66,6 +71,9 @@ def test_origin():
         doc.transaction(origin={})
 
     assert str(excinfo.value) == "Origin must be hashable"
+
+    with doc.transaction() as txn:
+        assert txn.origin is None
 
 
 def test_observe_callback_params():

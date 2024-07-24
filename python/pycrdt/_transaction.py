@@ -9,6 +9,9 @@ if TYPE_CHECKING:  # pragma: no cover
     from ._doc import Doc
 
 
+origins: dict[int, Any] = {}
+
+
 class Transaction:
     _doc: Doc
     _txn: _Transaction | None
@@ -17,12 +20,12 @@ class Transaction:
     def __init__(self, doc: Doc, _txn: _Transaction | None = None, *, origin: Any = None) -> None:
         self._doc = doc
         self._txn = _txn
-        self._origin = origin
         self._nb = 0
         if origin is None:
             self._origin = None
         else:
             self._origin = hash_origin(origin)
+            origins[self._origin] = origin
 
     def __enter__(self) -> Transaction:
         self._nb += 1
@@ -52,11 +55,17 @@ class Transaction:
             self._doc._txn = None
 
     @property
-    def origin(self) -> int:
+    def origin(self) -> Any:
         if self._txn is None:
             raise RuntimeError("No current transaction")
 
-        return self._txn.origin()
+        origin_hash = self._txn.origin()
+        if origin_hash is None:
+            return None
+
+        origin = origins[origin_hash]
+        del origins[origin_hash]
+        return origin
 
 
 class ReadTransaction(Transaction):
