@@ -189,6 +189,12 @@ class UndoManager:
     def expand_scope(self, scope: Text | Array | Map) -> None:
         """Extends a list of shared types tracked by current undo manager by a given scope."""
 
+    def include_origin(self, origin: int) -> None:
+        """Extends a list of origins tracked by current undo manager by a given origin."""
+
+    def exclude_origin(self, origin: int) -> None:
+        """Removes an origin from the list of origins tracked by current undo manager."""
+
     def can_undo(self) -> bool:
         """Whether there is any change to undo."""
 

@@ -22,10 +22,7 @@ class Transaction:
         if origin is None:
             self._origin = None
         else:
-            try:
-                self._origin = hash(origin)
-            except Exception:
-                raise TypeError("Transaction origin must be hashable")
+            self._origin = hash_origin(origin)
 
     def __enter__(self) -> Transaction:
         self._nb += 1
@@ -64,3 +61,10 @@ class Transaction:
 
 class ReadTransaction(Transaction):
     pass
+
+
+def hash_origin(origin: Any) -> int:
+    try:
+        return hash(origin)
+    except Exception:
+        raise TypeError("Origin must be hashable")

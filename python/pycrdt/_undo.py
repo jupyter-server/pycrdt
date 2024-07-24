@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from ._base import BaseType
 from ._pycrdt import (
@@ -9,6 +9,7 @@ from ._pycrdt import (
 from ._pycrdt import (
     UndoManager as _UndoManager,
 )
+from ._transaction import hash_origin
 
 if TYPE_CHECKING:  # pragma: no cover
     from ._doc import Doc
@@ -35,6 +36,12 @@ class UndoManager:
     def expand_scope(self, scope: BaseType) -> None:
         method = getattr(self._undo_manager, f"expand_scope_{scope.type_name}")
         method(scope._integrated)
+
+    def include_origin(self, origin: Any) -> None:
+        self._undo_manager.include_origin(hash_origin(origin))
+
+    def exclude_origin(self, origin: Any) -> None:
+        self._undo_manager.exclude_origin(hash_origin(origin))
 
     def can_undo(self) -> bool:
         return self._undo_manager.can_undo()

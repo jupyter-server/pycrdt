@@ -65,7 +65,7 @@ def test_origin():
     with pytest.raises(TypeError) as excinfo:
         doc.transaction(origin={})
 
-    assert str(excinfo.value) == "Transaction origin must be hashable"
+    assert str(excinfo.value) == "Origin must be hashable"
 
 
 def test_observe_callback_params():
