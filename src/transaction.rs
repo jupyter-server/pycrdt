@@ -1,6 +1,6 @@
 use pyo3::prelude::*;
 use std::cell::{RefCell, RefMut};
-use yrs::TransactionMut;
+use yrs::{Origin, TransactionMut};
 
 pub enum Cell<'a, T> {
     Owned(T),
@@ -58,5 +58,16 @@ impl Transaction {
 
     pub fn drop(&self) {
         self.0.replace(None);
+    }
+
+    pub fn origin(&self) -> Option<i128> {
+        let transaction = self.0.borrow();
+        let origin: Option<&Origin> = transaction.as_ref().unwrap().as_ref().origin();
+        if origin.is_some() {
+            let data: [u8; 16] = origin.unwrap().as_ref().try_into().expect("Slice with incorrect length");
+            Some(i128::from_be_bytes(data))
+        } else {
+            None
+        }
     }
 }

@@ -139,3 +139,26 @@ def test_undo_redo_stacks():
     undo_manager.undo()
     assert len(undo_manager.undo_stack) == 0
     assert len(undo_manager.redo_stack) == 2
+
+
+def test_origin():
+    doc = Doc()
+    doc["text"] = text = Text()
+    undo_manager = UndoManager(scopes=[text], capture_timeout_millis=0)
+    undo_manager.include_origin(456)
+    text += "Hello"
+    assert not undo_manager.can_undo()
+    with doc.transaction(origin=456):
+        text += ", World!"
+    assert str(text) == "Hello, World!"
+    assert undo_manager.can_undo()
+    undo_manager.undo()
+    assert str(text) == "Hello"
+    assert not undo_manager.can_undo()
+    undo_manager.exclude_origin(456)
+    text += ", World!"
+    assert str(text) == "Hello, World!"
+    assert undo_manager.can_undo()
+    undo_manager.undo()
+    assert str(text) == "Hello"
+    assert not undo_manager.can_undo()

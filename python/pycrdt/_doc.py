@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable, Type, TypeVar, cast
+from typing import Any, Callable, Type, TypeVar, cast
 
 from ._base import BaseDoc, BaseType, base_types
 from ._pycrdt import Doc as _Doc
@@ -34,10 +34,10 @@ class Doc(BaseDoc):
     def client_id(self) -> int:
         return self._doc.client_id()
 
-    def transaction(self) -> Transaction:
+    def transaction(self, origin: Any = None) -> Transaction:
         if self._txn is not None:
             return self._txn
-        return Transaction(self)
+        return Transaction(self, origin=origin)
 
     def _read_transaction(self, _txn: _Transaction) -> ReadTransaction:
         return ReadTransaction(self, _txn)

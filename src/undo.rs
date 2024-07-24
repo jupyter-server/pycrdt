@@ -41,6 +41,14 @@ impl UndoManager {
         self.undo_manager.expand_scope(&scope.map);
     }
 
+    pub fn include_origin(&mut self, origin: i128) {
+        self.undo_manager.include_origin(origin);
+    }
+
+    pub fn exclude_origin(&mut self, origin: i128) {
+        self.undo_manager.exclude_origin(origin);
+    }
+
     pub fn can_undo(&mut self)  -> bool {
         self.undo_manager.can_undo()
     }

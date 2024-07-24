@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from functools import partial
+from functools import lru_cache, partial
+from inspect import signature
 from typing import TYPE_CHECKING, Any, Callable, Type, cast
 
 from ._pycrdt import Doc as _Doc
@@ -151,17 +152,29 @@ class BaseType(ABC):
         subscription.drop()
 
 
-def observe_callback(callback: Callable[[Any], None], doc: Doc, event: Any):
+def observe_callback(
+    callback: Callable[[], None] | Callable[[Any], None] | Callable[[Any, ReadTransaction], None],
+    doc: Doc,
+    event: Any,
+):
+    param_nb = count_parameters(callback)
     _event = event_types[type(event)](event, doc)
-    with doc._read_transaction(event.transaction):
-        callback(_event)
+    with doc._read_transaction(event.transaction) as txn:
+        params = (_event, txn)
+        callback(*params[:param_nb])  # type: ignore[arg-type]
 
 
-def observe_deep_callback(callback: Callable[[Any], None], doc: Doc, events: list[Any]):
+def observe_deep_callback(
+    callback: Callable[[], None] | Callable[[Any], None] | Callable[[Any, ReadTransaction], None],
+    doc: Doc,
+    events: list[Any],
+):
+    param_nb = count_parameters(callback)
     for idx, event in enumerate(events):
         events[idx] = event_types[type(event)](event, doc)
-    with doc._read_transaction(event.transaction):
-        callback(events)
+    with doc._read_transaction(event.transaction) as txn:
+        params = (events, txn)
+        callback(*params[:param_nb])  # type: ignore[arg-type]
 
 
 class BaseEvent:
@@ -199,3 +212,9 @@ def process_event(value: Any, doc: Doc) -> Any:
                 base_type = cast(Type[BaseType], base_types[val_type])
                 value = base_type(_integrated=value, _doc=doc)
     return value
+
+
+@lru_cache(maxsize=1024)
+def count_parameters(func: Callable) -> int:
+    """Count the number of parameters in a callable"""
+    return len(signature(func).parameters)

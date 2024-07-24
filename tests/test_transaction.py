@@ -1,3 +1,4 @@
+import pytest
 from pycrdt import Array, Doc, Map, Text
 
 
@@ -38,3 +39,62 @@ def test_callback_transaction():
         {"foo": "bar"},
         '{"foo":"bar"}',
     ]
+
+
+def test_origin():
+    doc = Doc()
+    doc["text"] = text = Text()
+    origin = None
+
+    def callback(event, txn):
+        nonlocal origin
+        origin = txn.origin
+
+    text.observe(callback)
+
+    with doc.transaction(origin=123) as txn:
+        text += "Hello"
+
+    assert origin == 123
+
+    with pytest.raises(RuntimeError) as excinfo:
+        txn.origin()
+
+    assert str(excinfo.value) == "No current transaction"
+
+    with pytest.raises(TypeError) as excinfo:
+        doc.transaction(origin={})
+
+    assert str(excinfo.value) == "Origin must be hashable"
+
+
+def test_observe_callback_params():
+    doc = Doc()
+    doc["text"] = text = Text()
+
+    cb0_called = False
+    cb1_called = False
+    cb2_called = False
+
+    def callback0():
+        nonlocal cb0_called
+        cb0_called = True
+
+    def callback1(event):
+        nonlocal cb1_called
+        cb1_called = True
+
+    def callback2(event, txn):
+        nonlocal cb2_called
+        cb2_called = True
+
+    text.observe(callback0)
+    text.observe(callback1)
+    text.observe(callback2)
+
+    with doc.transaction():
+        text += "Hello, World!"
+
+    assert cb0_called
+    assert cb1_called
+    assert cb2_called

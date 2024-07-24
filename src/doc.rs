@@ -78,6 +78,12 @@ impl Doc {
         Ok(t)
     }
 
+    fn create_transaction_with_origin(&self, py: Python<'_>, origin: i128) -> PyResult<Py<Transaction>> {
+        let txn = self.doc.transact_mut_with(origin);
+        let t: Py<Transaction> = Py::new(py, Transaction::from(txn))?;
+        Ok(t)
+    }
+
     fn get_state(&mut self) -> PyObject {
         let txn = self.doc.transact_mut();
         let state = txn.state_vector().encode_v1();
