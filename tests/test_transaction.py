@@ -89,6 +89,15 @@ def test_origin():
     assert len(doc0._origins) == 0
     assert len(doc1._origins) == 0
 
+    with doc0.transaction(origin=123):
+        with doc0.transaction(origin=123):
+            with doc0.transaction():
+                with pytest.raises(RuntimeError) as excinfo:
+                    with doc0.transaction(origin=456):
+                        pass
+
+    assert str(excinfo.value) == "Nested transactions must have same origin as root transaction"
+
 
 def test_observe_callback_params():
     doc = Doc()

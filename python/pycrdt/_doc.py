@@ -36,6 +36,11 @@ class Doc(BaseDoc):
 
     def transaction(self, origin: Any = None) -> Transaction:
         if self._txn is not None:
+            if origin is not None:
+                if origin != self._txn.origin:
+                    raise RuntimeError(
+                        "Nested transactions must have same origin as root transaction"
+                    )
             return self._txn
         return Transaction(self, origin=origin)
 

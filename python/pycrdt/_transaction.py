@@ -13,22 +13,23 @@ class Transaction:
     _doc: Doc
     _txn: _Transaction | None
     _nb: int
+    _origin_hash: int | None
 
     def __init__(self, doc: Doc, _txn: _Transaction | None = None, *, origin: Any = None) -> None:
         self._doc = doc
         self._txn = _txn
         self._nb = 0
         if origin is None:
-            self._origin = None
+            self._origin_hash = None
         else:
-            self._origin = hash_origin(origin)
-            doc._origins[self._origin] = origin
+            self._origin_hash = hash_origin(origin)
+            doc._origins[self._origin_hash] = origin
 
     def __enter__(self) -> Transaction:
         self._nb += 1
         if self._txn is None:
-            if self._origin is not None:
-                self._txn = self._doc._doc.create_transaction_with_origin(self._origin)
+            if self._origin_hash is not None:
+                self._txn = self._doc._doc.create_transaction_with_origin(self._origin_hash)
             else:
                 self._txn = self._doc._doc.create_transaction()
         self._doc._txn = self
