@@ -24,6 +24,7 @@ class BaseDoc:
     _txn: Transaction | None
     _Model: Any
     _subscriptions: list[Subscription]
+    _origins: dict[int, Any]
 
     def __init__(
         self,
@@ -40,6 +41,7 @@ class BaseDoc:
         self._txn = None
         self._Model = Model
         self._subscriptions = []
+        self._origins = {}
 
 
 class BaseType(ABC):

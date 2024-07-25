@@ -9,9 +9,6 @@ if TYPE_CHECKING:  # pragma: no cover
     from ._doc import Doc
 
 
-origins: dict[int, Any] = {}
-
-
 class Transaction:
     _doc: Doc
     _txn: _Transaction | None
@@ -25,7 +22,7 @@ class Transaction:
             self._origin = None
         else:
             self._origin = hash_origin(origin)
-            origins[self._origin] = origin
+            doc._origins[self._origin] = origin
 
     def __enter__(self) -> Transaction:
         self._nb += 1
@@ -47,9 +44,12 @@ class Transaction:
         # only drop the transaction when exiting root context manager
         # since nested transactions reuse the root transaction
         if self._nb == 0:
-            # dropping the transaction will commit, no need to do it
-            # self._txn.commit()
             assert self._txn is not None
+            if not isinstance(self, ReadTransaction):
+                self._txn.commit()
+                origin_hash = self._txn.origin()
+                if origin_hash is not None:
+                    del self._doc._origins[origin_hash]
             self._txn.drop()
             self._txn = None
             self._doc._txn = None
@@ -63,9 +63,7 @@ class Transaction:
         if origin_hash is None:
             return None
 
-        origin = origins[origin_hash]
-        del origins[origin_hash]
-        return origin
+        return self._doc._origins[origin_hash]
 
 
 class ReadTransaction(Transaction):
