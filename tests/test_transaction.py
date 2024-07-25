@@ -42,8 +42,8 @@ def test_callback_transaction():
 
 
 def test_origin():
-    doc = Doc()
-    doc["text"] = text = Text()
+    doc0 = Doc()
+    doc0["text"] = text = Text()
 
     class Origin:
         pass
@@ -57,7 +57,7 @@ def test_origin():
 
     text.observe(callback)
 
-    with doc.transaction(origin=origin0) as txn:
+    with doc0.transaction(origin=origin0) as txn:
         text += "Hello"
 
     assert origin1 is origin0
@@ -68,12 +68,26 @@ def test_origin():
     assert str(excinfo.value) == "No current transaction"
 
     with pytest.raises(TypeError) as excinfo:
-        doc.transaction(origin={})
+        doc0.transaction(origin={})
 
     assert str(excinfo.value) == "Origin must be hashable"
 
-    with doc.transaction() as txn:
+    with doc0.transaction() as txn:
         assert txn.origin is None
+
+    doc1 = Doc()
+    with doc0.transaction(origin=origin0) as txn0:
+        with doc1.transaction(origin=origin0) as txn1:
+            assert txn0.origin == origin0
+            assert txn1.origin == origin0
+            assert len(doc0._origins) == 1
+            assert list(doc0._origins.values())[0] == origin0
+            assert doc0._origins == doc1._origins
+        assert len(doc0._origins) == 1
+        assert list(doc0._origins.values())[0] == origin0
+        assert len(doc1._origins) == 0
+    assert len(doc0._origins) == 0
+    assert len(doc1._origins) == 0
 
 
 def test_observe_callback_params():
