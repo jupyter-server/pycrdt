@@ -222,31 +222,6 @@ class StackItem:
     deletions tracked by it.
     """
 
-class Update:
-    """
-    Alternative update for state and update.
-
-    See https://docs.yjs.dev/api/document-updates#alternative-update-api
-    """
-
-    @staticmethod
-    def merge_update(updates: list[bytes]) -> bytes:
-        """
-        Merge several document updates into a single document update
-        while removing duplicate information.
-
-        The merged document update is always smaller than the separate updates
-        because of the compressed encoding.
-        """
-
-    @staticmethod
-    def encode_state_vector_from_update(update: bytes) -> bytes:
-        """
-        Computes the state vector from a document update and encodes it into an update.
-        """
-
-    @staticmethod
-    def diff_update(update: bytes, state_vector: bytes) -> bytes:
-        """
-        Encode the missing differences to another update message.
-        """
+def merge_updates(updates: tuple[bytes, ...]) -> bytes: ...
+def get_state(update: bytes) -> bytes: ...
+def get_update(update: bytes, state: bytes) -> bytes: ...

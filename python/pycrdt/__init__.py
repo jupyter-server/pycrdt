@@ -5,7 +5,6 @@ from ._map import Map as Map
 from ._map import MapEvent as MapEvent
 from ._pycrdt import Subscription as Subscription
 from ._pycrdt import TransactionEvent as TransactionEvent
-from ._pycrdt import Update as Update
 from ._sync import Decoder as Decoder
 from ._sync import YMessageType as YMessageType
 from ._sync import YSyncMessageType as YSyncMessageType
@@ -19,3 +18,6 @@ from ._text import TextEvent as TextEvent
 from ._transaction import ReadTransaction as ReadTransaction
 from ._transaction import Transaction as Transaction
 from ._undo import UndoManager as UndoManager
+from ._update import get_state as get_state
+from ._update import get_update as get_update
+from ._update import merge_updates as merge_updates

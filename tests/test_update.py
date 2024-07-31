@@ -1,38 +1,36 @@
-from pycrdt import Doc, Text, Update
+from pycrdt import Doc, Map, get_state, get_update, merge_updates
 
 
-def test_alternative_update():
-    data1 = Text("hello")
+def test_update():
+    data0 = Map({"key0": "val0"})
+    doc0 = Doc()
+    doc0["data"] = data0
+
+    data1 = Map({"key1": "val1"})
     doc1 = Doc()
     doc1["data"] = data1
 
-    data2 = Text("world")
-    doc2 = Doc()
-    doc2["data"] = data2
+    update0 = doc0.get_update()
+    update1 = doc1.get_update()
 
-    current_state1 = doc1.get_update()
-    current_state2 = doc2.get_update()
-
+    del doc0
     del doc1
-    del doc2
-    state_vector1 = Update.encode_state_vector_from_update(current_state1)
-    state_vector2 = Update.encode_state_vector_from_update(current_state2)
+    state0 = get_state(update0)
+    state1 = get_state(update1)
 
-    diff1 = Update.diff_update(current_state1, state_vector2)
-    diff2 = Update.diff_update(current_state2, state_vector1)
+    update01 = get_update(update0, state1)
+    update10 = get_update(update1, state0)
 
     # sync clients
-    current_state1 = Update.merge_update([current_state1, diff2])
-    current_state2 = Update.merge_update([current_state2, diff1])
-    assert current_state1 == current_state2 != b"\x00\x00"
+    update0 = merge_updates(update0, update10)
+    update1 = merge_updates(update1, update01)
+    assert update0 == update1
 
+    doc0 = Doc()
+    data0 = doc0.get("data", type=Map)
+    doc0.apply_update(update0)
     doc1 = Doc()
-    data1 = doc1.get("data", type=Text)
-    doc1.apply_update(current_state1)
-    doc2 = Doc()
-    data2 = doc2.get("data", type=Text)
-    doc2.apply_update(current_state2)
+    data1 = doc1.get("data", type=Map)
+    doc1.apply_update(update1)
 
-    # Merge does not preserve order
-    assert str(doc1["data"]) in ["helloworld", "worldhello"]
-    assert str(doc1["data"]) == str(doc2["data"])
+    assert data0.to_py() == data1.to_py() == {"key0": "val0", "key1": "val1"}
