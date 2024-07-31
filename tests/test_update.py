@@ -24,7 +24,7 @@ def test_alternative_update():
     # sync clients
     current_state1 = Update.merge_update([current_state1, diff2])
     current_state2 = Update.merge_update([current_state2, diff1])
-    assert current_state1 == current_state2
+    assert current_state1 == current_state2 != b"\x00\x00"
 
     doc1 = Doc()
     data1 = doc1.get("data", type=Text)
@@ -33,4 +33,6 @@ def test_alternative_update():
     data2 = doc2.get("data", type=Text)
     doc2.apply_update(current_state2)
 
+    # Merge does not preserve order
+    assert str(doc1["data"]) in ["helloworld", "worldhello"]
     assert str(doc1["data"]) == str(doc2["data"])
