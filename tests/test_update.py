@@ -27,7 +27,10 @@ def test_alternative_update():
     assert current_state1 == current_state2
 
     doc1 = Doc()
+    data1 = doc1.get("data", type=Text)
     doc1.apply_update(current_state1)
     doc2 = Doc()
+    data2 = doc2.get("data", type=Text)
     doc2.apply_update(current_state2)
-    assert doc1["data"] == doc2["data"]
+
+    assert str(doc1["data"]) == str(doc2["data"])
