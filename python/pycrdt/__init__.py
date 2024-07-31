@@ -18,3 +18,6 @@ from ._text import TextEvent as TextEvent
 from ._transaction import ReadTransaction as ReadTransaction
 from ._transaction import Transaction as Transaction
 from ._undo import UndoManager as UndoManager
+from ._update import get_state as get_state
+from ._update import get_update as get_update
+from ._update import merge_updates as merge_updates

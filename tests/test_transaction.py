@@ -94,7 +94,7 @@ def test_origin():
             with doc0.transaction():
                 with pytest.raises(RuntimeError) as excinfo:
                     with doc0.transaction(origin=456):
-                        pass
+                        pass  # pragma: no cover
 
     assert str(excinfo.value) == "Nested transactions must have same origin as root transaction"
 
