@@ -80,7 +80,13 @@ CRDTs ensure that documents don't diverge, their shared documents will eventuall
 
 ## Transactions
 
-Every change to a shared data happens in a document transaction. When no current transaction exists, an implicit transaction is created.
+Every change to a shared data happens in a document transaction, and there can only be one transaction at a time. Pycrdt offers two methods for creating transactions:
+- `doc.transaction()`: used with a context manager, this will create a new transaction if there is no current one, or use the current transaction. This method will never block, and should be used most of the time.
+- `doc.new_transaction()`: used with a context manager or an async context manager, this will always try to create a new transaction. This method can block, waiting for a transaction to be released.
+
+### Non-blocking transactions
+
+When no current transaction exists, an implicit transaction is created.
 Grouping multiple changes in a single transaction makes them atomic: they will appear as done simultaneously rather than sequentially.
 
 ```py
@@ -100,6 +106,52 @@ with doc.transaction() as t0:
         array0.append("bar")
         with doc.transaction() as t2:
             map0["key1"] = "value1"
+```
+
+### Blocking transactions
+
+#### Multithreading
+
+When used with a (non-async) context manager, the `new_transaction()` method will block the current thread waiting to acquire a transaction, with an optional timeout:
+
+```py
+from threading import Thread
+from pycrdt import Doc
+
+doc = Doc(allow_multithreading=True)
+
+def create_new_transaction():
+    with doc.new_transaction(timeout=3):
+        ...
+
+t0 = Thread(target=create_new_transaction)
+t1 = Thread(target=create_new_transaction)
+t0.start()
+t1.start()
+t0.join()
+t1.join()
+```
+
+#### Asynchronous programming
+
+When used with an async context manager, the `new_transaction()` method will yield to the event loop until a transaction is acquired:
+
+```py
+from anyio import create_task_group, run
+from pycrdt import Doc
+
+doc = Doc()
+
+async def create_new_transaction():
+    async with doc.new_transaction(timeout=3):
+        ...
+
+async def main():
+    async with create_task_group() as tg:
+        tg.start_soon(create_new_transaction)
+        tg.start_soon(create_new_transaction)
+
+run(main)
 ```
 
 ## Events

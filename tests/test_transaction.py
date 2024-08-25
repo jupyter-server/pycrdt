@@ -1,5 +1,15 @@
+import sys
+import time
+from functools import partial
+
 import pytest
+from anyio import create_task_group, fail_after, sleep, to_thread
 from pycrdt import Array, Doc, Map, Text
+
+if sys.version_info < (3, 11):
+    from exceptiongroup import ExceptionGroup
+
+pytestmark = pytest.mark.anyio
 
 
 def test_callback_transaction():
@@ -129,3 +139,134 @@ def test_observe_callback_params():
     assert cb0_called
     assert cb1_called
     assert cb2_called
+
+
+def create_new_transaction(map0: Map, key: str, val: str) -> None:
+    with map0.doc.new_transaction():
+        time.sleep(0.1)
+        map0[key] = val
+
+
+async def create_new_transaction_async(map0: Map, key: str, val: str) -> None:
+    async with map0.doc.new_transaction():
+        await sleep(0.1)
+        map0[key] = val
+
+
+async def test_new_transaction_multithreading():
+    doc = Doc(allow_multithreading=True)
+    doc["map0"] = map0 = Map()
+
+    def callback(events, event):
+        events.append(None)
+
+    events = []
+    sid = doc.observe(partial(callback, events))
+
+    async with create_task_group() as tg:
+        tg.start_soon(to_thread.run_sync, partial(create_new_transaction, map0, "key0", "val0"))
+        tg.start_soon(to_thread.run_sync, partial(create_new_transaction, map0, "key1", "val1"))
+
+    assert len(events) == 2
+    assert map0.to_py() == {"key0": "val0", "key1": "val1"}
+
+    doc.unobserve(sid)
+
+
+async def test_new_transaction_no_multithreading():
+    doc = Doc(allow_multithreading=False)
+    doc["map0"] = map0 = Map()
+
+    def callback(events, event):
+        events.append(None)
+
+    events = []
+    sid = doc.observe(partial(callback, events))
+
+    with pytest.raises(ExceptionGroup) as excinfo:
+        async with create_task_group() as tg:
+            tg.start_soon(to_thread.run_sync, partial(create_new_transaction, map0, "key0", "val0"))
+            tg.start_soon(to_thread.run_sync, partial(create_new_transaction, map0, "key1", "val1"))
+    assert len(excinfo.value.exceptions) == 1
+    assert isinstance(excinfo.value.exceptions[0], RuntimeError)
+    assert str(excinfo.value.exceptions[0]) == "Already in a transaction"
+
+    assert len(events) == 1
+    assert len(map0.to_py()) == 1
+    assert map0.to_py() in [{"key0": "val0"}, {"key1": "val1"}]
+
+    doc.unobserve(sid)
+
+
+def test_new_transaction_while_transaction():
+    doc = Doc(allow_multithreading=True)
+
+    with doc.transaction():
+        with pytest.raises(TimeoutError) as excinfo:
+            with doc.new_transaction(timeout=0.1):
+                pass  # pragma: no cover
+    assert str(excinfo.value) == "Could not acquire transaction"
+
+
+async def test_new_transaction_while_async_transaction():
+    doc = Doc(allow_multithreading=True)
+
+    async with doc.new_transaction():
+        with pytest.raises(TimeoutError) as excinfo:
+            with doc.new_transaction(timeout=0.1):
+                pass  # pragma: no cover
+    assert str(excinfo.value) == "Could not acquire transaction"
+
+
+async def test_new_async_transaction_while_transaction():
+    doc = Doc(allow_multithreading=True)
+
+    with doc.transaction():
+        with pytest.raises(TimeoutError) as excinfo:
+            async with doc.new_transaction(timeout=0.1):
+                pass  # pragma: no cover
+    assert str(excinfo.value) == "Could not acquire transaction"
+
+
+async def test_new_async_transaction_while_async_transaction():
+    doc = Doc(allow_multithreading=True)
+
+    async with doc.new_transaction():
+        with pytest.raises(TimeoutError):
+            with fail_after(0.1):
+                async with doc.new_transaction():
+                    pass  # pragma: no cover
+
+
+async def test_new_async_transaction_concurrent():
+    doc = Doc(allow_multithreading=True)
+    doc["map0"] = map0 = Map()
+
+    def callback(events, event):
+        events.append(event)
+
+    events = []
+    doc.observe(partial(callback, events))
+    async with create_task_group() as tg:
+        tg.start_soon(create_new_transaction_async, map0, "key0", "val0")
+        tg.start_soon(create_new_transaction_async, map0, "key1", "val1")
+
+    assert len(events) == 2
+    assert map0.to_py() == {"key0": "val0", "key1": "val1"}
+
+
+async def test_new_async_transaction_concurrent_no_multithreading():
+    doc = Doc(allow_multithreading=False)
+    doc["map0"] = map0 = Map()
+
+    def callback(events, event):
+        events.append(event)
+
+    events = []
+    doc.observe(partial(callback, events))
+    async with create_task_group() as tg:
+        tg.start_soon(create_new_transaction_async, map0, "key0", "val0")
+        tg.start_soon(create_new_transaction_async, map0, "key1", "val1")
+
+    assert len(events) == 2
+    assert map0.to_py() == {"key0": "val0", "key1": "val1"}

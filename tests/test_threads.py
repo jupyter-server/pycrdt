@@ -1,21 +1,22 @@
 import gc
-from threading import Thread
 
 import pytest
+from anyio import CapacityLimiter, to_thread
 from pycrdt import Doc, Text
 
+pytestmark = pytest.mark.anyio
 
-def test_multi_threading():
+
+async def test_multi_threading():
     doc = Doc()
     doc["text"] = text = Text()
     message = "Hello from thread!"
 
     def add_text(text, message):
-        text += "Hello from thread!"
+        text += message
 
-    thread = Thread(target=add_text, args=(text, message))
-    thread.start()
-    thread.join()
+    limiter = CapacityLimiter(1)
+    await to_thread.run_sync(add_text, text, message, limiter=limiter)
     assert str(text) == message
 
     def drop():
@@ -24,9 +25,7 @@ def test_multi_threading():
         del doc
         gc.collect()
 
-    thread = Thread(target=drop)
-    thread.start()
-    thread.join()
+    await to_thread.run_sync(drop, limiter=limiter)
 
     with pytest.raises(UnboundLocalError):
         text
