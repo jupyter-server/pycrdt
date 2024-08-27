@@ -1,5 +1,5 @@
 use pyo3::prelude::*;
-use pyo3::exceptions::PyValueError;
+use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::types::{PyBytes, PyDict, PyLong, PyList};
 use yrs::{
     Doc as _Doc,
@@ -105,9 +105,11 @@ impl Doc {
         let mut txn = self.doc.transact_mut();
         let bytes: &[u8] = update.extract()?;
         let u = Update::decode_v1(&bytes).unwrap();
-        txn.apply_update(u);
-        drop(txn);
-        Ok(())
+        if let Ok(_) = txn.apply_update(u) {
+            return Ok(());
+        } else {
+            return Err(PyRuntimeError::new_err("Cannot apply update"));
+        }
     }
 
     fn roots(&self, py: Python<'_>, txn: &mut Transaction) -> PyObject {

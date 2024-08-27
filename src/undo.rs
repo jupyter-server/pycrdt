@@ -54,8 +54,12 @@ impl UndoManager {
     }
 
     pub fn undo(&mut self)  -> PyResult<bool> {
-        let Ok(res) = self.undo_manager.undo() else { return Err(PyRuntimeError::new_err("Cannot undo")) };
-        Ok(res)
+        if let Ok(res) = self.undo_manager.try_undo() {
+            return Ok(res);
+        }
+        else {
+            return Err(PyRuntimeError::new_err("Cannot acquire transaction"));
+        }
     }
 
     pub fn can_redo(&mut self)  -> bool {
@@ -63,13 +67,16 @@ impl UndoManager {
     }
 
     pub fn redo(&mut self)  -> PyResult<bool> {
-        let Ok(res) = self.undo_manager.redo() else { return Err(PyRuntimeError::new_err("Cannot redo")) };
-        Ok(res)
+        if let Ok(res) = self.undo_manager.try_redo() {
+            return Ok(res);
+        }
+        else {
+            return Err(PyRuntimeError::new_err("Cannot acquire transaction"));
+        }
     }
 
-    pub fn clear(&mut self)  -> PyResult<()> {
-        let Ok(res) = self.undo_manager.clear() else { return Err(PyRuntimeError::new_err("Cannot clear")) };
-        Ok(res)
+    pub fn clear(&mut self)  -> () {
+        self.undo_manager.clear();
     }
 
     pub fn undo_stack(&mut self, py: Python<'_>) -> Py<PyList> {
