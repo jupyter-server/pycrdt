@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import threading
 from abc import ABC, abstractmethod
 from functools import lru_cache, partial
 from inspect import signature
 from typing import TYPE_CHECKING, Any, Callable, Type, cast
+
+import anyio
 
 from ._pycrdt import Doc as _Doc
 from ._pycrdt import Subscription
@@ -22,6 +25,9 @@ class BaseDoc:
     _doc: _Doc
     _twin_doc: BaseDoc | None
     _txn: Transaction | None
+    _txn_lock: threading.Lock
+    _txn_async_lock: anyio.Lock
+    _allow_multithreading: bool
     _Model: Any
     _subscriptions: list[Subscription]
     _origins: dict[int, Any]
@@ -32,6 +38,7 @@ class BaseDoc:
         client_id: int | None = None,
         doc: _Doc | None = None,
         Model=None,
+        allow_multithreading: bool = False,
         **data,
     ) -> None:
         super().__init__(**data)
@@ -39,9 +46,12 @@ class BaseDoc:
             doc = _Doc(client_id)
         self._doc = doc
         self._txn = None
+        self._txn_lock = threading.Lock()
+        self._txn_async_lock = anyio.Lock()
         self._Model = Model
         self._subscriptions = []
         self._origins = {}
+        self._allow_multithreading = allow_multithreading
 
 
 class BaseType(ABC):

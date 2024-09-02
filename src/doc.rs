@@ -73,15 +73,19 @@ impl Doc {
     }
 
     fn create_transaction(&self, py: Python<'_>) -> PyResult<Py<Transaction>> {
-        let txn = self.doc.transact_mut();
-        let t: Py<Transaction> = Py::new(py, Transaction::from(txn))?;
-        Ok(t)
+        if let Ok(txn) = self.doc.try_transact_mut() {
+            let t: Py<Transaction> = Py::new(py, Transaction::from(txn))?;
+            return Ok(t);
+        }
+        Err(PyRuntimeError::new_err("Already in a transaction"))
     }
 
     fn create_transaction_with_origin(&self, py: Python<'_>, origin: i128) -> PyResult<Py<Transaction>> {
-        let txn = self.doc.transact_mut_with(origin);
-        let t: Py<Transaction> = Py::new(py, Transaction::from(txn))?;
-        Ok(t)
+        if let Ok(txn) = self.doc.try_transact_mut_with(origin) {
+            let t: Py<Transaction> = Py::new(py, Transaction::from(txn))?;
+            return Ok(t);
+        }
+        Err(PyRuntimeError::new_err("Already in a transaction"))
     }
 
     fn get_state(&mut self) -> PyObject {

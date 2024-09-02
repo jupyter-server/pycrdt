@@ -6,7 +6,7 @@ from ._base import BaseDoc, BaseType, base_types
 from ._pycrdt import Doc as _Doc
 from ._pycrdt import SubdocsEvent, Subscription, TransactionEvent
 from ._pycrdt import Transaction as _Transaction
-from ._transaction import ReadTransaction, Transaction
+from ._transaction import NewTransaction, ReadTransaction, Transaction
 
 T_BaseType = TypeVar("T_BaseType", bound=BaseType)
 
@@ -19,8 +19,11 @@ class Doc(BaseDoc):
         client_id: int | None = None,
         doc: _Doc | None = None,
         Model=None,
+        allow_multithreading: bool = False,
     ) -> None:
-        super().__init__(client_id=client_id, doc=doc, Model=Model)
+        super().__init__(
+            client_id=client_id, doc=doc, Model=Model, allow_multithreading=allow_multithreading
+        )
         for k, v in init.items():
             self[k] = v
         if Model is not None:
@@ -43,6 +46,9 @@ class Doc(BaseDoc):
                     )
             return self._txn
         return Transaction(self, origin=origin)
+
+    def new_transaction(self, origin: Any = None, timeout: float | None = None) -> NewTransaction:
+        return NewTransaction(self, origin=origin, timeout=timeout)
 
     def _read_transaction(self, _txn: _Transaction) -> ReadTransaction:
         return ReadTransaction(self, _txn)
