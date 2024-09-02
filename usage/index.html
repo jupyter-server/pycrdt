@@ -645,9 +645,11 @@ After receiving the other user's update, if no special care is taken, machine A 
 In other words, their document states will diverge, and thus users won't collaborate on the same document anymore.
 CRDTs ensure that documents don't diverge, their shared documents will eventually have the same state. It will arbitrary be "ab" or "ba", but it will be the same on both machines.</p>
 <h2 id="transactions">Transactions</h2>
-<p>Every change to a shared data happens in a document transaction, and there can only be one transaction at a time. Pycrdt offers two methods for creating transactions:
-- <code>doc.transaction()</code>: used with a context manager, this will create a new transaction if there is no current one, or use the current transaction. This method will never block, and should be used most of the time.
-- <code>doc.new_transaction()</code>: used with a context manager or an async context manager, this will always try to create a new transaction. This method can block, waiting for a transaction to be released.</p>
+<p>Every change to a shared data happens in a document transaction, and there can only be one transaction at a time. Pycrdt offers two methods for creating transactions:</p>
+<ul>
+<li><code>doc.transaction()</code>: used with a context manager, this will create a new transaction if there is no current one, or use the current transaction. This method will never block, and should be used most of the time.</li>
+<li><code>doc.new_transaction()</code>: used with a context manager or an async context manager, this will always try to create a new transaction. This method can block, waiting for a transaction to be released.</li>
+</ul>
 <h3 id="non-blocking-transactions">Non-blocking transactions</h3>
 <p>When no current transaction exists, an implicit transaction is created.
 Grouping multiple changes in a single transaction makes them atomic: they will appear as done simultaneously rather than sequentially.</p>
