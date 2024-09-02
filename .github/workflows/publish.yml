@@ -27,8 +27,8 @@ jobs:
           args: --release --target universal2-apple-darwin --out dist -i 3.8 3.9 3.10 3.11 3.12 pypy3.8 pypy3.9 pypy3.10
       - name: Test built wheel - universal2
         run: |
-          pip install pycrdt --no-index --find-links dist --force-reinstall
           pip install pytest "pydantic>=2.5.2,<3" "anyio>=4.4.0,<5" "trio>=0.25.1,<0.26" "exceptiongroup; python_version<'3.11'"
+          pip install pycrdt --no-index --find-links dist --force-reinstall
           pytest
       - name: Upload wheels
         uses: actions/upload-artifact@v2
@@ -60,8 +60,8 @@ jobs:
           args: --release --out dist -i ${{ matrix.platform.interpreter }}
       - name: Test built wheel
         run: |
-          pip install pycrdt --no-index --find-links dist --force-reinstall
           pip install pytest "pydantic>=2.5.2,<3" "anyio>=4.4.0,<5" "trio>=0.25.1,<0.26" "exceptiongroup; python_version<'3.11'"
+          pip install pycrdt --no-index --find-links dist --force-reinstall
           pytest
       - name: Upload wheels
         uses: actions/upload-artifact@v2
@@ -96,8 +96,8 @@ jobs:
       - name: Test built wheel
         if: matrix.target == 'x86_64'
         run: |
-          pip install pycrdt --no-index --find-links dist --force-reinstall
           pip install pytest "pydantic>=2.5.2,<3" "anyio>=4.4.0,<5" "trio>=0.25.1,<0.26" "exceptiongroup; python_version<'3.11'"
+          pip install pycrdt --no-index --find-links dist --force-reinstall
           pytest
       - name: Upload wheels
         uses: actions/upload-artifact@v2
