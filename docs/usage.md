@@ -81,6 +81,7 @@ CRDTs ensure that documents don't diverge, their shared documents will eventuall
 ## Transactions
 
 Every change to a shared data happens in a document transaction, and there can only be one transaction at a time. Pycrdt offers two methods for creating transactions:
+
 - `doc.transaction()`: used with a context manager, this will create a new transaction if there is no current one, or use the current transaction. This method will never block, and should be used most of the time.
 - `doc.new_transaction()`: used with a context manager or an async context manager, this will always try to create a new transaction. This method can block, waiting for a transaction to be released.
 
