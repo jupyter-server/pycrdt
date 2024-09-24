@@ -229,3 +229,33 @@ update: bytes
 
 remote_doc.apply_update(update)
 ```
+
+## Undo manager
+
+An undo manager allows to undo/redo changes to a set of shared types belonging to a document:
+
+```py
+from pycrdt import Doc, Text, UndoManager
+
+doc = Doc()
+
+text = doc.get("text", type=Text)
+text += "Hello"
+
+undo_manager = UndoManager(doc=doc)
+undo_manager.expand_scope(text)
+
+text += ", World!"
+print(str(text))
+# prints: "Hello, World!"
+
+undo_manager.undo()
+print(str(text))
+# prints: "Hello"
+
+undo_manager.redo()
+print(str(text))
+# prints: "Hello, World!"
+```
+
+Undoing a change doesn't remove the change from the document's history, but applies a change that is the opposite of the previous change.
