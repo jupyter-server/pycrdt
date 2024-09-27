@@ -208,7 +208,7 @@ def test_api():
     assert str(excinfo.value) == "Negative stop not supported"
     with pytest.raises(TypeError) as excinfo:
         del array["a"]
-    assert str(excinfo.value) == "array indices must be integers or slices, not str"
+    assert str(excinfo.value) == "Array indices must be integers or slices, not str"
 
     assert [value for value in array] == [value for value in range(10)]
     assert 1 in array
