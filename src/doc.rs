@@ -2,14 +2,7 @@ use pyo3::prelude::*;
 use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::types::{PyBytes, PyDict, PyLong, PyList};
 use yrs::{
-    Doc as _Doc,
-    ReadTxn,
-    Transact,
-    TransactionMut,
-    TransactionCleanupEvent,
-    SubdocsEvent as _SubdocsEvent,
-    StateVector,
-    Update,
+    Doc as _Doc, ReadTxn, StateVector, SubdocsEvent as _SubdocsEvent, Transact, TransactionCleanupEvent, TransactionMut, Update
 };
 use yrs::updates::encoder::Encode;
 use yrs::updates::decoder::Decode;
@@ -19,6 +12,7 @@ use crate::map::Map;
 use crate::transaction::Transaction;
 use crate::subscription::Subscription;
 use crate::type_conversions::ToPython;
+use crate::xml::XmlFragment;
 
 
 #[pyclass]
@@ -70,6 +64,10 @@ impl Doc {
         let shared = self.doc.get_or_insert_map(name);
         let pyshared: Py<Map> = Py::new(py, Map::from(shared))?;
         Ok(pyshared)
+    }
+
+    fn get_or_insert_xml_fragment(&mut self, name: &str) -> XmlFragment {
+        self.doc.get_or_insert_xml_fragment(name).into()
     }
 
     fn create_transaction(&self, py: Python<'_>) -> PyResult<Py<Transaction>> {

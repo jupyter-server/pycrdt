@@ -15,6 +15,10 @@ from ._sync import read_message as read_message
 from ._sync import write_var_uint as write_var_uint
 from ._text import Text as Text
 from ._text import TextEvent as TextEvent
+from ._xml import XmlElement as XmlElement
+from ._xml import XmlFragment as XmlFragment
+from ._xml import XmlText as XmlText
+from ._xml import XmlEvent as XmlEvent
 from ._transaction import ReadTransaction as ReadTransaction
 from ._transaction import Transaction as Transaction
 from ._undo import UndoManager as UndoManager

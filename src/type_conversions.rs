@@ -1,14 +1,14 @@
 use pyo3::prelude::*;
 use pyo3::types::{IntoPyDict, PyAny, PyBool, PyByteArray, PyDict, PyFloat, PyList, PyLong, PyString, PyBytes};
 use yrs::types::{Attrs, Change, EntryChange, Delta, Events, Path, PathSegment};
-use yrs::{Any, Out, TransactionMut};
-use std::ops::Deref;
+use yrs::{Any, Out, TransactionMut, XmlOut};
 use std::collections::{VecDeque, HashMap};
 use crate::text::{Text, TextEvent};
 use crate::array::{Array, ArrayEvent};
 use crate::map::{Map, MapEvent};
 use crate::doc::Doc;
 use crate::undo::StackItem;
+use crate::xml::{XmlElement, XmlEvent, XmlFragment, XmlText};
 
 pub trait ToPython {
     fn into_py(self, py: Python) -> PyObject;
@@ -77,7 +77,7 @@ impl ToPython for Delta {
                 result.set_item("insert", value).unwrap();
 
                 if let Some(attrs) = attrs {
-                    let attrs = attrs_into_py(attrs.deref());
+                    let attrs = (&*attrs).into_py(py);
                     result.set_item("attributes", attrs).unwrap();
                 }
             }
@@ -85,7 +85,7 @@ impl ToPython for Delta {
                 result.set_item("retain", len).unwrap();
 
                 if let Some(attrs) = attrs {
-                    let attrs = attrs_into_py(attrs.deref());
+                    let attrs = (&*attrs).into_py(py);
                     result.set_item("attributes", attrs).unwrap();
                 }
             }
@@ -97,7 +97,7 @@ impl ToPython for Delta {
     }
 }
 
-impl ToPython for Out{
+impl ToPython for Out {
     fn into_py(self, py: Python) -> pyo3::PyObject {
         match self {
             Out::Any(v) => v.into_py(py),
@@ -105,23 +105,49 @@ impl ToPython for Out{
             Out::YArray(v) => Array::from(v).into_py(py),
             Out::YMap(v) => Map::from(v).into_py(py),
             Out::YDoc(v) => Doc::from(v).into_py(py),
-            _ => pyo3::IntoPy::into_py(py.None(), py),
-            //Out::YXmlElement(v) => YXmlElement::from(v).into_py(py),
-            //Out::YXmlText(v) => YXmlText::from(v).into_py(py),
+            Out::YXmlElement(v) => XmlElement::from(v).into_py(py),
+            Out::YXmlText(v) => XmlText::from(v).into_py(py),
+            Out::YXmlFragment(v) => XmlFragment::from(v).into_py(py),
+            Out::UndefinedRef(_) => pyo3::IntoPy::into_py(py.None(), py),
         }
     }
 }
 
-fn attrs_into_py(attrs: &Attrs) -> PyObject {
-    Python::with_gil(|py| {
+impl ToPython for XmlOut {
+    fn into_py(self, py: Python) -> PyObject {
+        match self {
+            XmlOut::Element(xml_element_ref) => Py::new(py, XmlElement::from(xml_element_ref))
+                .unwrap()
+                .into_any(),
+            XmlOut::Fragment(xml_fragment_ref) => Py::new(py, XmlFragment::from(xml_fragment_ref))
+                .unwrap()
+                .into_any(),
+            XmlOut::Text(xml_text_ref) => {
+                Py::new(py, XmlText::from(xml_text_ref)).unwrap().into_any()
+            }
+        }
+    }
+}
+
+impl<T> ToPython for Option<T>
+where
+    T: ToPython,
+{
+    fn into_py(self, py: Python) -> PyObject {
+        self.map(|v| v.into_py(py)).unwrap_or_else(|| py.None())
+    }
+}
+
+impl ToPython for &'_ Attrs {
+    fn into_py(self, py: Python) -> PyObject {
         let o = PyDict::new_bound(py);
-        for (key, value) in attrs.iter() {
+        for (key, value) in self.iter() {
             let key = key.as_ref();
             let value = Out::Any(value.clone()).into_py(py);
             o.set_item(key, value).unwrap();
         }
         o.into()
-    })
+    }
 }
 
 impl ToPython for &Change {
@@ -255,9 +281,8 @@ pub(crate) fn events_into_py(txn: &TransactionMut, events: &Events) -> PyObject 
             yrs::types::Event::Text(e_txt) => TextEvent::new(e_txt, txn).into_py(py),
             yrs::types::Event::Array(e_arr) => ArrayEvent::new(e_arr, txn).into_py(py),
             yrs::types::Event::Map(e_map) => MapEvent::new(e_map, txn).into_py(py),
-            //yrs::types::Event::XmlElement(e_xml) => YXmlEvent::new(e_xml, txn).into_py(py),
-            //yrs::types::Event::XmlText(e_xml) => YXmlTextEvent::new(e_xml, txn).into_py(py),
-            _ => py.None(),
+            yrs::types::Event::XmlFragment(e_xml) => unsafe { XmlEvent::from_xml_event(e_xml, txn, py) }.into_py(py),
+            yrs::types::Event::XmlText(e_xml) => unsafe { XmlEvent::from_xml_text_event(e_xml, txn, py) }.into_py(py),
         });
         PyList::new_bound(py, py_events).into()
     })
