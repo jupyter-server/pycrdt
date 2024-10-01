@@ -3,6 +3,8 @@ from ._array import ArrayEvent as ArrayEvent
 from ._doc import Doc as Doc
 from ._map import Map as Map
 from ._map import MapEvent as MapEvent
+from ._pycrdt import StackItem as StackItem
+from ._pycrdt import SubdocsEvent as SubdocsEvent
 from ._pycrdt import Subscription as Subscription
 from ._pycrdt import TransactionEvent as TransactionEvent
 from ._sync import Decoder as Decoder
@@ -15,6 +17,7 @@ from ._sync import read_message as read_message
 from ._sync import write_var_uint as write_var_uint
 from ._text import Text as Text
 from ._text import TextEvent as TextEvent
+from ._transaction import NewTransaction as NewTransaction
 from ._transaction import ReadTransaction as ReadTransaction
 from ._transaction import Transaction as Transaction
 from ._undo import UndoManager as UndoManager

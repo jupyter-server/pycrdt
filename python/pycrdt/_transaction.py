@@ -13,6 +13,15 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 class Transaction:
+    """
+    A read-write transaction that can be used to mutate a document.
+    It must be used with a context manager (see [Doc.transaction()][pycrdt.Doc.transaction]):
+    ```py
+    with doc.transaction():
+        ...
+    ```
+    """
+
     _doc: Doc
     _txn: _Transaction | None
     _leases: int
@@ -77,6 +86,12 @@ class Transaction:
 
     @property
     def origin(self) -> Any:
+        """
+        The origin of the transaction.
+
+        Raises:
+            RuntimeError: No current transaction.
+        """
         if self._txn is None:
             raise RuntimeError("No current transaction")
 
@@ -88,6 +103,19 @@ class Transaction:
 
 
 class NewTransaction(Transaction):
+    """
+    A read-write transaction that can be used to mutate a document.
+    It can be used with a context manager or an async context manager
+    (see [Doc.new_transaction()][pycrdt.Doc.new_transaction]):
+    ```py
+    with doc.new_transaction():
+        ...
+
+    async with doc.new_transaction():
+        ...
+    ```
+    """
+
     async def __aenter__(self) -> Transaction:
         if self._doc._allow_multithreading:
             if not await to_thread.run_sync(
@@ -110,7 +138,9 @@ class NewTransaction(Transaction):
 
 
 class ReadTransaction(Transaction):
-    pass
+    """
+    A read-only transaction that cannot be used to mutate a document.
+    """
 
 
 def hash_origin(origin: Any) -> int:
