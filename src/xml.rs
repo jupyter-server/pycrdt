@@ -1,16 +1,13 @@
 
-use std::sync::Arc;
-
-use pyo3::types::{PyAnyMethods, PyDict, PyIterator, PyList, PyString, PyStringMethods};
+use pyo3::types::{PyAnyMethods, PyDict, PyIterator, PyList};
 use pyo3::{pyclass, pymethods, Bound, IntoPy as _, PyObject, PyResult, Python};
 use yrs::types::xml::{XmlEvent as _XmlEvent, XmlTextEvent as _XmlTextEvent};
-use yrs::types::Attrs;
 use yrs::{
     DeepObservable, GetString as _, Observable as _, Text as _, TransactionMut, Xml as _, XmlElementPrelim, XmlElementRef, XmlFragment as _, XmlFragmentRef, XmlOut, XmlTextPrelim, XmlTextRef
 };
 
 use crate::subscription::Subscription;
-use crate::type_conversions::{events_into_py, py_to_any, EntryChangeWrapper};
+use crate::type_conversions::{events_into_py, py_to_attrs, EntryChangeWrapper};
 use crate::{transaction::Transaction, type_conversions::ToPython};
 
 /// Implements methods common to `XmlFragment`, `XmlElement`, and `XmlText`.
@@ -323,15 +320,4 @@ impl XmlEvent {
             self.children_changed, self.target, self.path, self.delta, self.keys,
         )
     }
-}
-
-/// Converts an iterator of k,v tuples to an [`Attrs`] map
-fn py_to_attrs<'py>(
-    pyobj: Bound<'py, PyIterator>,
-) -> PyResult<Attrs> {
-    pyobj.map(|res| res.and_then(|item| {
-        let key = item.get_item(0)?.extract::<Bound<PyString>>()?;
-        let value = item.get_item(1).map(|v| py_to_any(&v))?;
-        Ok((Arc::from(key.to_str()?), value))
-    })).collect::<PyResult<Attrs>>()
 }

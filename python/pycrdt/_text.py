@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from ._base import BaseEvent, BaseType, base_types, event_types
 from ._pycrdt import Text as _Text
@@ -119,9 +119,30 @@ class Text(BaseType):
         """Remove the entire range of characters."""
         del self[:]
 
-    def insert(self, index: int, value: str) -> None:
+    def insert(self, index: int, value: str, attrs: dict[str, Any] | None = None) -> None:
         """Insert 'value' at character position 'index'."""
-        self[index:index] = value
+        with self.doc.transaction() as txn:
+            self._forbid_read_transaction(txn)
+            self.integrated.insert(txn._txn, index, value, iter(attrs.items()) if attrs is not None else None)
+
+    def insert_embed(self, index: int, value: Any, attrs: dict[str, Any] | None = None) -> None:
+        """Insert 'value' as an embed at character position 'index'."""
+        with self.doc.transaction() as txn:
+            self._forbid_read_transaction(txn)
+            self.integrated.insert_embed(txn._txn, index, value, iter(attrs.items()) if attrs is not None else None)
+
+    def format(self, start: int, stop: int, attrs: dict[str, Any]) -> None:
+        """Formats existing text with attributes"""
+        with self.doc.transaction() as txn:
+            self._forbid_read_transaction(txn)
+            start, stop = self._check_slice(slice(start, stop))
+            length = stop - start
+            if length > 0:
+                self.integrated.format(txn._txn, start, length, iter(attrs.items()))
+
+    def diff(self) -> list[tuple[Any, dict[str, Any] | None]]:
+        with self.doc.transaction() as txn:
+            return self.integrated.diff(txn._txn)
 
 
 class TextEvent(BaseEvent):

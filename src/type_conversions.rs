@@ -1,8 +1,9 @@
 use pyo3::prelude::*;
-use pyo3::types::{IntoPyDict, PyAny, PyBool, PyByteArray, PyDict, PyFloat, PyList, PyLong, PyString, PyBytes};
+use pyo3::types::{IntoPyDict, PyAny, PyBool, PyByteArray, PyBytes, PyDict, PyFloat, PyIterator, PyList, PyLong, PyString};
 use yrs::types::{Attrs, Change, EntryChange, Delta, Events, Path, PathSegment};
 use yrs::{Any, Out, TransactionMut, XmlOut};
 use std::collections::{VecDeque, HashMap};
+use std::sync::Arc;
 use crate::text::{Text, TextEvent};
 use crate::array::{Array, ArrayEvent};
 use crate::map::{Map, MapEvent};
@@ -287,3 +288,15 @@ pub(crate) fn events_into_py(txn: &TransactionMut, events: &Events) -> PyObject 
         PyList::new_bound(py, py_events).into()
     })
 }
+
+/// Converts an iterator of k,v tuples to an [`Attrs`] map
+pub(crate) fn py_to_attrs<'py>(
+    pyobj: Bound<'py, PyIterator>,
+) -> PyResult<Attrs> {
+    pyobj.map(|res| res.and_then(|item| {
+        let key = item.get_item(0)?.extract::<Bound<PyString>>()?;
+        let value = item.get_item(1).map(|v| py_to_any(&v))?;
+        Ok((Arc::from(key.to_str()?), value))
+    })).collect::<PyResult<Attrs>>()
+}
+

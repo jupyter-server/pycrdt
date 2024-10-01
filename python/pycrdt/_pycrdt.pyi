@@ -104,8 +104,14 @@ class Text:
     def len(self, txn: Transaction) -> int:
         """Returns the number of characters visible in the current shared text."""
 
-    def insert(self, txn: Transaction, index: int, chunk: str) -> None:
+    def insert(self, txn: Transaction, index: int, chunk: str, attrs: Iterator[tuple[str, Any]] | None = None) -> None:
         """Inserts a `chunk` of text at a given `index`."""
+
+    def insert_embed(self, txn: Transaction, index: int, embed: Any, attrs: Iterator[tuple[str, Any]] | None = None) -> None:
+        """Inserts an embed at a given `index`."""
+
+    def format(self, txn: Transaction, index: int, len: int, attrs: Iterator[tuple[str, Any]]) -> None:
+        """Formats a range of elements"""
 
     def remove_range(self, txn: Transaction, index: int, len: int) -> None:
         """Removes up to `len` characters from th current shared text, starting at
@@ -113,6 +119,9 @@ class Text:
 
     def get_string(self, txn: Transaction) -> str:
         """Returns a text representation of the current shared text."""
+
+    def diff(self, txn: Transaction) -> list[tuple[Any, dict[str, Any] | None]]:
+        """Returns a sequence of formatted chunks"""
 
     def observe(self, callback: Callable[[TextEvent], None]) -> Subscription:
         """Subscribes a callback to be called with the shared text change event.
