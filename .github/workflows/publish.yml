@@ -66,7 +66,7 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-windows
+          name: wheels-windows-${{ matrix.platform.target }}
           path: dist
 
   linux:
@@ -102,7 +102,7 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-linux
+          name: wheels-linux-${{ matrix.target }}
           path: dist
 
   linux-cross:
@@ -141,7 +141,7 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-linux-cross
+          name: wheels-linux-cross-${{ matrix.target }}
           path: dist
 
   pypi-release:
