@@ -3,12 +3,11 @@ from __future__ import annotations
 import json
 import time
 from logging import Logger, getLogger
-from typing import Any, Callable, Coroutine, Never
+from typing import Any, Callable
 from uuid import uuid4
 
 from ._doc import Doc
 from ._sync import Decoder, YMessageType, read_message, write_var_uint
-
 
 DEFAULT_USER = {"username": str(uuid4()), "name": "Jupyter server"}
 
@@ -25,7 +24,7 @@ class Awareness:
         self,
         ydoc: Doc,
         log: Logger | None = None,
-        on_change: Callable[[bytes], Coroutine[Any, Any, Never]] | None = None,
+        on_change: Callable[[bytes], None] | None = None,
         user: dict[str, str] | None = None,
     ):
         self.client_id = ydoc.client_id
@@ -118,7 +117,6 @@ class Awareness:
         return self._states.get(self.client_id, {})
 
     def set_local_state(self, state: dict[str, Any]) -> None:
-        self.log('SET LOCAL CHANGE')
         # Update the state and the meta.
         timestamp = int(time.time() * 1000)
         clock = self.meta.get(self.client_id, {}).get("clock", -1) + 1
@@ -142,7 +140,7 @@ class Awareness:
         msg = write_var_uint(YMessageType.AWARENESS) + msg
 
         if self.on_change:
-                self.on_change(msg)
+            self.on_change(msg)
 
     def set_local_state_field(self, field: str, value: Any) -> None:
         current_state = self.get_local_state()
