@@ -20,9 +20,7 @@ REMOTE_USER = {
 }
 
 
-def create_bytes_message(
-    client_id: int, user: dict[str, dict[str, str | None]] | str, clock: int = 1
-) -> bytes:
+def create_bytes_message(client_id, user, clock=1) -> bytes:
     if type(user) is str:
         new_user_bytes = user.encode("utf-8")
     else:
