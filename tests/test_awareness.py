@@ -1,5 +1,5 @@
-from copy import deepcopy
 import json
+from copy import deepcopy
 from uuid import uuid4
 
 from dirty_equals import IsStr
@@ -21,9 +21,7 @@ REMOTE_USER = {
 
 
 def create_bytes_message(
-    client_id: int,
-    user: dict[str, dict[str, str | None]] | str,
-    clock: int = 1
+    client_id: int, user: dict[str, dict[str, str | None]] | str, clock: int = 1
 ) -> bytes:
     if type(user) is str:
         new_user_bytes = user.encode("utf-8")
