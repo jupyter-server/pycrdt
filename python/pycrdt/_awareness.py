@@ -31,13 +31,13 @@ class Awareness:
         self.log = log or getLogger(__name__)
         self.meta = {}
         self._states = {}
+        self.on_change = on_change
 
         if user is not None:
             self.user = user
         else:
             self._user = DEFAULT_USER
             self._states[self.client_id] = {"user": DEFAULT_USER}
-        self.on_change = on_change
 
         self._subscriptions = []
 
@@ -55,6 +55,13 @@ class Awareness:
         self.set_local_state_field("user", self._user)
 
     def get_changes(self, message: bytes) -> dict[str, Any]:
+        """
+        Update the states with a user state.
+        This function send the changes to subscribers.
+
+        Args:
+            msg: Bytes representing the user state.
+        """
         message = read_message(message)
         decoder = Decoder(message)
         timestamp = int(time.time() * 1000)
@@ -117,7 +124,14 @@ class Awareness:
         return self._states.get(self.client_id, {})
 
     def set_local_state(self, state: dict[str, Any]) -> None:
-        # Update the state and the meta.
+        """
+        Update the local state and meta.
+        This function call the on_change() callback (if provided), with the states
+        formatted (bytes) as argument.
+
+        Args:
+            state: The dictionary representing the state.
+        """
         timestamp = int(time.time() * 1000)
         clock = self.meta.get(self.client_id, {}).get("clock", -1) + 1
         self._states[self.client_id] = state
@@ -143,6 +157,13 @@ class Awareness:
             self.on_change(msg)
 
     def set_local_state_field(self, field: str, value: Any) -> None:
+        """
+        Set a local state field.
+
+        Args:
+            field: The field to set (str)
+            value: the value of the field
+        """
         current_state = self.get_local_state()
         current_state[field] = value
         self.set_local_state(current_state)
