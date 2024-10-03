@@ -1,9 +1,31 @@
 import json
 
 from dirty_equals import IsStr
-from pycrdt import Awareness, Doc
+from pycrdt import Awareness, Doc, write_var_uint
 
 DEFAULT_USER = {"username": IsStr(), "name": "Jupyter server"}
+
+TEST_CLIENT_ID = 853790970
+TEST_USER = {
+    "user": {
+        "username": "2460ab00fd28415b87e49ec5aa2d482d",
+        "name": "Anonymous Ersa",
+        "display_name": "Anonymous Ersa",
+        "initials": "AE",
+        "avatar_url": None,
+        "color": "var(--jp-collaborator-color7)",
+    }
+}
+
+
+def create_bytes_message(client_id: int, user: dict[str, dict[str, str | None]]) -> bytes:
+    new_user_bytes = json.dumps(user, separators=(",", ":")).encode("utf-8")
+    msg = write_var_uint(len(new_user_bytes)) + new_user_bytes
+    msg = write_var_uint(1) + msg
+    msg = write_var_uint(client_id) + msg
+    msg = write_var_uint(1) + msg
+    msg = write_var_uint(len(msg)) + msg
+    return msg
 
 
 def test_awareness_default_user():
@@ -40,27 +62,18 @@ def test_awareness_get_changes():
     ydoc = Doc()
     awareness = Awareness(ydoc)
 
-    new_user = {
-        "user": {
-            "username": "2460ab00fd28415b87e49ec5aa2d482d",
-            "name": "Anonymous Ersa",
-            "display_name": "Anonymous Ersa",
-            "initials": "AE",
-            "avatar_url": None,
-            "color": "var(--jp-collaborator-color7)",
-        }
-    }
-    new_user_bytes = json.dumps(new_user, separators=(",", ":")).encode("utf-8")
-    new_user_message = b"\xc3\x01\x01\xfa\xa1\x8f\x97\x03\x03\xba\x01" + new_user_bytes
-    changes = awareness.get_changes(new_user_message)
+    changes = awareness.get_changes(create_bytes_message(TEST_CLIENT_ID, TEST_USER))
     assert changes == {
-        "added": [853790970],
+        "added": [TEST_CLIENT_ID],
         "updated": [],
         "filtered_updated": [],
         "removed": [],
-        "states": [new_user],
+        "states": [TEST_USER],
     }
-    assert awareness.states == {awareness.client_id: {"user": DEFAULT_USER}, 853790970: new_user}
+    assert awareness.states == {
+        awareness.client_id: {"user": DEFAULT_USER},
+        TEST_CLIENT_ID: TEST_USER,
+    }
 
 
 def test_awareness_observes():
@@ -74,19 +87,7 @@ def test_awareness_observes():
 
     awareness.observe(callback)
 
-    new_user = {
-        "user": {
-            "username": "2460ab00fd28415b87e49ec5aa2d482d",
-            "name": "Anonymous Ersa",
-            "display_name": "Anonymous Ersa",
-            "initials": "AE",
-            "avatar_url": None,
-            "color": "var(--jp-collaborator-color7)",
-        }
-    }
-    new_user_bytes = json.dumps(new_user, separators=(",", ":")).encode("utf-8")
-    new_user_message = b"\xc3\x01\x01\xfa\xa1\x8f\x97\x03\x03\xba\x01" + new_user_bytes
-    changes = awareness.get_changes(new_user_message)
+    changes = awareness.get_changes(create_bytes_message(TEST_CLIENT_ID, TEST_USER))
 
     assert called == changes
 
