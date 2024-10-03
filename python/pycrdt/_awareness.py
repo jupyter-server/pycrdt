@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import time
-from logging import Logger, getLogger
 from typing import Any, Callable
 from uuid import uuid4
 
@@ -14,7 +13,6 @@ DEFAULT_USER = {"username": str(uuid4()), "name": "Jupyter server"}
 
 class Awareness:
     client_id: int
-    log: Logger
     meta: dict[int, dict[str, Any]]
     _states: dict[int, dict[str, Any]]
     _subscriptions: list[Callable[[dict[str, Any]], None]]
@@ -23,12 +21,10 @@ class Awareness:
     def __init__(
         self,
         ydoc: Doc,
-        log: Logger | None = None,
         on_change: Callable[[bytes], None] | None = None,
         user: dict[str, str] | None = None,
     ):
         self.client_id = ydoc.client_id
-        self.log = log or getLogger(__name__)
         self.meta = {}
         self._states = {}
         self.on_change = on_change
