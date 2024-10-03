@@ -2,17 +2,58 @@ from __future__ import annotations
 
 import json
 import time
-from typing import Any
+from logging import Logger, getLogger
+from typing import Any, Callable, Coroutine, Never
+from uuid import uuid4
 
 from ._doc import Doc
-from ._sync import Decoder, read_message
+from ._sync import Decoder, YMessageType, read_message, write_var_uint
 
 
-class Awareness:  # pragma: no cover
-    def __init__(self, ydoc: Doc):
+DEFAULT_USER = {"username": str(uuid4()), "name": "Jupyter server"}
+
+
+class Awareness:
+    client_id: int
+    log: Logger
+    meta: dict[int, dict[str, Any]]
+    _states: dict[int, dict[str, Any]]
+    _subscriptions: list[Callable[[dict[str, Any]], None]]
+    _user: dict[str, str] | None
+
+    def __init__(
+        self,
+        ydoc: Doc,
+        log: Logger | None = None,
+        on_change: Callable[[bytes], Coroutine[Any, Any, Never]] | None = None,
+        user: dict[str, str] | None = None,
+    ):
         self.client_id = ydoc.client_id
-        self.meta: dict[int, dict[str, Any]] = {}
-        self.states: dict[int, dict[str, Any]] = {}
+        self.log = log or getLogger(__name__)
+        self.meta = {}
+        self._states = {}
+
+        if user is not None:
+            self.user = user
+        else:
+            self._user = DEFAULT_USER
+            self._states[self.client_id] = {"user": DEFAULT_USER}
+        self.on_change = on_change
+
+        self._subscriptions = []
+
+    @property
+    def states(self) -> dict[int, dict[str, Any]]:
+        return self._states
+
+    @property
+    def user(self) -> dict[str, str] | None:
+        return self._user
+
+    @user.setter
+    def user(self, user: dict[str, str]):
+        self._user = user
+        self.set_local_state_field("user", self._user)
 
     def get_changes(self, message: bytes) -> dict[str, Any]:
         message = read_message(message)
@@ -32,19 +73,19 @@ class Awareness:  # pragma: no cover
             if state is not None:
                 states.append(state)
             client_meta = self.meta.get(client_id)
-            prev_state = self.states.get(client_id)
+            prev_state = self._states.get(client_id)
             curr_clock = 0 if client_meta is None else client_meta["clock"]
             if curr_clock < clock or (
-                curr_clock == clock and state is None and client_id in self.states
+                curr_clock == clock and state is None and client_id in self._states
             ):
                 if state is None:
-                    if client_id == self.client_id and self.states.get(client_id) is not None:
+                    if client_id == self.client_id and self._states.get(client_id) is not None:
                         clock += 1
                     else:
-                        if client_id in self.states:
-                            del self.states[client_id]
+                        if client_id in self._states:
+                            del self._states[client_id]
                 else:
-                    self.states[client_id] = state
+                    self._states[client_id] = state
                 self.meta[client_id] = {
                     "clock": clock,
                     "last_updated": timestamp,
@@ -57,10 +98,70 @@ class Awareness:  # pragma: no cover
                     if state != prev_state:
                         filtered_updated.append(client_id)
                     updated.append(client_id)
-        return {
+
+        changes = {
             "added": added,
             "updated": updated,
             "filtered_updated": filtered_updated,
             "removed": removed,
             "states": states,
         }
+
+        # Do not trigger the callbacks if it is only a keep alive update
+        if added or filtered_updated or removed:
+            for callback in self._subscriptions:
+                callback(changes)
+
+        return changes
+
+    def get_local_state(self) -> dict[str, Any]:
+        return self._states.get(self.client_id, {})
+
+    def set_local_state(self, state: dict[str, Any]) -> None:
+        self.log('SET LOCAL CHANGE')
+        # Update the state and the meta.
+        timestamp = int(time.time() * 1000)
+        clock = self.meta.get(self.client_id, {}).get("clock", -1) + 1
+        self._states[self.client_id] = state
+        self.meta[self.client_id] = {"clock": clock, "last_updated": timestamp}
+        # Build the message to broadcast, with the following information:
+        # - message type
+        # - length in bytes of the updates
+        # - number of updates
+        # - for each update
+        #   - client_id
+        #   - clock
+        #   - length in bytes of the update
+        #   - encoded update
+        msg = json.dumps(state, separators=(",", ":")).encode("utf-8")
+        msg = write_var_uint(len(msg)) + msg
+        msg = write_var_uint(clock) + msg
+        msg = write_var_uint(self.client_id) + msg
+        msg = write_var_uint(1) + msg
+        msg = write_var_uint(len(msg)) + msg
+        msg = write_var_uint(YMessageType.AWARENESS) + msg
+
+        if self.on_change:
+                self.on_change(msg)
+
+    def set_local_state_field(self, field: str, value: Any) -> None:
+        current_state = self.get_local_state()
+        current_state[field] = value
+        self.set_local_state(current_state)
+
+    def observe(self, callback: Callable[[dict[str, Any]], None]) -> None:
+        """
+        Subscribes to awareness changes.
+
+        :param callback: Callback that will be called when the document changes.
+        :type callback: Callable[[str, Any], None]
+        """
+        self._subscriptions.append(callback)
+
+    def unobserve(self) -> None:
+        """
+        Unsubscribes to awareness changes.
+
+        This method removes all the callbacks.
+        """
+        self._subscriptions = []
