@@ -151,8 +151,8 @@ class Awareness:
         """
         Subscribes to awareness changes.
 
-        :param callback: Callback that will be called when the document changes.
-        :type callback: Callable[[str, Any], None]
+        Args:
+            callback: Callback that will be called when the document changes.
         """
         self._subscriptions.append(callback)
 
