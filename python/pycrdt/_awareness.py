@@ -52,11 +52,11 @@ class Awareness:
 
     def get_changes(self, message: bytes) -> dict[str, Any]:
         """
-        Update the states with a user state.
-        This function send the changes to subscribers.
+        Updates the states with a user state.
+        This function sends the changes to subscribers.
 
         Args:
-            msg: Bytes representing the user state.
+            message: Bytes representing the user state.
         """
         message = read_message(message)
         decoder = Decoder(message)
@@ -121,9 +121,9 @@ class Awareness:
 
     def set_local_state(self, state: dict[str, Any]) -> None:
         """
-        Update the local state and meta.
-        This function call the on_change() callback (if provided), with the states
-        formatted (bytes) as argument.
+        Updates the local state and meta.
+        This function calls the `on_change()` callback (if provided), with the serialized states
+        as argument.
 
         Args:
             state: The dictionary representing the state.
@@ -175,8 +175,6 @@ class Awareness:
 
     def unobserve(self) -> None:
         """
-        Unsubscribes to awareness changes.
-
-        This method removes all the callbacks.
+        Unsubscribes to awareness changes. This method removes all the callbacks.
         """
         self._subscriptions = []
