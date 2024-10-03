@@ -33,7 +33,7 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
-          name: wheels
+          name: wheels-macos
           path: dist
 
   windows:
@@ -66,7 +66,7 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
-          name: wheels
+          name: wheels-windows
           path: dist
 
   linux:
@@ -102,7 +102,7 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
-          name: wheels
+          name: wheels-linux
           path: dist
 
   linux-cross:
@@ -141,7 +141,7 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
-          name: wheels
+          name: wheels-linux-cross
           path: dist
 
   pypi-release:
@@ -156,7 +156,8 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: wheels
+          path: dist
+          merge-multiple: true
       - uses: actions/setup-python@v5
       - name: Publish to PyPI
         env:
@@ -164,4 +165,4 @@ jobs:
           TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
         run: |
           pip install --upgrade twine
-          twine upload --skip-existing *
+          twine upload --skip-existing dist/*
