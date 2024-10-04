@@ -66,7 +66,7 @@ jobs:
       run: pytest --color=yes -v tests
 
     - name: Run code coverage
-      if: ${{ (matrix.python-version == '3.12') && (matrix.os == 'ubuntu-latest') }}
+      if: ${{ (matrix.python-version == '3.12') && (matrix.os == 'ubuntu') }}
       run: |
         coverage run -m pytest tests
         coverage report --show-missing --fail-under=100

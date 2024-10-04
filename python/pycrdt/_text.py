@@ -275,9 +275,6 @@ class TextIterator:
         self.length = len(text)
         self.idx = 0
 
-    def __iter__(self) -> TextIterator:
-        return self
-
     def __next__(self) -> str:
         if self.idx == self.length:
             raise StopIteration

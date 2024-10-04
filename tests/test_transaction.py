@@ -7,7 +7,7 @@ from anyio import create_task_group, fail_after, sleep, to_thread
 from pycrdt import Array, Doc, Map, Text
 
 if sys.version_info < (3, 11):
-    from exceptiongroup import ExceptionGroup
+    from exceptiongroup import ExceptionGroup  # pragma: no cover
 
 pytestmark = pytest.mark.anyio
 

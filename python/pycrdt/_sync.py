@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import IntEnum
 from typing import Iterator
 
-from pycrdt import Doc
+from ._doc import Doc
 
 
 class YMessageType(IntEnum):
