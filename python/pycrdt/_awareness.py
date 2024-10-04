@@ -13,21 +13,16 @@ class Awareness:
     meta: dict[int, dict[str, Any]]
     _states: dict[int, dict[str, Any]]
     _subscriptions: list[Callable[[dict[str, Any]], None]]
-    _user: dict[str, str] | None
 
     def __init__(
         self,
         ydoc: Doc,
         on_change: Callable[[bytes], None] | None = None,
-        user: dict[str, str] | None = None,
     ):
         self.client_id = ydoc.client_id
         self.meta = {}
         self._states = {}
         self.on_change = on_change
-
-        if user is not None:
-            self.user = user
 
         self._subscriptions = []
 
@@ -35,22 +30,15 @@ class Awareness:
     def states(self) -> dict[int, dict[str, Any]]:
         return self._states
 
-    @property
-    def user(self) -> dict[str, str] | None:
-        return self._user
-
-    @user.setter
-    def user(self, user: dict[str, str]):
-        self._user = user
-        self.set_local_state_field("user", self._user)
-
     def get_changes(self, message: bytes) -> dict[str, Any]:
         """
-        Updates the states with a user state.
+        Updates the states with a client state.
         This function sends the changes to subscribers.
 
         Args:
-            message: Bytes representing the user state.
+            message: Bytes representing the client state.
+        Returns:
+            A dictionary summarizing the changes.
         """
         message = read_message(message)
         decoder = Decoder(message)

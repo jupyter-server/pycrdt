@@ -38,22 +38,6 @@ def test_awareness_get_local_state():
     assert awareness.get_local_state() == {}
 
 
-def test_awareness_with_user():
-    ydoc = Doc()
-    awareness = Awareness(ydoc, user=TEST_USER)
-
-    assert awareness.user == TEST_USER
-    assert awareness.get_local_state() == {"user": TEST_USER}
-
-
-def test_awareness_set_user():
-    ydoc = Doc()
-    awareness = Awareness(ydoc)
-    user = {"username": "test_username", "name": "test_name"}
-    awareness.user = user
-    assert awareness.user == user
-
-
 def test_awareness_set_local_state_field():
     ydoc = Doc()
     awareness = Awareness(ydoc)
@@ -123,7 +107,7 @@ def test_awareness_remove_user():
     assert awareness.states == {}
 
 
-def test_awareness_increment_clock():
+def test_awareness_do_not_increment_clock():
     ydoc = Doc()
     awareness = Awareness(ydoc)
     changes = awareness.get_changes(create_bytes_message(awareness.client_id, "null"))
@@ -134,7 +118,15 @@ def test_awareness_increment_clock():
         "removed": [],
         "states": [],
     }
-    assert awareness.meta.get(awareness.client_id, {}).get("clock", 0) == 1
+    assert awareness.meta.get(awareness.client_id, {}).get("clock") == 1
+
+
+def test_awareness_increment_clock():
+    ydoc = Doc()
+    awareness = Awareness(ydoc)
+    awareness.set_local_state_field("new_field", "new_value")
+    awareness.get_changes(create_bytes_message(awareness.client_id, "null"))
+    assert awareness.meta.get(awareness.client_id, {}).get("clock") == 2
 
 
 def test_awareness_observes():
