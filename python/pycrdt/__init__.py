@@ -1,5 +1,6 @@
 from ._array import Array as Array
 from ._array import ArrayEvent as ArrayEvent
+from ._awareness import Awareness as Awareness
 from ._doc import Doc as Doc
 from ._map import Map as Map
 from ._map import MapEvent as MapEvent

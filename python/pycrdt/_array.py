@@ -382,9 +382,6 @@ class ArrayIterator:
         self.length = len(array)
         self.idx = 0
 
-    def __iter__(self) -> ArrayIterator:
-        return self
-
     def __next__(self) -> Any:
         if self.idx == self.length:
             raise StopIteration
