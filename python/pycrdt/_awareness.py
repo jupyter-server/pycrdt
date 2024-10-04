@@ -118,7 +118,8 @@ class Awareness:
 
     def get_local_state(self) -> dict[str, Any]:
         """
-        Returns the local state (the state of the current awareness client).
+        Returns:
+            The local state (the state of the current awareness client).
         """
         return self._states.get(self.client_id, {})
 
@@ -157,11 +158,11 @@ class Awareness:
 
     def set_local_state_field(self, field: str, value: Any) -> None:
         """
-        Set a local state field.
+        Sets a local state field.
 
         Args:
-            field: The field to set (str)
-            value: the value of the field
+            field: The field to set.
+            value: The value of the field.
         """
         current_state = self.get_local_state()
         current_state[field] = value
