@@ -8,6 +8,7 @@
       - BaseType
       - Array
       - ArrayEvent
+      - Awareness
       - Decoder
       - Doc
       - Map

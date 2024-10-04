@@ -11,24 +11,29 @@ from ._sync import Decoder, YMessageType, read_message, write_var_uint
 
 class Awareness:
     client_id: int
-    meta: dict[int, dict[str, Any]]
+    _meta: dict[int, dict[str, Any]]
     _states: dict[int, dict[str, Any]]
     _subscriptions: dict[str, Callable[[dict[str, Any]], None]]
 
-    def __init__(
-        self,
-        ydoc: Doc,
-        on_change: Callable[[bytes], None] | None = None,
-    ):
+    def __init__(self, ydoc: Doc):
+        """
+        Args:
+            ydoc: The [Doc][pycrdt.Doc] to associate the awareness with.
+        """
         self.client_id = ydoc.client_id
-        self.meta = {}
+        self._meta = {}
         self._states = {}
-        self.on_change = on_change
 
         self._subscriptions = {}
 
     @property
+    def meta(self) -> dict[int, dict[str, Any]]:
+        """The clients' metadata."""
+        return self._meta
+
+    @property
     def states(self) -> dict[int, dict[str, Any]]:
+        """The client states."""
         return self._states
 
     def get_changes(self, message: bytes) -> dict[str, Any]:
@@ -37,6 +42,7 @@ class Awareness:
 
         Args:
             message: The binary changes.
+
         Returns:
             A dictionary summarizing the changes.
         """
@@ -56,7 +62,7 @@ class Awareness:
             state = None if not state_str else json.loads(state_str)
             if state is not None:
                 states.append(state)
-            client_meta = self.meta.get(client_id)
+            client_meta = self._meta.get(client_id)
             prev_state = self._states.get(client_id)
             curr_clock = 0 if client_meta is None else client_meta["clock"]
             if curr_clock < clock or (
@@ -70,7 +76,7 @@ class Awareness:
                             del self._states[client_id]
                 else:
                     self._states[client_id] = state
-                self.meta[client_id] = {
+                self._meta[client_id] = {
                     "clock": clock,
                     "last_updated": timestamp,
                 }
@@ -101,61 +107,66 @@ class Awareness:
     def get_local_state(self) -> dict[str, Any]:
         """
         Returns:
-            The local state (the state of the current awareness client).
+            The local state.
         """
         return self._states.get(self.client_id, {})
 
-    def set_local_state(self, state: dict[str, Any]) -> None:
+    def set_local_state(self, state: dict[str, Any], encode: bool = True) -> bytes | None:
         """
-        Updates the local state and meta.
-        This function calls the `on_change()` callback (if provided), with the serialized states
-        as argument.
+        Updates the local state and meta, and optionally returns the encoded new state.
 
         Args:
-            state: The dictionary representing the state.
+            state: The new local state.
+            encode: Whether to encode the new state and return it.
+
+        Returns:
+            The encoded new state, if `encode==True`.
         """
         timestamp = int(time.time() * 1000)
-        clock = self.meta.get(self.client_id, {}).get("clock", -1) + 1
+        clock = self._meta.get(self.client_id, {}).get("clock", -1) + 1
         self._states[self.client_id] = state
-        self.meta[self.client_id] = {"clock": clock, "last_updated": timestamp}
-        # Build the message to broadcast, with the following information:
-        # - message type
-        # - length in bytes of the updates
-        # - number of updates
-        # - for each update
-        #   - client_id
-        #   - clock
-        #   - length in bytes of the update
-        #   - encoded update
-        msg = json.dumps(state, separators=(",", ":")).encode("utf-8")
-        msg = write_var_uint(len(msg)) + msg
-        msg = write_var_uint(clock) + msg
-        msg = write_var_uint(self.client_id) + msg
-        msg = write_var_uint(1) + msg
-        msg = write_var_uint(len(msg)) + msg
-        msg = write_var_uint(YMessageType.AWARENESS) + msg
+        self._meta[self.client_id] = {"clock": clock, "last_updated": timestamp}
+        if encode:
+            update = json.dumps(state, separators=(",", ":")).encode()
+            message0 = [update]
+            message0.insert(0, write_var_uint(len(update)))
+            message0.insert(0, write_var_uint(clock))
+            message0.insert(0, write_var_uint(self.client_id))
+            message0.insert(0, bytes(1))
+            message0_bytes = b"".join(message0)
+            message1 = [
+                bytes(YMessageType.AWARENESS),
+                write_var_uint(len(message0_bytes)),
+                message0_bytes,
+            ]
+            message = b"".join(message1)
+            return message
+        return None
 
-        if self.on_change:
-            self.on_change(msg)
-
-    def set_local_state_field(self, field: str, value: Any) -> None:
+    def set_local_state_field(self, field: str, value: Any, encode: bool = True) -> bytes | None:
         """
-        Sets a local state field.
+        Sets a local state field, and optionally returns the encoded new state.
 
         Args:
-            field: The field to set.
-            value: The value of the field.
+            field: The field of the local state to set.
+            value: The value associated with the field.
+
+        Returns:
+            The encoded new state, if `encode==True`.
         """
         current_state = self.get_local_state()
         current_state[field] = value
-        self.set_local_state(current_state)
+        return self.set_local_state(current_state, encode)
 
     def observe(self, callback: Callable[[dict[str, Any]], None]) -> str:
         """
-        Subscribes to awareness changes.
+        Registers the given callback to awareness changes.
 
         Args:
-            callback: Callback that will be called when the document changes.
+            callback: The callback to call with the awareness changes.
+
+        Returns:
+            The subscription ID that can be used to unobserve.
         """
         id = str(uuid4())
         self._subscriptions[id] = callback
@@ -163,7 +174,9 @@ class Awareness:
 
     def unobserve(self, id: str) -> None:
         """
-        Unsubscribes to awareness changes. This method removes all the callbacks.
+        Unregisters the given subscription ID from awareness changes.
+
+        Args:
+            id: The subscription ID to unregister.
         """
-        if id in self._subscriptions.keys():
-            del self._subscriptions[id]
+        del self._subscriptions[id]

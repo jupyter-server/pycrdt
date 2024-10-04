@@ -42,7 +42,7 @@ def test_awareness_set_local_state_field():
     ydoc = Doc()
     awareness = Awareness(ydoc)
 
-    awareness.set_local_state_field("new_field", "new_value")
+    awareness.set_local_state_field("new_field", "new_value", encode=False)
     assert awareness.get_local_state() == {"new_field": "new_value"}
 
 
@@ -124,7 +124,7 @@ def test_awareness_do_not_increment_clock():
 def test_awareness_increment_clock():
     ydoc = Doc()
     awareness = Awareness(ydoc)
-    awareness.set_local_state_field("new_field", "new_value")
+    awareness.set_local_state_field("new_field", "new_value", encode=False)
     awareness.get_changes(create_bytes_message(awareness.client_id, "null"))
     assert awareness.meta.get(awareness.client_id, {}).get("clock") == 2
 
@@ -163,18 +163,8 @@ def test_awareness_observes():
     assert called_2 == {}
 
 
-def test_awareness_on_change():
+def test_awareness_encode():
     ydoc = Doc()
-
-    changes = []
-
-    def callback(value):
-        changes.append(value)
-
-    awareness = Awareness(ydoc, on_change=callback)
-
-    awareness.set_local_state_field("new_field", "new_value")
-
-    assert len(changes) == 1
-
-    assert type(changes[0]) is bytes
+    awareness = Awareness(ydoc)
+    encoded_state = awareness.set_local_state_field("new_field", "new_value", encode=True)
+    assert encoded_state.endswith(b'{"new_field":"new_value"}')
