@@ -117,6 +117,9 @@ class Awareness:
         return changes
 
     def get_local_state(self) -> dict[str, Any]:
+        """
+        Returns the local state (the state of the current awareness client).
+        """
         return self._states.get(self.client_id, {})
 
     def set_local_state(self, state: dict[str, Any]) -> None:
