@@ -36,7 +36,7 @@ class Awareness:
         Updates the states and sends the changes to subscribers.
 
         Args:
-            message: Bytes representing the client state.
+            message: The binary changes.
         Returns:
             A dictionary summarizing the changes.
         """
