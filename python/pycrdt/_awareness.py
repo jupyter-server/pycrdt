@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import time
 from typing import Any, Callable
+from uuid import uuid4
 
 from ._doc import Doc
 from ._sync import Decoder, YMessageType, read_message, write_var_uint
@@ -12,7 +13,7 @@ class Awareness:
     client_id: int
     meta: dict[int, dict[str, Any]]
     _states: dict[int, dict[str, Any]]
-    _subscriptions: list[Callable[[dict[str, Any]], None]]
+    _subscriptions: dict[str, Callable[[dict[str, Any]], None]]
 
     def __init__(
         self,
@@ -24,7 +25,7 @@ class Awareness:
         self._states = {}
         self.on_change = on_change
 
-        self._subscriptions = []
+        self._subscriptions = {}
 
     @property
     def states(self) -> dict[int, dict[str, Any]]:
@@ -32,8 +33,7 @@ class Awareness:
 
     def get_changes(self, message: bytes) -> dict[str, Any]:
         """
-        Updates the states with a client state.
-        This function sends the changes to subscribers.
+        Updates the states and sends the changes to subscribers.
 
         Args:
             message: Bytes representing the client state.
@@ -93,7 +93,7 @@ class Awareness:
 
         # Do not trigger the callbacks if it is only a keep alive update
         if added or filtered_updated or removed:
-            for callback in self._subscriptions:
+            for callback in self._subscriptions.values():
                 callback(changes)
 
         return changes
@@ -150,17 +150,20 @@ class Awareness:
         current_state[field] = value
         self.set_local_state(current_state)
 
-    def observe(self, callback: Callable[[dict[str, Any]], None]) -> None:
+    def observe(self, callback: Callable[[dict[str, Any]], None]) -> str:
         """
         Subscribes to awareness changes.
 
         Args:
             callback: Callback that will be called when the document changes.
         """
-        self._subscriptions.append(callback)
+        id = str(uuid4())
+        self._subscriptions[id] = callback
+        return id
 
-    def unobserve(self) -> None:
+    def unobserve(self, id: str) -> None:
         """
         Unsubscribes to awareness changes. This method removes all the callbacks.
         """
-        self._subscriptions = []
+        if id in self._subscriptions.keys():
+            del self._subscriptions[id]

@@ -133,20 +133,34 @@ def test_awareness_observes():
     ydoc = Doc()
     awareness = Awareness(ydoc)
 
-    called = {}
+    called_1 = {}
+    called_2 = {}
 
-    def callback(value):
-        called.update(value)
+    def callback_1(value):
+        called_1.update(value)
 
-    awareness.observe(callback)
+    def callback_2(value):
+        called_2.update(value)
+
+    awareness.observe(callback_1)
+    sub_2 = awareness.observe(callback_2)
     changes = awareness.get_changes(create_bytes_message(REMOTE_CLIENT_ID, REMOTE_USER))
-    assert called == changes
+    assert called_1 == changes
+    assert called_2 == changes
 
-    called = {}
-    awareness.unobserve()
-    changes = awareness.get_changes(create_bytes_message(REMOTE_CLIENT_ID, REMOTE_USER))
-    assert called != changes
-    assert called == {}
+    keys = list(called_1.keys())
+    for k in keys:
+        del called_1[k]
+
+    keys = list(called_2.keys())
+    for k in keys:
+        del called_2[k]
+
+    awareness.unobserve(sub_2)
+    changes = awareness.get_changes(create_bytes_message(REMOTE_CLIENT_ID, "null"))
+    assert called_1 == changes
+    assert called_2 != changes
+    assert called_2 == {}
 
 
 def test_awareness_on_change():
