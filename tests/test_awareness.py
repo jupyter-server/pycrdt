@@ -2,10 +2,8 @@ import json
 from copy import deepcopy
 from uuid import uuid4
 
-from dirty_equals import IsStr
 from pycrdt import Awareness, Doc, write_var_uint
 
-DEFAULT_USER = {"username": IsStr(), "name": "Jupyter server"}
 TEST_USER = {"username": str(uuid4()), "name": "Test user"}
 REMOTE_CLIENT_ID = 853790970
 REMOTE_USER = {
@@ -33,11 +31,11 @@ def create_bytes_message(client_id, user, clock=1) -> bytes:
     return msg
 
 
-def test_awareness_default_user():
+def test_awareness_get_local_state():
     ydoc = Doc()
     awareness = Awareness(ydoc)
 
-    assert awareness.user == DEFAULT_USER
+    assert awareness.get_local_state() == {}
 
 
 def test_awareness_with_user():
@@ -45,6 +43,7 @@ def test_awareness_with_user():
     awareness = Awareness(ydoc, user=TEST_USER)
 
     assert awareness.user == TEST_USER
+    assert awareness.get_local_state() == {"user": TEST_USER}
 
 
 def test_awareness_set_user():
@@ -55,19 +54,12 @@ def test_awareness_set_user():
     assert awareness.user == user
 
 
-def test_awareness_get_local_state():
-    ydoc = Doc()
-    awareness = Awareness(ydoc)
-
-    assert awareness.get_local_state() == {"user": DEFAULT_USER}
-
-
 def test_awareness_set_local_state_field():
     ydoc = Doc()
     awareness = Awareness(ydoc)
 
     awareness.set_local_state_field("new_field", "new_value")
-    assert awareness.get_local_state() == {"user": DEFAULT_USER, "new_field": "new_value"}
+    assert awareness.get_local_state() == {"new_field": "new_value"}
 
 
 def test_awareness_add_user():
@@ -83,7 +75,6 @@ def test_awareness_add_user():
         "states": [REMOTE_USER],
     }
     assert awareness.states == {
-        awareness.client_id: {"user": DEFAULT_USER},
         REMOTE_CLIENT_ID: REMOTE_USER,
     }
 
@@ -108,7 +99,6 @@ def test_awareness_update_user():
         "states": [remote_user],
     }
     assert awareness.states == {
-        awareness.client_id: {"user": DEFAULT_USER},
         REMOTE_CLIENT_ID: remote_user,
     }
 
@@ -130,7 +120,7 @@ def test_awareness_remove_user():
         "removed": [REMOTE_CLIENT_ID],
         "states": [],
     }
-    assert awareness.states == {awareness.client_id: {"user": DEFAULT_USER}}
+    assert awareness.states == {}
 
 
 def test_awareness_increment_clock():
@@ -144,7 +134,7 @@ def test_awareness_increment_clock():
         "removed": [],
         "states": [],
     }
-    assert awareness.meta.get(awareness.client_id, {}).get("clock", 0) == 2
+    assert awareness.meta.get(awareness.client_id, {}).get("clock", 0) == 1
 
 
 def test_awareness_observes():

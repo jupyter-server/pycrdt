@@ -3,12 +3,9 @@ from __future__ import annotations
 import json
 import time
 from typing import Any, Callable
-from uuid import uuid4
 
 from ._doc import Doc
 from ._sync import Decoder, YMessageType, read_message, write_var_uint
-
-DEFAULT_USER = {"username": str(uuid4()), "name": "Jupyter server"}
 
 
 class Awareness:
@@ -31,9 +28,6 @@ class Awareness:
 
         if user is not None:
             self.user = user
-        else:
-            self._user = DEFAULT_USER
-            self._states[self.client_id] = {"user": DEFAULT_USER}
 
         self._subscriptions = []
 
