@@ -71,7 +71,7 @@ class Awareness:
         decoder = Decoder(update)
         states = []
         length = decoder.read_var_uint()
-        states_changes = {
+        states_changes: dict[str, list[int]] = {
             "added": [],
             "updated": [],
             "filtered_updated": [],
@@ -121,7 +121,7 @@ class Awareness:
             A dictionary with the changes and the origin (="local").
         """
         clock = self._meta.get(self.client_id, {}).get("clock", 0) + 1
-        states_changes = {
+        states_changes: dict[str, list[int]] = {
             "added": [],
             "updated": [],
             "filtered_updated": [],
@@ -183,7 +183,7 @@ class Awareness:
             messages.append(b"".join(client_msg))
 
         if not messages:
-            return
+            return None
 
         messages.insert(0, write_var_uint(len(client_ids)))
         encoded_messages = b"".join(messages)
@@ -219,7 +219,7 @@ class Awareness:
         del self._subscriptions[id]
 
     def _update_states(
-        self, client_id: int, clock: int, state: Any, states_changes: dict[str, list[str]]
+        self, client_id: int, clock: int, state: Any, states_changes: dict[str, list[int]]
     ) -> None:
         """
         Update the states of the clients, and the states_changes dictionary.
