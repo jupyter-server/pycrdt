@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, Type, TypeVar, cast
 
-from ._base import BaseDoc, BaseType, base_types
+from ._base import BaseDoc, BaseType, base_types, forbid_read_transaction
 from ._pycrdt import Doc as _Doc
 from ._pycrdt import SubdocsEvent, Subscription, TransactionEvent
 from ._pycrdt import Transaction as _Transaction
@@ -71,7 +71,10 @@ class Doc(BaseDoc):
             except Exception as e:
                 self._twin_doc = Doc(dict(self))
                 raise e
-        self._doc.apply_update(update)
+        with self.transaction() as txn:
+            forbid_read_transaction(txn)
+            assert txn._txn is not None
+            self._doc.apply_update(txn._txn, update)
 
     def __setitem__(self, key: str, value: BaseType) -> None:
         if not isinstance(key, str):

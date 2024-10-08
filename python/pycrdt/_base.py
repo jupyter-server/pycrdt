@@ -20,6 +20,9 @@ if TYPE_CHECKING:  # pragma: no cover
 base_types: dict[Any, type[BaseType | BaseDoc]] = {}
 event_types: dict[Any, type[BaseEvent]] = {}
 
+def forbid_read_transaction(txn: Transaction):
+    if isinstance(txn, ReadTransaction):
+        raise RuntimeError("Read-only transaction cannot be used to modify document structure")
 
 class BaseDoc:
     _doc: _Doc
@@ -91,8 +94,7 @@ class BaseType(ABC):
     def _init(self, value: Any | None) -> None: ...
 
     def _forbid_read_transaction(self, txn: Transaction):
-        if isinstance(txn, ReadTransaction):
-            raise RuntimeError("Read-only transaction cannot be used to modify document structure")
+        forbid_read_transaction(txn)
 
     def _integrate(self, doc: Doc, integrated: Any) -> Any:
         prelim = self._prelim

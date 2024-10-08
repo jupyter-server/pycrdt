@@ -1,4 +1,4 @@
-from pycrdt import Doc, Map, get_state, get_update, merge_updates
+from pycrdt import Doc, Map, Text, get_state, get_update, merge_updates
 
 
 def test_update():
@@ -34,3 +34,21 @@ def test_update():
     doc1.apply_update(update1)
 
     assert data0.to_py() == data1.to_py() == {"key0": "val0", "key1": "val1"}
+
+def test_update_transaction():
+    doc0 = Doc()
+    text0 = doc0.get("test", type=Text)
+    text0 += "Hello"
+
+    update0 = doc0.get_update()
+
+    text0 += " World!"
+    update1 = doc0.get_update()
+    del doc0
+
+    doc1 = Doc()
+    with doc1.transaction():
+        doc1.apply_update(update0)
+        doc1.apply_update(update1)
+
+    assert str(doc1.get("test", type=Text)) == "Hello World!"

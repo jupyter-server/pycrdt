@@ -37,7 +37,7 @@ class Doc:
     def get_update(self, state: bytes) -> bytes:
         """Get the update from the given state to the current state."""
 
-    def apply_update(self, update: bytes) -> None:
+    def apply_update(self, txn: Transaction, update: bytes) -> None:
         """Apply the update to the document."""
 
     def roots(self, txn: Transaction) -> dict[str, Text | Array | Map]:
