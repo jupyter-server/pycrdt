@@ -110,6 +110,43 @@ def create_update_message(data: bytes) -> bytes:
     return create_message(data, YSyncMessageType.SYNC_UPDATE)
 
 
+class Encoder:
+    """
+    An encoder capable of writing messages to a binary stream.
+    """
+
+    stream: list[bytes]
+
+    def __init__(self) -> None:
+        self.stream = []
+
+    def write_var_uint(self, num: int) -> None:
+        """
+        Encodes a number.
+
+        Args:
+            num: The number to encode.
+        """
+        self.stream.append(write_var_uint(num))
+
+    def write_var_string(self, text: str) -> None:
+        """
+        Encodes a string.
+
+        Args:
+            text: The string to encode.
+        """
+        self.stream.append(write_var_uint(len(text)))
+        self.stream.append(text.encode())
+
+    def to_bytes(self) -> bytes:
+        """
+        Returns:
+            The binary stream.
+        """
+        return b"".join(self.stream)
+
+
 class Decoder:
     """
     A decoder capable of reading messages from a byte stream.

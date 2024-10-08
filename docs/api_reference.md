@@ -11,6 +11,7 @@
       - Awareness
       - Decoder
       - Doc
+      - Encoder
       - Map
       - MapEvent
       - NewTransaction

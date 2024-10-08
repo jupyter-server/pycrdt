@@ -9,6 +9,7 @@ from ._pycrdt import SubdocsEvent as SubdocsEvent
 from ._pycrdt import Subscription as Subscription
 from ._pycrdt import TransactionEvent as TransactionEvent
 from ._sync import Decoder as Decoder
+from ._sync import Encoder as Encoder
 from ._sync import YMessageType as YMessageType
 from ._sync import YSyncMessageType as YSyncMessageType
 from ._sync import create_sync_message as create_sync_message
