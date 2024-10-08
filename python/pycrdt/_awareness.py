@@ -55,7 +55,8 @@ class Awareness:
         clock = 0 if curr_local_meta is None else curr_local_meta["clock"] + 1
         prev_state = self._states.get(client_id)
         if state is None:
-            del self._states[client_id]
+            if client_id in self._states:
+                del self._states[client_id]
         else:
             self._states[client_id] = state
         timestamp = int(time.time() * 1000)
