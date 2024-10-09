@@ -3,7 +3,7 @@ from copy import deepcopy
 from uuid import uuid4
 
 import pytest
-from pycrdt import Awareness, Doc, Encoder
+from pycrdt import Awareness, Doc, Encoder, YMessageType, create_awareness_message, read_message
 
 TEST_USER = {"username": str(uuid4()), "name": "Test user"}
 REMOTE_CLIENT_ID = 853790970
@@ -325,11 +325,13 @@ def test_awareness_encode():
     assert awareness_update == create_awareness_update(
         awareness.client_id, awareness.get_local_state()
     )
+    message = create_awareness_message(awareness_update)
+    assert message[0] == YMessageType.AWARENESS
+    assert read_message(message[1:]) == awareness_update
 
 
 def test_awareness_encode_wrong_id():
     ydoc = Doc()
     awareness = Awareness(ydoc)
-
     with pytest.raises(TypeError):
         awareness.encode_awareness_update([10])
