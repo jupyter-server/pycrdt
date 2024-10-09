@@ -297,8 +297,19 @@ def test_awareness_observes_local_change():
 
     awareness.observe(callback)
     awareness.set_local_state_field("new_field", "new_value")
-    assert len(changes) == 1
+    assert len(changes) == 2
     assert changes[0] == (
+        "change",
+        (
+            {
+                "added": [],
+                "removed": [],
+                "updated": [ydoc.client_id],
+            },
+            "local",
+        ),
+    )
+    assert changes[1] == (
         "update",
         (
             {
