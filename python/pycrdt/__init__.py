@@ -9,12 +9,15 @@ from ._pycrdt import SubdocsEvent as SubdocsEvent
 from ._pycrdt import Subscription as Subscription
 from ._pycrdt import TransactionEvent as TransactionEvent
 from ._sync import Decoder as Decoder
+from ._sync import Encoder as Encoder
 from ._sync import YMessageType as YMessageType
 from ._sync import YSyncMessageType as YSyncMessageType
+from ._sync import create_awareness_message as create_awareness_message
 from ._sync import create_sync_message as create_sync_message
 from ._sync import create_update_message as create_update_message
 from ._sync import handle_sync_message as handle_sync_message
 from ._sync import read_message as read_message
+from ._sync import write_message as write_message
 from ._sync import write_var_uint as write_var_uint
 from ._text import Text as Text
 from ._text import TextEvent as TextEvent

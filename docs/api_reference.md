@@ -8,8 +8,10 @@
       - BaseType
       - Array
       - ArrayEvent
+      - Awareness
       - Decoder
       - Doc
+      - Encoder
       - Map
       - MapEvent
       - NewTransaction
@@ -24,6 +26,7 @@
       - UndoManager
       - YMessageType
       - YSyncMessageType
+      - create_awareness_message
       - create_sync_message
       - create_update_message
       - handle_sync_message
@@ -31,4 +34,5 @@
       - get_update
       - merge_updates
       - read_message
+      - write_message
       - write_var_uint

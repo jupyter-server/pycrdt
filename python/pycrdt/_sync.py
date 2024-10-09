@@ -54,18 +54,31 @@ def write_var_uint(num: int) -> bytes:
     return bytes(res)
 
 
-def create_message(data: bytes, msg_type: int) -> bytes:
+def create_awareness_message(data: bytes) -> bytes:
     """
-    Creates a binary Y message.
+    Creates an [AWARENESS][pycrdt.YMessageType] message.
 
     Args:
         data: The data to send in the message.
-        msg_type: The [message type][pycrdt.YSyncMessageType].
 
     Returns:
-        The binary Y message.
+        The [AWARENESS][pycrdt.YMessageType] message.
     """
-    return bytes([YMessageType.SYNC, msg_type]) + write_var_uint(len(data)) + data
+    return bytes([YMessageType.AWARENESS]) + write_message(data)
+
+
+def create_message(data: bytes, msg_type: int) -> bytes:
+    """
+    Creates a SYNC message.
+
+    Args:
+        data: The data to send in the message.
+        msg_type: The [SYNC message type][pycrdt.YSyncMessageType].
+
+    Returns:
+        The SYNC message.
+    """
+    return bytes([YMessageType.SYNC, msg_type]) + write_message(data)
 
 
 def create_sync_step1_message(data: bytes) -> bytes:
@@ -108,6 +121,43 @@ def create_update_message(data: bytes) -> bytes:
         A [SYNC_UPDATE][pycrdt.YSyncMessageType] message.
     """
     return create_message(data, YSyncMessageType.SYNC_UPDATE)
+
+
+class Encoder:
+    """
+    An encoder capable of writing messages to a binary stream.
+    """
+
+    stream: list[bytes]
+
+    def __init__(self) -> None:
+        self.stream = []
+
+    def write_var_uint(self, num: int) -> None:
+        """
+        Encodes a number.
+
+        Args:
+            num: The number to encode.
+        """
+        self.stream.append(write_var_uint(num))
+
+    def write_var_string(self, text: str) -> None:
+        """
+        Encodes a string.
+
+        Args:
+            text: The string to encode.
+        """
+        self.stream.append(write_var_uint(len(text)))
+        self.stream.append(text.encode())
+
+    def to_bytes(self) -> bytes:
+        """
+        Returns:
+            The binary stream.
+        """
+        return b"".join(self.stream)
 
 
 class Decoder:
@@ -203,6 +253,19 @@ def read_message(stream: bytes) -> bytes:
     message = Decoder(stream).read_message()
     assert message is not None
     return message
+
+
+def write_message(stream: bytes) -> bytes:
+    """
+    Writes a stream in a message.
+
+    Args:
+        stream: The byte stream to write in a message.
+
+    Returns:
+        The message containing the stream.
+    """
+    return write_var_uint(len(stream)) + stream
 
 
 def handle_sync_message(message: bytes, ydoc: Doc) -> bytes | None:
