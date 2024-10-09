@@ -30,9 +30,6 @@ jobs:
           - 'pypy3.8'
           - 'pypy3.9'
           - 'pypy3.10'
-        exclude:
-          - os: windows
-            python-version: '3.13'
 
     runs-on: ${{ matrix.os }}-latest
 
