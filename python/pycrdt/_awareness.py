@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 import time
 from typing import Any, Callable, cast
@@ -54,6 +55,8 @@ class Awareness:
         curr_local_meta = self._meta.get(client_id)
         clock = 0 if curr_local_meta is None else curr_local_meta["clock"] + 1
         prev_state = self._states.get(client_id)
+        if prev_state is not None:
+            prev_state = copy.deepcopy(prev_state)
         if state is None:
             if client_id in self._states:
                 del self._states[client_id]
@@ -93,6 +96,7 @@ class Awareness:
         """
         state = self.get_local_state()
         if state is not None:
+            state = copy.deepcopy(state)
             state[field] = value
             self.set_local_state(state)
 
