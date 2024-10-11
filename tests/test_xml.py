@@ -35,7 +35,7 @@ def test_api():
     assert str(frag.children[0]) == "Hello "
     assert str(frag.children[1]) == "<em class=\"bold\">World</em>"
     assert str(frag.children[2]) == "!"
-    assert [str(x) for x in frag.children] == ["Hello ", "<em class=\"bold\">World</em>", "!"]
+    assert list(frag.children) == [frag.children[0], frag.children[1], frag.children[2]]
 
     frag.children.insert(1, XmlElement("strong", None, ["wonderful"]))
     frag.children.insert(2, " ")

@@ -20,6 +20,7 @@ macro_rules! impl_xml_methods {
             // For `XmlElement` and `XmlText`, implements methods from `yrs::types::xml::Xml`
             $(, xml: $xinner:ident)?
         ] {
+            // Methods specific to the type
             $($extra:tt)*
         }
     ) => {
@@ -107,10 +108,18 @@ macro_rules! impl_xml_methods {
 
             $($extra)*
         }
+
+        impl std::hash::Hash for $typ {
+            fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+                let branch: &yrs::branch::Branch = self.$inner.as_ref();
+                branch.id().hash(state)
+            }
+        }
     };
 }
 
-#[pyclass]
+#[pyclass(eq, frozen, hash)]
+#[derive(PartialEq, Eq)]
 pub struct XmlFragment {
     pub fragment: XmlFragmentRef,
 }
@@ -145,7 +154,8 @@ impl_xml_methods!(XmlFragment[fragment, fragment: fragment] {
     }
 });
 
-#[pyclass]
+#[pyclass(eq, frozen, hash)]
+#[derive(PartialEq, Eq)]
 pub struct XmlElement {
     pub element: XmlElementRef,
 }
@@ -184,7 +194,8 @@ impl_xml_methods!(XmlElement[element, fragment: element, xml: element] {
     }
 });
 
-#[pyclass]
+#[pyclass(eq, frozen, hash)]
+#[derive(PartialEq, Eq)]
 pub struct XmlText {
     pub text: XmlTextRef,
 }

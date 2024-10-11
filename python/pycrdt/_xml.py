@@ -51,6 +51,12 @@ class _XmlBaseMixin(BaseType):
         with self.doc.transaction() as txn:
             return self.integrated.get_string(txn._txn)
 
+    def __eq__(self, other: _XmlBaseMixin):
+        return self.integrated == other.integrated
+
+    def __hash__(self) -> int:
+        return hash(self.integrated)
+
 class _XmlFragmentTraitMixin(_XmlBaseMixin):
     _integrated: _XmlElement | _XmlFragment | None
 
