@@ -3,7 +3,10 @@ from copy import deepcopy
 from uuid import uuid4
 
 import pytest
+from anyio import create_task_group, sleep
 from pycrdt import Awareness, Doc, Encoder, YMessageType, create_awareness_message, read_message
+
+pytestmark = pytest.mark.anyio
 
 TEST_USER = {"username": str(uuid4()), "name": "Test user"}
 REMOTE_CLIENT_ID = 853790970
@@ -346,3 +349,87 @@ def test_awareness_encode_wrong_id():
     awareness = Awareness(ydoc)
     with pytest.raises(TypeError):
         awareness.encode_awareness_update([10])
+
+
+async def test_awareness_periodic_updates():
+    ydoc = Doc()
+    outdated_timeout = 200
+    awareness = Awareness(ydoc, outdated_timeout=outdated_timeout)
+    remote_client_id = 0
+    awareness._meta[remote_client_id] = {"clock": 0, "lastUpdated": 0}
+    awareness._states[remote_client_id] = {}
+    changes = []
+
+    def callback(topic, value):
+        changes.append((topic, value))
+
+    awareness.observe(callback)
+    async with create_task_group() as tg:
+        await tg.start(awareness.start)
+        with pytest.raises(RuntimeError) as excinfo:
+            await tg.start(awareness.start)
+        assert str(excinfo.value) == "Awareness already started"
+        await sleep((outdated_timeout - outdated_timeout / 10) / 1000)
+        awareness.remove_awareness_states([awareness.client_id], "local")
+        await sleep(outdated_timeout / 1000)
+        await awareness.stop()
+        with pytest.raises(RuntimeError) as excinfo:
+            await awareness.stop()
+        assert str(excinfo.value) == "Awareness not started"
+
+    assert len(changes) == 5
+    assert changes[0] == (
+        "change",
+        (
+            {
+                "added": [],
+                "removed": [remote_client_id],
+                "updated": [],
+            },
+            "timeout",
+        ),
+    )
+    assert changes[1] == (
+        "update",
+        (
+            {
+                "added": [],
+                "removed": [remote_client_id],
+                "updated": [],
+            },
+            "timeout",
+        ),
+    )
+    assert changes[2] == (
+        "update",
+        (
+            {
+                "added": [],
+                "removed": [],
+                "updated": [awareness.client_id],
+            },
+            "local",
+        ),
+    )
+    assert changes[3] == (
+        "change",
+        (
+            {
+                "added": [],
+                "removed": [awareness.client_id],
+                "updated": [],
+            },
+            "local",
+        ),
+    )
+    assert changes[4] == (
+        "update",
+        (
+            {
+                "added": [],
+                "removed": [awareness.client_id],
+                "updated": [],
+            },
+            "local",
+        ),
+    )

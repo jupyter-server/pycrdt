@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import copy
 import json
-import time
-from typing import Any, Callable, cast
+from time import time
+from typing import Any, Callable, Literal, cast
 from uuid import uuid4
+
+from anyio import TASK_STATUS_IGNORED, create_task_group, sleep
+from anyio.abc import TaskGroup, TaskStatus
 
 from ._doc import Doc
 from ._sync import Decoder, Encoder
@@ -15,16 +18,20 @@ class Awareness:
     _meta: dict[int, dict[str, Any]]
     _states: dict[int, dict[str, Any]]
     _subscriptions: dict[str, Callable[[str, tuple[dict[str, Any], Any]], None]]
+    _task_group: TaskGroup | None
 
-    def __init__(self, ydoc: Doc):
+    def __init__(self, ydoc: Doc, *, outdated_timeout: int = 30000) -> None:
         """
         Args:
             ydoc: The [Doc][pycrdt.Doc] to associate the awareness with.
+            outdated_timeout: The timeout (in milliseconds) to consider a client gone.
         """
         self.client_id = ydoc.client_id
+        self._outdated_timeout = outdated_timeout
         self._meta = {}
         self._states = {}
         self._subscriptions = {}
+        self._task_group = None
         self.set_local_state({})
 
     @property
@@ -36,6 +43,62 @@ class Awareness:
     def states(self) -> dict[int, dict[str, Any]]:
         """The client states."""
         return self._states
+
+    def _emit(
+        self,
+        topic: Literal["change", "update"],
+        added: list[int],
+        updated: list[int],
+        removed: list[int],
+        origin: Any,
+    ):
+        for callback in self._subscriptions.values():
+            callback(topic, ({"added": added, "updated": updated, "removed": removed}, origin))
+
+    def _get_time(self) -> int:
+        return int(time() * 1000)
+
+    async def start(self, *, task_status: TaskStatus[None] = TASK_STATUS_IGNORED) -> None:
+        """
+        Starts updating the awareness periodically.
+        """
+        if self._task_group is not None:
+            raise RuntimeError("Awareness already started")
+
+        async with create_task_group() as tg:
+            self._task_group = tg
+            task_status.started()
+            tg.start_soon(self._start)
+
+    async def _start(self) -> None:
+        while True:
+            await sleep(self._outdated_timeout / 1000 / 10)
+            now = self._get_time()
+            if (
+                self.get_local_state() is not None
+                and self._outdated_timeout / 2 <= now - self._meta[self.client_id]["lastUpdated"]
+            ):
+                # renew local clock
+                self.set_local_state(self.get_local_state())
+            remove: list[int] = []
+            for client_id, meta in self._meta.items():
+                if (
+                    client_id != self.client_id
+                    and self._outdated_timeout <= now - meta["lastUpdated"]
+                    and client_id in self._states
+                ):
+                    remove.append(client_id)
+            if remove:
+                self.remove_awareness_states(remove, "timeout")
+
+    async def stop(self) -> None:
+        """
+        Stops updating the awareness periodically.
+        """
+        if self._task_group is None:
+            raise RuntimeError("Awareness not started")
+        self._task_group.cancel_scope.cancel()
+        self._task_group = None
 
     def get_local_state(self) -> dict[str, Any] | None:
         """
@@ -62,7 +125,7 @@ class Awareness:
                 del self._states[client_id]
         else:
             self._states[client_id] = state
-        timestamp = int(time.time() * 1000)
+        timestamp = self._get_time()
         self._meta[client_id] = {"clock": clock, "lastUpdated": timestamp}
         added = []
         updated = []
@@ -78,13 +141,8 @@ class Awareness:
             if prev_state != state:
                 filtered_updated.append(client_id)
         if added or filtered_updated or removed:
-            for callback in self._subscriptions.values():
-                callback(
-                    "change",
-                    ({"added": added, "updated": filtered_updated, "removed": removed}, "local"),
-                )
-        for callback in self._subscriptions.values():
-            callback("update", ({"added": added, "updated": updated, "removed": removed}, "local"))
+            self._emit("change", added, filtered_updated, removed, "local")
+        self._emit("update", added, updated, removed, "local")
 
     def set_local_state_field(self, field: str, value: Any) -> None:
         """
@@ -99,6 +157,29 @@ class Awareness:
             state = copy.deepcopy(state)
             state[field] = value
             self.set_local_state(state)
+
+    def remove_awareness_states(self, client_ids: list[int], origin: Any) -> None:
+        """
+        Removes awareness states for clients given by their IDs.
+
+        Args:
+            client_ids: The list of client IDs for which to remove the awareness states.
+            origin: The origin of the update.
+        """
+        removed = []
+        for client_id in client_ids:
+            if client_id in self._states:
+                del self._states[client_id]
+                if client_id == self.client_id:
+                    cur_meta = self._meta[client_id]
+                    self._meta[client_id] = {
+                        "clock": cur_meta["clock"] + 1,
+                        "lastUpdted": self._get_time(),
+                    }
+                removed.append(client_id)
+        if removed:
+            self._emit("change", [], [], removed, origin)
+            self._emit("update", [], [], removed, origin)
 
     def encode_awareness_update(self, client_ids: list[int]) -> bytes:
         """
@@ -129,7 +210,7 @@ class Awareness:
             origin: The origin of the update.
         """
         decoder = Decoder(update)
-        timestamp = int(time.time() * 1000)
+        timestamp = self._get_time()
         added = []
         updated = []
         filtered_updated = []
@@ -171,16 +252,9 @@ class Awareness:
                         filtered_updated.append(client_id)
                     updated.append(client_id)
         if added or filtered_updated or removed:
-            for callback in self._subscriptions.values():
-                callback(
-                    "change",
-                    ({"added": added, "updated": filtered_updated, "removed": removed}, origin),
-                )
+            self._emit("change", added, filtered_updated, removed, origin)
         if added or updated or removed:
-            for callback in self._subscriptions.values():
-                callback(
-                    "update", ({"added": added, "updated": updated, "removed": removed}, origin)
-                )
+            self._emit("update", added, updated, removed, origin)
 
     def observe(self, callback: Callable[[str, tuple[dict[str, Any], Any]], None]) -> str:
         """
