@@ -1,6 +1,7 @@
 
-use pyo3::types::{PyAnyMethods, PyDict, PyIterator, PyList};
+use pyo3::types::{PyAnyMethods, PyDict, PyIterator, PyList, PyString, PyTuple};
 use pyo3::{pyclass, pymethods, Bound, IntoPy as _, PyObject, PyResult, Python};
+use yrs::types::text::YChange;
 use yrs::types::xml::{XmlEvent as _XmlEvent, XmlTextEvent as _XmlTextEvent};
 use yrs::{
     DeepObservable, GetString as _, Observable as _, Text as _, TransactionMut, Xml as _, XmlElementPrelim, XmlElementRef, XmlFragment as _, XmlFragmentRef, XmlOut, XmlTextPrelim, XmlTextRef
@@ -232,6 +233,37 @@ impl_xml_methods!(XmlText[text, xml: text] {
         let mut t = _t.as_mut().unwrap().as_mut();
         self.text.format(&mut t, index, len, attrs);
         Ok(())
+    }
+
+    fn diff<'py>(&self, py: Python<'py>, txn: &mut Transaction) -> Bound<'py, PyList> {
+        let mut t0 = txn.transaction();
+        let t1 = t0.as_mut().unwrap();
+        let t = t1.as_ref();
+
+        let iter = self.text.diff(t, YChange::identity)
+            .into_iter()
+            .map(|diff| {
+                let attrs = diff.attributes.map(|attrs| {
+                    let pyattrs = PyDict::new_bound(py);
+                    for (name, value) in attrs.into_iter() {
+                        pyattrs.set_item(
+                            PyString::intern_bound(py, &*name),
+                            value.into_py(py),
+                        ).unwrap();
+                    }
+                    pyattrs.into_any().unbind()
+                }).unwrap_or_else(|| py.None());
+
+                PyTuple::new_bound(py, [
+                    diff.insert.into_py(py),
+                    attrs,
+                ])
+            });
+
+        PyList::new_bound(
+            py,
+            iter
+        )
     }
 
     fn observe(&self, f: PyObject) -> Subscription {

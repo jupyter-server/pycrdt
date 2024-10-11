@@ -304,6 +304,9 @@ class XmlText:
     def format(self, txn: Transaction, index: int, len: int, attrs: Iterator[tuple[str, Any]]):
         """Adds attributes to a section of text"""
 
+    def diff(self, txn: Transaction) -> list[tuple[Any, dict[str, Any] | None]]:
+        """Returns a sequence of formatted chunks"""
+
     def observe(self, callback: Callable[[XmlEvent], None]) -> Subscription:
         """Subscribes a callback to be called with the xml change event.
         Returns a subscription that can be used to unsubscribe."""
