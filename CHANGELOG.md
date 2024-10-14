@@ -1,5 +1,9 @@
 # Version history
 
+## 0.10.8
+
+- Use `agronholm/release-notes@v1` again, now that [it](https://github.com/agronholm/release-notes/issues/43) is fixed.
+
 ## 0.10.7
 
 - Use `agronholm/release-notes@1.0.1` instead of `v1`.
