@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, cast, Any
+from typing import TYPE_CHECKING, Any, Callable, cast
 
 from ._base import BaseEvent, BaseType, base_types, event_types
 from ._pycrdt import Subscription
@@ -278,8 +278,8 @@ class Text(BaseType):
         """
         Returns list of formatted chunks that the current text corresponds to.
 
-        Each list item is a tuple containing the chunk's contents and formatting attributes. The contents is usually
-        the text as a string, but may be other data for embedded objects.
+        Each list item is a tuple containing the chunk's contents and formatting attributes. The
+        contents is usually the text as a string, but may be other data for embedded objects.
         """
         with self.doc.transaction() as txn:
             return self.integrated.diff(txn._txn)

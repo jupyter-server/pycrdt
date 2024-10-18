@@ -186,8 +186,8 @@ class XmlText(_XmlTraitMixin):
     """
     A piece of text in an XML tree.
 
-    This is similar to the `Text` object, but instead of existing in a doc on its own, it is a child of
-    an `XmlElement` or `XmlFragment`.
+    This is similar to the `Text` object, but instead of existing in a doc on its own, it is a child
+    of an `XmlElement` or `XmlFragment`.
     """
 
     _prelim: str | None
@@ -266,8 +266,8 @@ class XmlText(_XmlTraitMixin):
         """
         Returns list of formatted chunks that the current text corresponds to.
 
-        Each list item is a tuple containing the chunk's contents and formatting attributes. The contents is usually
-        the text as a string, but may be other data for embedded objects.
+        Each list item is a tuple containing the chunk's contents and formatting attributes. The
+        contents is usually the text as a string, but may be other data for embedded objects.
         """
         with self.doc.transaction() as txn:
             return self.integrated.diff(txn._txn)

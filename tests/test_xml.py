@@ -83,7 +83,7 @@ def test_observe():
     fragment.children.append(XmlElement("em", None, ["This is a test"]))
     assert len(events) == 1
     assert len(events[0]) == 1
-    assert events[0][0].children_changed == True
+    assert events[0][0].children_changed is True
     assert str(events[0][0].target) == "Hello world!<em>This is a test</em>"
     assert events[0][0].path == []
     assert len(events[0][0].delta) == 2
