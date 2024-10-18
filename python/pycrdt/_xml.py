@@ -135,41 +135,43 @@ class XmlElement(_XmlFragmentTraitMixin, _XmlTraitMixin):
         _doc: Doc | None = None,
         _integrated: _XmlElement | None = None,
     ) -> None:
-        if tag is None and attributes is None and contents is None:
-            init = None
-        elif (attributes is not None or contents is not None) and tag is None:
-            raise ValueError("Tag is required if specifying attributes or contents")
-        else:
-            if isinstance(attributes, dict):
-                init_attrs = list(attributes.items())
-            elif attributes is not None:
-                init_attrs = list(attributes)
-            else:
-                init_attrs = []
+        """
+        Creates a new preliminary element.
 
-            init = (
+        `tag` is required.
+        """
+        if _integrated is not None:
+            super().__init__(init=None, _doc=_doc, _integrated=_integrated)
+            return
+
+        if tag is None:
+            raise ValueError("XmlElement: tag is required")
+
+        if isinstance(attributes, dict):
+            init_attrs = list(attributes.items())
+        elif attributes is not None:
+            init_attrs = list(attributes)
+        else:
+            init_attrs = []
+
+        super().__init__(
+            init=(
                 tag,
                 init_attrs,
                 list(contents) if contents is not None else [],
             )
-
-        super().__init__(
-            init=init,
-            _doc=_doc,
-            _integrated=_integrated,
         )
 
     def to_py(self) -> None:
         raise ValueError("XmlElement has no Python equivalent")
 
-    def _get_or_insert(self, _name: str, _doc: Doc) -> Any:
+    def _get_or_insert(self, name: str, doc: Doc) -> Any:
         raise ValueError("Cannot get an XmlElement from a doc - get an XmlFragment instead.")
 
     def _init(
         self, value: tuple[str, list[tuple[str, str]], list[str | XmlElement | XmlText]] | None
     ):
-        if value is None:
-            return
+        assert value is not None
         _, attrs, contents = value
         with self.doc.transaction():
             for k, v in attrs:
@@ -179,6 +181,9 @@ class XmlElement(_XmlFragmentTraitMixin, _XmlTraitMixin):
 
     @property
     def tag(self) -> str | None:
+        """
+        Gets the element's tag.
+        """
         return self.integrated.tag()
 
 
@@ -190,12 +195,12 @@ class XmlText(_XmlTraitMixin):
     of an `XmlElement` or `XmlFragment`.
     """
 
-    _prelim: str | None
+    _prelim: str
     _integrated: _XmlText | None
 
     def __init__(
         self,
-        init: str | None = None,
+        init: str = "",
         *,
         _doc: Doc | None = None,
         _integrated: _XmlText | None = None,
@@ -209,14 +214,13 @@ class XmlText(_XmlTraitMixin):
     def _get_or_insert(self, _name: str, _doc: Doc) -> Any:
         raise ValueError("Cannot get an XmlText from a doc - get an XmlFragment instead.")
 
-    def to_py(self) -> str | None:
+    def to_py(self) -> str:
         if self._integrated is None:
             return self._prelim
         return str(self)
 
-    def _init(self, value: str | None) -> None:
-        if value is None:
-            return
+    def _init(self, value: str | None) -> None:  # pragma: no cover
+        assert value is not None
         with self.doc.transaction() as txn:
             self.integrated.insert(txn._txn, 0, value)
 
@@ -236,7 +240,7 @@ class XmlText(_XmlTraitMixin):
         with self.doc.transaction() as txn:
             self._forbid_read_transaction(txn)
             self.integrated.insert(
-                txn._txn, index, value, attrs.items() if attrs is not None else iter([])
+                txn._txn, index, value, iter(attrs.items()) if attrs is not None else iter([])
             )
 
     def insert_embed(self, index: int, value: Any, attrs: dict[str, Any] | None = None) -> None:
@@ -283,7 +287,7 @@ class XmlText(_XmlTraitMixin):
                 if length > 0:
                     self.integrated.remove_range(txn._txn, start, length)
             else:
-                raise RuntimeError(f"Index not supported: {key}")
+                raise TypeError(f"Index not supported: {key}")
 
     def clear(self) -> None:
         """Remove the entire range of characters."""
@@ -407,7 +411,7 @@ class XmlChildrenView:
                 if length > 0:
                     self.inner.integrated.remove_range(txn._txn, start, length)
             else:
-                raise RuntimeError(f"Index not supported: {key}")
+                raise TypeError(f"Index not supported: {key}")
 
     def __setitem__(self, key: int, value: str | XmlText | XmlElement):
         """
@@ -459,7 +463,7 @@ class XmlChildrenView:
                 element._init(prelim)
                 return element
             else:
-                raise ValueError("Cannot add value to XML: " + repr(element))
+                raise TypeError("Cannot add value to XML: " + repr(element))
 
     @overload
     def append(self, element: str | XmlText) -> XmlText: ...

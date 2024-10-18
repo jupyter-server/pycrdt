@@ -1,6 +1,6 @@
 
 use pyo3::types::{PyAnyMethods, PyDict, PyIterator, PyList, PyString, PyTuple};
-use pyo3::{pyclass, pymethods, Bound, IntoPy as _, PyObject, PyResult, Python};
+use pyo3::{pyclass, pymethods, Bound, IntoPy as _, PyAny, PyObject, PyResult, Python};
 use yrs::types::text::YChange;
 use yrs::types::xml::{XmlEvent as _XmlEvent, XmlTextEvent as _XmlTextEvent};
 use yrs::{
@@ -8,7 +8,7 @@ use yrs::{
 };
 
 use crate::subscription::Subscription;
-use crate::type_conversions::{events_into_py, py_to_attrs, EntryChangeWrapper};
+use crate::type_conversions::{events_into_py, py_to_any, py_to_attrs, EntryChangeWrapper};
 use crate::{transaction::Transaction, type_conversions::ToPython};
 
 /// Implements methods common to `XmlFragment`, `XmlElement`, and `XmlText`.
@@ -217,6 +217,20 @@ impl_xml_methods!(XmlText[text, xml: text] {
             self.text.insert_with_attributes(&mut t, index, text, attrs);
         } else {
             self.text.insert(&mut t, index, text);
+        }
+        Ok(())
+    }
+
+    #[pyo3(signature = (txn, index, embed, attrs=None))]
+    fn insert_embed<'py>(&self, txn: &mut Transaction, index: u32, embed: Bound<'py, PyAny>, attrs: Option<Bound<'_, PyIterator>>) -> PyResult<()> {
+        let embed = py_to_any(&embed);
+        let mut _t = txn.transaction();
+        let mut t = _t.as_mut().unwrap().as_mut();
+        if let Some(attrs) = attrs {
+            let attrs = py_to_attrs(attrs)?;
+            self.text.insert_embed_with_attributes(&mut t, index, embed, attrs);
+        } else {
+            self.text.insert_embed(&mut t, index, embed);
         }
         Ok(())
     }

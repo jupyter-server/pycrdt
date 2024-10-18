@@ -51,9 +51,9 @@ impl Text {
 
     #[pyo3(signature = (txn, index, embed, attrs=None))]
     fn insert_embed(&self, txn: &mut Transaction, index: u32, embed: Bound<'_, PyAny>, attrs: Option<Bound<'_, PyIterator>>) -> PyResult<()> {
+        let embed = py_to_any(&embed);
         let mut _t = txn.transaction();
         let mut t = _t.as_mut().unwrap().as_mut();
-        let embed = py_to_any(&embed);
         if let Some(attrs) = attrs {
             let attrs = py_to_attrs(attrs)?;
             self.text.insert_embed_with_attributes(&mut t, index, embed, attrs);
