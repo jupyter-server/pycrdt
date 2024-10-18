@@ -25,13 +25,28 @@ theme:
     - search.highlight
     - content.code.annotate
     - content.code.copy
+  logo: assets/logo.png
 
 nav:
 - Overview: index.md
 - install.md
 - usage.md
+- api_reference.md
 
 markdown_extensions:
   - admonition
   - pymdownx.details
   - pymdownx.superfences
+
+plugins:
+- search
+- mkdocstrings:
+    default_handler: python
+    handlers:
+      python:
+        options:
+          show_source: false
+          docstring_style: google
+          find_stubs_package: true
+          docstring_options:
+            ignore_init_summary: false

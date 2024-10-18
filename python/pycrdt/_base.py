@@ -131,6 +131,12 @@ class BaseType(ABC):
 
     @property
     def doc(self) -> Doc:
+        """
+        The document this shared type belongs to.
+
+        Raises:
+            RuntimeError: Not integrated in a document yet.
+        """
         if self._doc is None:
             raise RuntimeError("Not integrated in a document yet")
         return self._doc
@@ -151,19 +157,31 @@ class BaseType(ABC):
     def type_name(self) -> str:
         return self._type_name
 
-    def observe(self, callback: Callable[[Any], None]) -> Subscription:
+    def observe(self, callback: Callable[[BaseEvent], None]) -> Subscription:
         _callback = partial(observe_callback, callback, self.doc)
         subscription = self.integrated.observe(_callback)
         self._subscriptions.append(subscription)
         return subscription
 
-    def observe_deep(self, callback: Callable[[Any], None]) -> Subscription:
+    def observe_deep(self, callback: Callable[[list[BaseEvent]], None]) -> Subscription:
+        """
+        Subscribes a callback for all events emitted by this and nested collaborative types.
+
+        Args:
+            callback: The callback to call with the list of events.
+        """
         _callback = partial(observe_deep_callback, callback, self.doc)
         subscription = self.integrated.observe_deep(_callback)
         self._subscriptions.append(subscription)
         return subscription
 
     def unobserve(self, subscription: Subscription) -> None:
+        """
+        Unsubscribes to changes using the given subscription.
+
+        Args:
+            subscription: The subscription to unregister.
+        """
         self._subscriptions.remove(subscription)
         subscription.drop()
 

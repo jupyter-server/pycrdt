@@ -1,16 +1,21 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Callable, cast
 
 from ._base import BaseDoc, BaseEvent, BaseType, base_types, event_types
 from ._pycrdt import Array as _Array
 from ._pycrdt import ArrayEvent as _ArrayEvent
+from ._pycrdt import Subscription
 
 if TYPE_CHECKING:  # pragma: no cover
     from ._doc import Doc
 
 
 class Array(BaseType):
+    """
+    A collection used to store data in an indexed sequence structure, similar to a Python `list`.
+    """
+
     _prelim: list | None
     _integrated: _Array | None
 
@@ -21,6 +26,16 @@ class Array(BaseType):
         _doc: Doc | None = None,
         _integrated: _Array | None = None,
     ) -> None:
+        """
+        Creates an array with an optional initial value:
+        ```py
+        array0 = Array()
+        array1 = Array(["foo", 3, array0])
+        ```
+
+        Args:
+            init: The list from which to initialize the array.
+        """
         super().__init__(
             init=init,
             _doc=_doc,
@@ -52,24 +67,65 @@ class Array(BaseType):
         return doc._doc.get_or_insert_array(name)
 
     def __len__(self) -> int:
+        """
+        ```py
+        Doc()["array"] = array = Array([2, 3, 0])
+        assert len(array) == 3
+        ```
+
+        Returns:
+            The length of the array.
+        """
         with self.doc.transaction() as txn:
             return self.integrated.len(txn._txn)
 
     def append(self, value: Any) -> None:
+        """
+        Appends an item to the array.
+
+        Args:
+            value: The item to append to the array.
+        """
         with self.doc.transaction():
             self += [value]
 
     def extend(self, value: list[Any]) -> None:
+        """
+        Extends the array with a list of items.
+
+        Args:
+            value: The items that will extend the array.
+        """
         with self.doc.transaction():
             self += value
 
     def clear(self) -> None:
+        """
+        Removes all items from the array.
+        """
         del self[:]
 
-    def insert(self, index, object) -> None:
+    def insert(self, index: int, object: Any) -> None:
+        """
+        Inserts an item at a given index in the array.
+
+        Args:
+            index: The index where to insert the item.
+            object: The item to insert in the array.
+        """
         self[index:index] = [object]
 
     def pop(self, index: int = -1) -> Any:
+        """
+        Removes the item at the given index from the array, and returns it.
+        If no index is passed, removes and returns the last item.
+
+        Args:
+            index: The optional index of the item to pop.
+
+        Returns:
+            The item at the given index, or the last item.
+        """
         with self.doc.transaction():
             index = self._check_index(index)
             res = self[index]
@@ -79,6 +135,13 @@ class Array(BaseType):
             return res
 
     def move(self, source_index: int, destination_index: int) -> None:
+        """
+        Moves an item in the array from a source index to a destination index.
+
+        Args:
+            source_index: The index of the item to move.
+            destination_index: The index where the item will be inserted.
+        """
         with self.doc.transaction() as txn:
             self._forbid_read_transaction(txn)
             source_index = self._check_index(source_index)
@@ -86,17 +149,60 @@ class Array(BaseType):
             self.integrated.move_to(txn._txn, source_index, destination_index)
 
     def __add__(self, value: list[Any]) -> Array:
+        """
+        Extends the array with a list of items:
+        ```py
+        Doc()["array"] = array = Array(["foo"])
+        array += ["bar", "baz"]
+        assert array.to_py() == ["foo", "bar", "baz"]
+        ```
+
+        Args:
+            value: The items that will extend the array.
+
+        Returns:
+            The extended array.
+        """
         with self.doc.transaction():
             length = len(self)
             self[length:length] = value
             return self
 
     def __radd__(self, value: list[Any]) -> Array:
+        """
+        Prepends a list of items to the array:
+        ```py
+        Doc()["array"] = array = Array(["bar", "baz"])
+        array = ["foo"] + array
+        assert array.to_py() == ["foo", "bar", "baz"]
+        ```
+
+        Args:
+            value: The list of items to prepend.
+
+        Returns:
+            The prepended array.
+        """
         with self.doc.transaction():
             self[0:0] = value
             return self
 
     def __setitem__(self, key: int | slice, value: Any | list[Any]) -> None:
+        """
+        Replaces the item at the given index with a new item:
+        ```py
+        Doc()["array"] = array = Array(["foo", "bar"])
+        array[1] = "baz"
+        assert array.to_py() == ["foo", "baz"]
+        ```
+
+        Args:
+            key: The index of the item to replace.
+            value: The new item to set.
+
+        Raises:
+            RuntimeError: Index must be of type integer.
+        """
         with self.doc.transaction():
             if isinstance(key, int):
                 key = self._check_index(key)
@@ -125,6 +231,20 @@ class Array(BaseType):
         return idx
 
     def __delitem__(self, key: int | slice) -> None:
+        """
+        Removes the item at the given index from the array:
+        ```py
+        Doc()["array"] = array = Array(["foo", "bar", "baz"])
+        del array[2]
+        assert array.to_py() == ["foo", "bar"]
+        ```
+
+        Args:
+            key: The index of the item to remove.
+
+        Raises:
+            RuntimeError: Array indices must be integers or slices.
+        """
         with self.doc.transaction() as txn:
             self._forbid_read_transaction(txn)
             if isinstance(key, int):
@@ -148,10 +268,20 @@ class Array(BaseType):
                 self.integrated.remove_range(txn._txn, i, n)
             else:
                 raise TypeError(
-                    f"array indices must be integers or slices, not {type(key).__name__}"
+                    f"Array indices must be integers or slices, not {type(key).__name__}"
                 )
 
     def __getitem__(self, key: int) -> BaseType:
+        """
+        Gets the item at the given index:
+        ```py
+        Doc()["array"] = array = Array(["foo", "bar", "baz"])
+        assert array[1] == "bar"
+        ```
+
+        Returns:
+            The item at the given index.
+        """
         with self.doc.transaction() as txn:
             if isinstance(key, int):
                 key = self._check_index(key)
@@ -162,30 +292,87 @@ class Array(BaseType):
                 step = 1 if key.step is None else key.step
                 return [self[i] for i in range(i0, i1, step)]
 
-    def __iter__(self):
+    def __iter__(self) -> ArrayIterator:
+        """
+        ```py
+        Doc()["array"] = array = Array(["foo", "foo"])
+        for value in array:
+            assert value == "foo"
+        ```
+        Returns:
+            An iterable over the items of the array.
+        """
         return ArrayIterator(self)
 
     def __contains__(self, item: Any) -> bool:
-        return item in list(self)
+        """
+        Checks if the given item is in the array:
+        ```py
+        Doc()["array"] = array = Array(["foo", "bar"])
+        assert "baz" not in array
+        ```
+
+        Args:
+            item: The item to look for in the array.
+
+        Returns:
+            True if the item was found.
+        """
+        return item in [value for value in self]
 
     def __str__(self) -> str:
+        """
+        ```py
+        Doc()["array"] = array = Array([2, 3, 0])
+        assert str(array) == "[2,3,0]"
+        ```
+
+        Returns:
+            The string representation of the array.
+        """
         with self.doc.transaction() as txn:
             return self.integrated.to_json(txn._txn)
 
     def to_py(self) -> list | None:
+        """
+        Recursively converts the array's items to Python objects, and
+        returns them in a list. If the array was not yet inserted in a document,
+        returns `None` if the array was not initialized.
+
+        Returns:
+            The array recursively converted to Python objects, or `None`.
+        """
         if self._integrated is None:
             py = self._prelim
             if py is None:
                 return None
         else:
-            py = list(self)
+            py = [value for value in self]
         for idx, val in enumerate(py):
             if isinstance(val, BaseType):
                 py[idx] = val.to_py()
         return py
 
+    def observe(self, callback: Callable[[ArrayEvent], None]) -> Subscription:
+        """
+        Subscribes a callback to be called with the array event.
+
+        Args:
+            callback: The callback to call with the [ArrayEvent][pycrdt.ArrayEvent].
+        """
+        return super().observe(cast(Callable[[BaseEvent], None], callback))
+
 
 class ArrayEvent(BaseEvent):
+    """
+    An array change event.
+
+    Attributes:
+        target (Array): The changed array.
+        delta (list[dict[str, Any]]): A list of items describing the changes.
+        path (list[int | str]): A list with the indices pointing to the array that was changed.
+    """
+
     __slots__ = "target", "delta", "path"
 
 
@@ -195,7 +382,7 @@ class ArrayIterator:
         self.length = len(array)
         self.idx = 0
 
-    def __next__(self):
+    def __next__(self) -> Any:
         if self.idx == self.length:
             raise StopIteration
 
