@@ -275,6 +275,12 @@ class Text(BaseType):
                 self.integrated.format(txn._txn, start, length, iter(attrs.items()))
 
     def diff(self) -> list[tuple[Any, dict[str, Any] | None]]:
+        """
+        Returns list of formatted chunks that the current text corresponds to.
+
+        Each list item is a tuple containing the chunk's contents and formatting attributes. The contents is usually
+        the text as a string, but may be other data for embedded objects.
+        """
         with self.doc.transaction() as txn:
             return self.integrated.diff(txn._txn)
 
