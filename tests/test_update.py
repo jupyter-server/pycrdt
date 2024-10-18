@@ -35,6 +35,7 @@ def test_update():
 
     assert data0.to_py() == data1.to_py() == {"key0": "val0", "key1": "val1"}
 
+
 def test_update_transaction():
     doc0 = Doc()
     text0 = doc0.get("test", type=Text)

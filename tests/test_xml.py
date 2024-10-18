@@ -1,5 +1,6 @@
 import pytest
-from pycrdt import Doc, XmlFragment, XmlText, XmlElement
+from pycrdt import Doc, XmlElement, XmlFragment, XmlText
+
 
 def test_plain_text():
     doc1 = Doc()
@@ -13,13 +14,16 @@ def test_plain_text():
 
     assert str(frag) == "Hello, World!"
 
+
 def test_api():
     doc = Doc()
-    frag = XmlFragment([
-        XmlText("Hello "),
-        XmlElement("em", {"class": "bold"}, [XmlText("World")]),
-        XmlText("!"),
-    ])
+    frag = XmlFragment(
+        [
+            XmlText("Hello "),
+            XmlElement("em", {"class": "bold"}, [XmlText("World")]),
+            XmlText("!"),
+        ]
+    )
 
     with pytest.raises(RuntimeError) as excinfo:
         frag.integrated
@@ -30,16 +34,16 @@ def test_api():
     assert str(excinfo.value) == "Not integrated in a document yet"
 
     doc["test"] = frag
-    assert str(frag) == "Hello <em class=\"bold\">World</em>!"
+    assert str(frag) == 'Hello <em class="bold">World</em>!'
     assert len(frag.children) == 3
     assert str(frag.children[0]) == "Hello "
-    assert str(frag.children[1]) == "<em class=\"bold\">World</em>"
+    assert str(frag.children[1]) == '<em class="bold">World</em>'
     assert str(frag.children[2]) == "!"
     assert list(frag.children) == [frag.children[0], frag.children[1], frag.children[2]]
 
     frag.children.insert(1, XmlElement("strong", None, ["wonderful"]))
     frag.children.insert(2, " ")
-    assert str(frag) == "Hello <strong>wonderful</strong> <em class=\"bold\">World</em>!"
+    assert str(frag) == 'Hello <strong>wonderful</strong> <em class="bold">World</em>!'
     assert len(frag.children) == 5
 
     el = frag.children[3]
@@ -56,7 +60,7 @@ def test_api():
 
     del frag.children[2]
     del frag.children[1]
-    assert str(frag) == "Hello <em class=\"bold\">World</em>!"
+    assert str(frag) == 'Hello <em class="bold">World</em>!'
 
 
 def test_observe():
@@ -74,7 +78,7 @@ def test_observe():
         )
         events.append(event)
 
-    sub = fragment.observe_deep(callback) # noqa: F841
+    sub = fragment.observe_deep(callback)  # noqa: F841
 
     fragment.children.append(XmlElement("em", None, ["This is a test"]))
     assert len(events) == 1

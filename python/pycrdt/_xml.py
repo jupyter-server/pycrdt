@@ -3,22 +3,28 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Iterator, overload
 
 from ._base import BaseEvent, BaseType, base_types, event_types
-from ._pycrdt import XmlFragment as _XmlFragment
 from ._pycrdt import XmlElement as _XmlElement
-from ._pycrdt import XmlText as _XmlText
 from ._pycrdt import XmlEvent as _XmlEvent
+from ._pycrdt import XmlFragment as _XmlFragment
+from ._pycrdt import XmlText as _XmlText
 
 if TYPE_CHECKING:  # pragma: no cover
+    from typing import Any, Iterable, Mapping, Sized, TypeVar
+
     from ._doc import Doc
-    from typing import Mapping, Any, Iterable, Sized, TypeVar
+
     T = TypeVar("T")
 
-def _integrated_to_wrapper(doc: Doc, inner: _XmlText | _XmlElement | _XmlFragment) -> XmlText | XmlElement | XmlFragment:
+
+def _integrated_to_wrapper(
+    doc: Doc, inner: _XmlText | _XmlElement | _XmlFragment
+) -> XmlText | XmlElement | XmlFragment:
     if isinstance(inner, _XmlElement):
         return XmlElement(_doc=doc, _integrated=inner)
     if isinstance(inner, _XmlFragment):
         return XmlFragment(_doc=doc, _integrated=inner)
     return XmlText(_doc=doc, _integrated=inner)
+
 
 def _check_slice(value: Sized, key: slice) -> tuple[int, int]:
     if key.step is not None:
@@ -37,6 +43,7 @@ def _check_slice(value: Sized, key: slice) -> tuple[int, int]:
         stop = key.stop
     return start, stop
 
+
 class _XmlBaseMixin(BaseType):
     _integrated: _XmlElement | _XmlText | _XmlFragment | None
 
@@ -51,11 +58,14 @@ class _XmlBaseMixin(BaseType):
         with self.doc.transaction() as txn:
             return self.integrated.get_string(txn._txn)
 
-    def __eq__(self, other: _XmlBaseMixin):
+    def __eq__(self, other: object):
+        if not isinstance(other, _XmlBaseMixin):
+            return False
         return self.integrated == other.integrated
 
     def __hash__(self) -> int:
         return hash(self.integrated)
+
 
 class _XmlFragmentTraitMixin(_XmlBaseMixin):
     _integrated: _XmlElement | _XmlFragment | None
@@ -64,13 +74,13 @@ class _XmlFragmentTraitMixin(_XmlBaseMixin):
     def children(self) -> XmlChildrenView:
         return XmlChildrenView(self)
 
+
 class _XmlTraitMixin(_XmlBaseMixin):
     _integrated: _XmlElement | _XmlText | None
 
     @property
     def attributes(self) -> XmlAttributesView:
         return XmlAttributesView(self)
-
 
 
 class XmlFragment(_XmlFragmentTraitMixin):
@@ -146,12 +156,14 @@ class XmlElement(_XmlFragmentTraitMixin, _XmlTraitMixin):
     def _get_or_insert(self, _name: str, _doc: Doc) -> Any:
         raise ValueError("Cannot get an XmlElement from a doc - get an XmlFragment instead.")
 
-    def _init(self, value: tuple[str, list[tuple[str, str]], list[str | XmlElement | XmlText]] | None):
+    def _init(
+        self, value: tuple[str, list[tuple[str, str]], list[str | XmlElement | XmlText]] | None
+    ):
         if value is None:
             return
         _, attrs, contents = value
         with self.doc.transaction():
-            for k,v in attrs:
+            for k, v in attrs:
                 self.attributes[k] = v
             for child in contents:
                 self.children.append(child)
@@ -159,7 +171,6 @@ class XmlElement(_XmlFragmentTraitMixin, _XmlTraitMixin):
     @property
     def tag(self) -> str | None:
         return self.integrated.tag()
-
 
 
 class XmlText(_XmlTraitMixin):
@@ -208,7 +219,9 @@ class XmlText(_XmlTraitMixin):
         """
         with self.doc.transaction() as txn:
             self._forbid_read_transaction(txn)
-            self.integrated.insert(txn._txn, index, value, attrs.items() if attrs is not None else iter([]))
+            self.integrated.insert(
+                txn._txn, index, value, attrs.items() if attrs is not None else iter([])
+            )
 
     def format(self, start: int, stop: int, attrs: dict[str, Any]) -> None:
         """Formats existing text with attributes"""
@@ -241,10 +254,8 @@ class XmlText(_XmlTraitMixin):
         del self[:]
 
 
-
 class XmlEvent(BaseEvent):
     __slots__ = ["children_changed", "target", "path", "delta", "keys"]
-
 
 
 class XmlAttributesView:
@@ -283,10 +294,9 @@ class XmlAttributesView:
         with self.inner.doc.transaction() as txn:
             return len(self.inner.integrated.attributes(txn._txn))
 
-    def __iter__(self) -> Iterable[tuple[str,str]]:
+    def __iter__(self) -> Iterable[tuple[str, str]]:
         with self.inner.doc.transaction() as txn:
             return iter(self.inner.integrated.attributes(txn._txn))
-
 
 
 class XmlChildrenView:
@@ -301,7 +311,9 @@ class XmlChildrenView:
 
     def __getitem__(self, index: int) -> XmlElement | XmlFragment | XmlText:
         with self.inner.doc.transaction() as txn:
-            return _integrated_to_wrapper(self.inner.doc, self.inner.integrated.get(txn._txn, index))
+            return _integrated_to_wrapper(
+                self.inner.doc, self.inner.integrated.get(txn._txn, index)
+            )
 
     def __delitem__(self, key: int | slice) -> None:
         with self.inner.doc.transaction() as txn:
@@ -361,7 +373,6 @@ class XmlChildrenView:
 
     def append(self, element: str | XmlText | XmlElement) -> XmlText | XmlElement:
         return self.insert(len(self), element)
-
 
 
 base_types[_XmlFragment] = XmlFragment

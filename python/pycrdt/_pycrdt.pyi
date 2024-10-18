@@ -104,13 +104,27 @@ class Text:
     def len(self, txn: Transaction) -> int:
         """Returns the number of characters visible in the current shared text."""
 
-    def insert(self, txn: Transaction, index: int, chunk: str, attrs: Iterator[tuple[str, Any]] | None = None) -> None:
+    def insert(
+        self,
+        txn: Transaction,
+        index: int,
+        chunk: str,
+        attrs: Iterator[tuple[str, Any]] | None = None,
+    ) -> None:
         """Inserts a `chunk` of text at a given `index`."""
 
-    def insert_embed(self, txn: Transaction, index: int, embed: Any, attrs: Iterator[tuple[str, Any]] | None = None) -> None:
+    def insert_embed(
+        self,
+        txn: Transaction,
+        index: int,
+        embed: Any,
+        attrs: Iterator[tuple[str, Any]] | None = None,
+    ) -> None:
         """Inserts an embed at a given `index`."""
 
-    def format(self, txn: Transaction, index: int, len: int, attrs: Iterator[tuple[str, Any]]) -> None:
+    def format(
+        self, txn: Transaction, index: int, len: int, attrs: Iterator[tuple[str, Any]]
+    ) -> None:
         """Formats a range of elements"""
 
     def remove_range(self, txn: Transaction, index: int, len: int) -> None:
@@ -197,9 +211,7 @@ class Map:
         `subscription`."""
 
 class XmlFragment:
-    def parent(self) -> XmlFragment | XmlElement | XmlText | None:
-        ...
-
+    def parent(self) -> XmlFragment | XmlElement | XmlText | None: ...
     def get_string(self, txn: Transaction) -> str:
         """Returns a text representation of the current shared xml."""
 
@@ -228,9 +240,7 @@ class XmlFragment:
         Returns a subscription that can be used to unsubscribe."""
 
 class XmlElement:
-    def parent(self) -> XmlFragment | XmlElement | XmlText | None:
-        ...
-
+    def parent(self) -> XmlFragment | XmlElement | XmlText | None: ...
     def get_string(self, txn: Transaction) -> str:
         """Returns a text representation of the current shared xml."""
 
@@ -254,7 +264,7 @@ class XmlElement:
 
     def attribute(self, txn: Transaction, name: str) -> str | None:
         """Gets an attribute, or None if the attribute does not exist"""
-    
+
     def insert_attribute(self, txn: Transaction, name: str, value: str) -> None:
         """Inserts or overwrites an attribute."""
 
@@ -267,16 +277,14 @@ class XmlElement:
     def observe(self, callback: Callable[[XmlEvent], None]) -> Subscription:
         """Subscribes a callback to be called with the xml change event.
         Returns a subscription that can be used to unsubscribe."""
-    
+
     def observe_deep(self, callback: Callable[[XmlEvent], None]) -> Subscription:
         """Subscribes a callback to be called with the xml change event
         and its nested elements.
         Returns a subscription that can be used to unsubscribe."""
 
 class XmlText:
-    def parent(self) -> XmlFragment | XmlElement | XmlText | None:
-        ...
-
+    def parent(self) -> XmlFragment | XmlElement | XmlText | None: ...
     def get_string(self, txn: Transaction) -> str:
         """Returns a text representation of the current shared xml."""
 
@@ -285,7 +293,7 @@ class XmlText:
 
     def attribute(self, txn: Transaction, name: str) -> str | None:
         """Gets an attribute, or None if the attribute does not exist"""
-    
+
     def insert_attribute(self, txn: Transaction, name: str, value: str) -> None:
         """Inserts or overwrites an attribute."""
 
@@ -295,7 +303,13 @@ class XmlText:
     def siblings(self, txn: Transaction) -> list[XmlFragment | XmlElement | XmlText]:
         """Gets the siblings of this node"""
 
-    def insert(self, txn: Transaction, index: int, text: str, attrs: Iterator[tuple[str, Any]] | None = None):
+    def insert(
+        self,
+        txn: Transaction,
+        index: int,
+        text: str,
+        attrs: Iterator[tuple[str, Any]] | None = None,
+    ):
         """Inserts text, optionally with attributes"""
 
     def remove_range(self, txn: Transaction, index: int, len: int):

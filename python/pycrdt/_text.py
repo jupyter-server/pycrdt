@@ -123,13 +123,17 @@ class Text(BaseType):
         """Insert 'value' at character position 'index'."""
         with self.doc.transaction() as txn:
             self._forbid_read_transaction(txn)
-            self.integrated.insert(txn._txn, index, value, iter(attrs.items()) if attrs is not None else None)
+            self.integrated.insert(
+                txn._txn, index, value, iter(attrs.items()) if attrs is not None else None
+            )
 
     def insert_embed(self, index: int, value: Any, attrs: dict[str, Any] | None = None) -> None:
         """Insert 'value' as an embed at character position 'index'."""
         with self.doc.transaction() as txn:
             self._forbid_read_transaction(txn)
-            self.integrated.insert_embed(txn._txn, index, value, iter(attrs.items()) if attrs is not None else None)
+            self.integrated.insert_embed(
+                txn._txn, index, value, iter(attrs.items()) if attrs is not None else None
+            )
 
     def format(self, start: int, stop: int, attrs: dict[str, Any]) -> None:
         """Formats existing text with attributes"""
