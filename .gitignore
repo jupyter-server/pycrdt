@@ -3,3 +3,6 @@ __pycache__/
 *.so
 Cargo.lock
 .coverage
+/site
+/dist
+_pycrdt.*.pyd

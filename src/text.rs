@@ -1,5 +1,5 @@
 use pyo3::prelude::*;
-use pyo3::types::{PyList, PyString};
+use pyo3::types::{PyDict, PyIterator, PyList, PyString, PyTuple};
 use yrs::{
     GetString,
     Observable,
@@ -7,10 +7,10 @@ use yrs::{
     Text as _Text,
     TransactionMut,
 };
-use yrs::types::text::TextEvent as _TextEvent;
+use yrs::types::text::{TextEvent as _TextEvent, YChange};
 use crate::transaction::Transaction;
 use crate::subscription::Subscription;
-use crate::type_conversions::ToPython;
+use crate::type_conversions::{py_to_any, py_to_attrs, ToPython};
 
 
 #[pyclass]
@@ -36,10 +36,38 @@ impl Text {
         Ok(len)
     }
 
-    fn insert(&self, txn: &mut Transaction, index: u32, chunk: &str) -> PyResult<()> {
+    #[pyo3(signature = (txn, index, chunk, attrs=None))]
+    fn insert(&self, txn: &mut Transaction, index: u32, chunk: &str, attrs: Option<Bound<'_, PyIterator>>) -> PyResult<()> {
         let mut _t = txn.transaction();
         let mut t = _t.as_mut().unwrap().as_mut();
-        self.text.insert(&mut t, index, chunk);
+        if let Some(attrs) = attrs {
+            let attrs = py_to_attrs(attrs)?;
+            self.text.insert_with_attributes(&mut t, index, chunk, attrs);
+        } else {
+            self.text.insert(&mut t, index, chunk);
+        }
+        Ok(())
+    }
+
+    #[pyo3(signature = (txn, index, embed, attrs=None))]
+    fn insert_embed(&self, txn: &mut Transaction, index: u32, embed: Bound<'_, PyAny>, attrs: Option<Bound<'_, PyIterator>>) -> PyResult<()> {
+        let embed = py_to_any(&embed);
+        let mut _t = txn.transaction();
+        let mut t = _t.as_mut().unwrap().as_mut();
+        if let Some(attrs) = attrs {
+            let attrs = py_to_attrs(attrs)?;
+            self.text.insert_embed_with_attributes(&mut t, index, embed, attrs);
+        } else {
+            self.text.insert_embed(&mut t, index, embed);
+        }
+        Ok(())
+    }
+
+    fn format(&self, txn: &mut Transaction, index: u32, len: u32, attrs: Bound<'_, PyIterator>) -> PyResult<()> {
+        let mut _t = txn.transaction();
+        let mut t = _t.as_mut().unwrap().as_mut();
+        let attrs = py_to_attrs(attrs)?;
+        self.text.format(&mut t, index, len, attrs);
         Ok(())
     }
 
@@ -56,6 +84,37 @@ impl Text {
         let t = t1.as_ref();
         let s = self.text.get_string(t);
         Python::with_gil(|py| PyString::new_bound(py, &s).into())
+    }
+
+    fn diff<'py>(&self, py: Python<'py>, txn: &mut Transaction) -> Bound<'py, PyList> {
+        let mut t0 = txn.transaction();
+        let t1 = t0.as_mut().unwrap();
+        let t = t1.as_ref();
+
+        let iter = self.text.diff(t, YChange::identity)
+            .into_iter()
+            .map(|diff| {
+                let attrs = diff.attributes.map(|attrs| {
+                    let pyattrs = PyDict::new_bound(py);
+                    for (name, value) in attrs.into_iter() {
+                        pyattrs.set_item(
+                            PyString::intern_bound(py, &*name),
+                            value.into_py(py),
+                        ).unwrap();
+                    }
+                    pyattrs.into_any().unbind()
+                }).unwrap_or_else(|| py.None());
+                
+                PyTuple::new_bound(py, [
+                    diff.insert.into_py(py),
+                    attrs,
+                ])
+            });
+
+        PyList::new_bound(
+            py,
+            iter
+        )
     }
 
     fn observe(&mut self, py: Python<'_>, f: PyObject) -> PyResult<Py<Subscription>> {
