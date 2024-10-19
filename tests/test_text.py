@@ -114,6 +114,28 @@ def test_slice():
     assert str(excinfo.value) == "Negative stop not supported"
 
 
+def test_formatting():
+    doc = Doc()
+    doc["text"] = text = Text("")
+
+    text.insert(0, "hello ")
+    assert len(text) == len("hello "), str(text)
+    text.insert(len(text), "world", {"bold": True})
+    text.insert(len(text), "! I have formatting!", {})
+    text.format(len("hello world! "), len("hello world! I have formatting!") + 1, {"font-size": 32})
+    text.insert_embed(len(text), b"png blob", {"type": "image"})
+
+    diff = text.diff()
+
+    assert diff == [
+        ("hello ", None),
+        ("world", {"bold": True}),
+        ("! ", None),
+        ("I have formatting!", {"font-size": 32}),
+        (bytearray(b"png blob"), {"type": "image"}),
+    ]
+
+
 def test_observe():
     doc = Doc()
     doc["text"] = text = Text()

@@ -24,6 +24,11 @@
       - Transaction
       - TransactionEvent
       - UndoManager
+      - XmlElement
+      - XmlFragment
+      - XmlText
+      - XmlChildrenView
+      - XmlAttributesView
       - YMessageType
       - YSyncMessageType
       - create_awareness_message

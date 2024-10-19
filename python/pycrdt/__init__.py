@@ -28,3 +28,7 @@ from ._undo import UndoManager as UndoManager
 from ._update import get_state as get_state
 from ._update import get_update as get_update
 from ._update import merge_updates as merge_updates
+from ._xml import XmlElement as XmlElement
+from ._xml import XmlEvent as XmlEvent
+from ._xml import XmlFragment as XmlFragment
+from ._xml import XmlText as XmlText

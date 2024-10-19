@@ -2,14 +2,7 @@ use pyo3::prelude::*;
 use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::types::{PyBytes, PyDict, PyLong, PyList};
 use yrs::{
-    Doc as _Doc,
-    ReadTxn,
-    Transact,
-    TransactionMut,
-    TransactionCleanupEvent,
-    SubdocsEvent as _SubdocsEvent,
-    StateVector,
-    Update,
+    Doc as _Doc, ReadTxn, StateVector, SubdocsEvent as _SubdocsEvent, Transact, TransactionCleanupEvent, TransactionMut, Update
 };
 use yrs::updates::encoder::Encode;
 use yrs::updates::decoder::Decode;
@@ -19,6 +12,7 @@ use crate::map::Map;
 use crate::transaction::Transaction;
 use crate::subscription::Subscription;
 use crate::type_conversions::ToPython;
+use crate::xml::XmlFragment;
 
 
 #[pyclass]
@@ -72,6 +66,10 @@ impl Doc {
         Ok(pyshared)
     }
 
+    fn get_or_insert_xml_fragment(&mut self, name: &str) -> XmlFragment {
+        self.doc.get_or_insert_xml_fragment(name).into()
+    }
+
     fn create_transaction(&self, py: Python<'_>) -> PyResult<Py<Transaction>> {
         if let Ok(txn) = self.doc.try_transact_mut() {
             let t: Py<Transaction> = Py::new(py, Transaction::from(txn))?;
@@ -105,15 +103,12 @@ impl Doc {
         Ok(bytes)
     }
 
-    fn apply_update(&mut self, update: &Bound<'_, PyBytes>) -> PyResult<()> {
-        let mut txn = self.doc.transact_mut();
-        let bytes: &[u8] = update.extract()?;
-        let u = Update::decode_v1(&bytes).unwrap();
-        if let Ok(_) = txn.apply_update(u) {
-            return Ok(());
-        } else {
-            return Err(PyRuntimeError::new_err("Cannot apply update"));
-        }
+    fn apply_update(&mut self, txn: &mut Transaction, update: &Bound<'_, PyBytes>) -> PyResult<()> {
+        let u = Update::decode_v1(update.as_bytes()).unwrap();
+        let mut _t = txn.transaction();
+        let t = _t.as_mut().unwrap().as_mut();
+        t.apply_update(u)
+            .map_err(|e| PyRuntimeError::new_err(format!("Cannot apply update: {}", e)))
     }
 
     fn roots(&self, py: Python<'_>, txn: &mut Transaction) -> PyObject {

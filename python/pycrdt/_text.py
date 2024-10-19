@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, cast
+from typing import TYPE_CHECKING, Any, Callable, cast
 
 from ._base import BaseEvent, BaseType, base_types, event_types
 from ._pycrdt import Subscription
@@ -233,18 +233,56 @@ class Text(BaseType):
         """Remove the entire range of characters."""
         del self[:]
 
-    def insert(self, index: int, value: str) -> None:
+    def insert(self, index: int, value: str, attrs: dict[str, Any] | None = None) -> None:
         """
         Inserts a string at a given index in the text.
+        ```py
         Doc()["text"] = text = Text("Hello World!")
         text.insert(5, ",")
         assert text == "Hello, World!"
+        ```
 
         Args:
             index: The index where to insert the string.
             value: The string to insert in the text.
+            attrs: Optional dictionary of attributes to apply
         """
-        self[index:index] = value
+        with self.doc.transaction() as txn:
+            self._forbid_read_transaction(txn)
+            self.integrated.insert(
+                txn._txn, index, value, iter(attrs.items()) if attrs is not None else None
+            )
+
+    def insert_embed(self, index: int, value: Any, attrs: dict[str, Any] | None = None) -> None:
+        """
+        Insert 'value' as an embed at a given index in the text.
+        """
+        with self.doc.transaction() as txn:
+            self._forbid_read_transaction(txn)
+            self.integrated.insert_embed(
+                txn._txn, index, value, iter(attrs.items()) if attrs is not None else None
+            )
+
+    def format(self, start: int, stop: int, attrs: dict[str, Any]) -> None:
+        """
+        Adds attribute to a section of text
+        """
+        with self.doc.transaction() as txn:
+            self._forbid_read_transaction(txn)
+            start, stop = self._check_slice(slice(start, stop))
+            length = stop - start
+            if length > 0:
+                self.integrated.format(txn._txn, start, length, iter(attrs.items()))
+
+    def diff(self) -> list[tuple[Any, dict[str, Any] | None]]:
+        """
+        Returns list of formatted chunks that the current text corresponds to.
+
+        Each list item is a tuple containing the chunk's contents and formatting attributes. The
+        contents is usually the text as a string, but may be other data for embedded objects.
+        """
+        with self.doc.transaction() as txn:
+            return self.integrated.diff(txn._txn)
 
     def observe(self, callback: Callable[[TextEvent], None]) -> Subscription:
         """
