@@ -7,7 +7,7 @@ from ._pycrdt import Array as _Array
 from ._pycrdt import ArrayEvent as _ArrayEvent
 from ._pycrdt import Subscription
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from ._doc import Doc
 
 

@@ -8,7 +8,7 @@ from ._pycrdt import XmlEvent as _XmlEvent
 from ._pycrdt import XmlFragment as _XmlFragment
 from ._pycrdt import XmlText as _XmlText
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from typing import Any, Iterable, Mapping, Sized, TypeVar
 
     from ._doc import Doc
@@ -136,9 +136,12 @@ class XmlElement(_XmlFragmentTraitMixin, _XmlTraitMixin):
         _integrated: _XmlElement | None = None,
     ) -> None:
         """
-        Creates a new preliminary element.
+        Creates an XML element.
 
-        `tag` is required.
+        Args:
+            tag: The tag of the element (required).
+            attributes: The optional attributes of the element.
+            contents: The optional contents of the element.
         """
         if _integrated is not None:
             super().__init__(init=None, _doc=_doc, _integrated=_integrated)
@@ -166,7 +169,7 @@ class XmlElement(_XmlFragmentTraitMixin, _XmlTraitMixin):
         raise ValueError("XmlElement has no Python equivalent")
 
     def _get_or_insert(self, name: str, doc: Doc) -> Any:
-        raise ValueError("Cannot get an XmlElement from a doc - get an XmlFragment instead.")
+        raise ValueError("Cannot get an XmlElement from a doc, get an XmlFragment instead")
 
     def _init(
         self, value: tuple[str, list[tuple[str, str]], list[str | XmlElement | XmlText]] | None
@@ -181,9 +184,7 @@ class XmlElement(_XmlFragmentTraitMixin, _XmlTraitMixin):
 
     @property
     def tag(self) -> str | None:
-        """
-        Gets the element's tag.
-        """
+        """The element's tag, if any."""
         return self.integrated.tag()
 
 
@@ -191,8 +192,8 @@ class XmlText(_XmlTraitMixin):
     """
     A piece of text in an XML tree.
 
-    This is similar to the `Text` object, but instead of existing in a doc on its own, it is a child
-    of an `XmlElement` or `XmlFragment`.
+    This is similar to a [Text][pycrdt.Text], but instead of existing in a [Doc][pycrdt.Doc] on its
+    own, it is a child of [XmlElement][pycrdt.XmlElement] or [XmlFragment][pycrdt.XmlFragment].
     """
 
     _prelim: str
@@ -235,7 +236,12 @@ class XmlText(_XmlTraitMixin):
 
     def insert(self, index: int, value: str, attrs: Mapping[str, Any] | None = None) -> None:
         """
-        Inserts text at the specified index, optionally with attributes
+        Inserts text at a given index, with optional attributes.
+
+        Args:
+            index: The index at which to insert the text.
+            value: The text to insert.
+            attrs: The optional attributes.
         """
         with self.doc.transaction() as txn:
             self._forbid_read_transaction(txn)
@@ -245,7 +251,12 @@ class XmlText(_XmlTraitMixin):
 
     def insert_embed(self, index: int, value: Any, attrs: dict[str, Any] | None = None) -> None:
         """
-        Insert 'value' as an embed at a given index in the text.
+        Insert an embed at a given index in the text, with optional attributes.
+
+        Args:
+            index: The index at which to insert the embed.
+            value: The embed to insert.
+            attrs: The optional attributes.
         """
         with self.doc.transaction() as txn:
             self._forbid_read_transaction(txn)
@@ -257,7 +268,10 @@ class XmlText(_XmlTraitMixin):
         """
         Formats existing text with attributes.
 
-        Affects the text from the 'start' index (inclusive) to the 'stop' index (exclusive).
+        Args:
+            start: The index at which to start applying the attributes (included).
+            stop: The index at which to stop applying the attributes (excluded).
+            attrs: The attributes to apply.
         """
         with self.doc.transaction() as txn:
             self._forbid_read_transaction(txn)
@@ -268,10 +282,11 @@ class XmlText(_XmlTraitMixin):
 
     def diff(self) -> list[tuple[Any, dict[str, Any] | None]]:
         """
-        Returns list of formatted chunks that the current text corresponds to.
-
-        Each list item is a tuple containing the chunk's contents and formatting attributes. The
-        contents is usually the text as a string, but may be other data for embedded objects.
+        Returns:
+            A list of formatted chunks that the current text corresponds to.
+                Each list item is a tuple containing the chunk's contents and formatting attributes.
+                The contents is usually the text as a string, but may be other data for embedded
+                objects.
         """
         with self.doc.transaction() as txn:
             return self.integrated.diff(txn._txn)
@@ -290,7 +305,7 @@ class XmlText(_XmlTraitMixin):
                 raise TypeError(f"Index not supported: {key}")
 
     def clear(self) -> None:
-        """Remove the entire range of characters."""
+        """Removes the entire range of characters."""
         del self[:]
 
 
@@ -300,7 +315,8 @@ class XmlEvent(BaseEvent):
 
 class XmlAttributesView:
     """
-    A list-like view into an `XmlFragment` or `XmlElement`'s child nodes.
+    A list-like view into an [XmlFragment][pycrdt.XmlFragment] or [XmlElement][pycrdt.XmlElement]'s
+    child nodes.
 
     Supports `len`, `in`, and getting, setting, and deleting by index. Iteration will iterate over
     key/value tuples.
@@ -313,7 +329,11 @@ class XmlAttributesView:
 
     def get(self, key: str) -> Any | None:
         """
-        Gets the value of an attribute, or `None` if there is no attribute with the passed in name.
+        Args:
+            key: The name of the attribute to get.
+
+        Returns:
+            The value of the attribute, or `None` if there is no attribute with the given name.
         """
         with self.inner.doc.transaction() as txn:
             v = self.inner.integrated.attribute(txn._txn, key)
@@ -323,7 +343,14 @@ class XmlAttributesView:
 
     def __getitem__(self, key: str) -> Any:
         """
-        Gets an attribute by name.
+        Args:
+            key: The name of the attribute to get.
+
+        Raises:
+            KeyError: Attribute does not exist.
+
+        Returns:
+            The attribute's value.
         """
         v = self.get(key)
         if v is None:
@@ -332,7 +359,9 @@ class XmlAttributesView:
 
     def __setitem__(self, key: str, value: Any) -> None:
         """
-        Sets an attribute.
+        Args:
+            key: The name of the attribute to set.
+            value: The value of the attribute.
         """
         with self.inner.doc.transaction() as txn:
             self.inner._forbid_read_transaction(txn)
@@ -340,7 +369,8 @@ class XmlAttributesView:
 
     def __delitem__(self, key: str) -> None:
         """
-        Deletes an attribute
+        Args:
+            key: The value of the attribute to delete.
         """
         with self.inner.doc.transaction() as txn:
             self.inner._forbid_read_transaction(txn)
@@ -348,20 +378,26 @@ class XmlAttributesView:
 
     def __contains__(self, key: str) -> bool:
         """
-        Checks if an attribute exists
+        Args:
+            key: The name of the attribute to check.
+
+        Returns:
+            `True` if the attribute with the given name exists.
         """
         return self.get(key) is not None
 
     def __len__(self) -> int:
         """
-        Gets the number of attributes
+        Returns:
+            The number of attributes.
         """
         with self.inner.doc.transaction() as txn:
             return len(self.inner.integrated.attributes(txn._txn))
 
     def __iter__(self) -> Iterable[tuple[str, Any]]:
         """
-        Iterates over each attribute, as key/value tuples.
+        Returns:
+            An iterable over each attribute, as key/value tuples.
         """
         with self.inner.doc.transaction() as txn:
             return iter(self.inner.integrated.attributes(txn._txn))
@@ -369,7 +405,8 @@ class XmlAttributesView:
 
 class XmlChildrenView:
     """
-    A list-like view into an `XmlFragment` or `XmlElement`'s child nodes.
+    A list-like view into an [XmlFragment][pycrdt.XmlFragment] or [XmlElement][pycrdt.XmlElement]'s
+    child nodes.
 
     Supports `iter`, `len`, and getting, setting, and deleting by index.
     """
@@ -381,14 +418,22 @@ class XmlChildrenView:
 
     def __len__(self) -> int:
         """
-        Gets the number of child nodes
+        Returns:
+            The number of child nodes.
         """
         with self.inner.doc.transaction() as txn:
             return self.inner.integrated.len(txn._txn)
 
     def __getitem__(self, index: int) -> XmlElement | XmlFragment | XmlText:
         """
-        Gets a child by its index.
+        Args:
+            index: The index of the child to get.
+
+        Raises:
+            IndexError: Index out of bounds.
+
+        Returns:
+            The child at the given index.
         """
         with self.inner.doc.transaction() as txn:
             if index >= len(self):
@@ -399,7 +444,8 @@ class XmlChildrenView:
 
     def __delitem__(self, key: int | slice) -> None:
         """
-        Removes a child (integer index) or a range of children (slice index).
+        Args:
+            key: The child index (`int`) or children `slice` to remove.
         """
         with self.inner.doc.transaction() as txn:
             self.inner._forbid_read_transaction(txn)
@@ -416,6 +462,10 @@ class XmlChildrenView:
     def __setitem__(self, key: int, value: str | XmlText | XmlElement):
         """
         Replaces a child. Equivalent to deleting the index and then inserting the new value.
+
+        Args:
+            key: The index of the child to replace.
+            value: The new value at the index.
         """
         with self.inner.doc.transaction():
             del self[key]
@@ -423,7 +473,8 @@ class XmlChildrenView:
 
     def __iter__(self) -> Iterator[XmlText | XmlElement | XmlFragment]:
         """
-        Iterates over child nodes.
+        Returns:
+            An iterable over child nodes.
         """
         with self.inner.doc.transaction():
             children = [self[i] for i in range(len(self))]
@@ -440,6 +491,13 @@ class XmlChildrenView:
 
         Passing in a `str` will convert it to an `XmlText`. Returns the passed in element, which
         will now be integrated into the tree.
+
+        Args:
+            index: The index at which to insert the element.
+            element: The element to insert.
+
+        Returns:
+            The inserted element.
         """
         with self.inner.doc.transaction() as txn:
             self.inner._forbid_read_transaction(txn)
@@ -475,6 +533,12 @@ class XmlChildrenView:
         Appends a new node to the end of the element's or fragment's children.
 
         Equivalent to `insert` at index `len(self)`.
+
+        Args:
+            element: The element to append.
+
+        Returns:
+            The appended element.
         """
         return self.insert(len(self), element)
 

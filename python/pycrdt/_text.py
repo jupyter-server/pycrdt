@@ -7,7 +7,7 @@ from ._pycrdt import Subscription
 from ._pycrdt import Text as _Text
 from ._pycrdt import TextEvent as _TextEvent
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from ._doc import Doc
 
 
@@ -235,7 +235,7 @@ class Text(BaseType):
 
     def insert(self, index: int, value: str, attrs: dict[str, Any] | None = None) -> None:
         """
-        Inserts a string at a given index in the text.
+        Inserts a string at a given index in the text, with optional attributes.
         ```py
         Doc()["text"] = text = Text("Hello World!")
         text.insert(5, ",")
@@ -245,7 +245,7 @@ class Text(BaseType):
         Args:
             index: The index where to insert the string.
             value: The string to insert in the text.
-            attrs: Optional dictionary of attributes to apply
+            attrs: The formatting of attributes to apply.
         """
         with self.doc.transaction() as txn:
             self._forbid_read_transaction(txn)
@@ -255,7 +255,12 @@ class Text(BaseType):
 
     def insert_embed(self, index: int, value: Any, attrs: dict[str, Any] | None = None) -> None:
         """
-        Insert 'value' as an embed at a given index in the text.
+        Insert a value as an embed at a given index in the text, with optional attributes.
+
+        Args:
+            index: The index where to insert the embedded content.
+            value: The value to embed.
+            attrs: The formatting attributes to apply.
         """
         with self.doc.transaction() as txn:
             self._forbid_read_transaction(txn)
@@ -265,7 +270,12 @@ class Text(BaseType):
 
     def format(self, start: int, stop: int, attrs: dict[str, Any]) -> None:
         """
-        Adds attribute to a section of text
+        Applies formatting attributes to a section of text between given start and stop indices.
+
+        Args:
+            start: The index at which to start applying attributes (included).
+            stop: The index at which to stop applying attributes (excluded).
+            attrs: The formatting attributes to apply.
         """
         with self.doc.transaction() as txn:
             self._forbid_read_transaction(txn)
@@ -276,10 +286,11 @@ class Text(BaseType):
 
     def diff(self) -> list[tuple[Any, dict[str, Any] | None]]:
         """
-        Returns list of formatted chunks that the current text corresponds to.
-
-        Each list item is a tuple containing the chunk's contents and formatting attributes. The
-        contents is usually the text as a string, but may be other data for embedded objects.
+        Returns:
+            A list of formatted chunks that the current text corresponds to.
+                Each list item is a tuple containing the chunk's content and formatting attributes.
+                The content is usually the text as a string, but may be other data for embedded
+                objects.
         """
         with self.doc.transaction() as txn:
             return self.integrated.diff(txn._txn)

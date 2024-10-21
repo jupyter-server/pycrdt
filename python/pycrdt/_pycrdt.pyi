@@ -114,7 +114,7 @@ class Text:
         chunk: str,
         attrs: Iterator[tuple[str, Any]] | None = None,
     ) -> None:
-        """Inserts a `chunk` of text at a given `index`."""
+        """Inserts a `chunk` of text at a given `index`, with optional attributes."""
 
     def insert_embed(
         self,
@@ -123,12 +123,12 @@ class Text:
         embed: Any,
         attrs: Iterator[tuple[str, Any]] | None = None,
     ) -> None:
-        """Inserts an embed at a given `index`."""
+        """Inserts an embed at a given `index`, with optional attributes."""
 
     def format(
         self, txn: Transaction, index: int, len: int, attrs: Iterator[tuple[str, Any]]
     ) -> None:
-        """Formats a range of elements"""
+        """Formats a range of elements."""
 
     def remove_range(self, txn: Transaction, index: int, len: int) -> None:
         """Removes up to `len` characters from th current shared text, starting at
@@ -138,7 +138,7 @@ class Text:
         """Returns a text representation of the current shared text."""
 
     def diff(self, txn: Transaction) -> list[tuple[Any, dict[str, Any] | None]]:
-        """Returns a sequence of formatted chunks"""
+        """Returns a sequence of formatted chunks."""
 
     def observe(self, callback: Callable[[TextEvent], None]) -> Subscription:
         """Subscribes a callback to be called with the shared text change event.
@@ -214,97 +214,103 @@ class Map:
         `subscription`."""
 
 class XmlFragment:
-    def parent(self) -> XmlFragment | XmlElement | XmlText | None: ...
+    def parent(self) -> XmlFragment | XmlElement | XmlText | None:
+        """Returns the parent of the XML fragment, if any."""
+
     def get_string(self, txn: Transaction) -> str:
-        """Returns a text representation of the current shared xml."""
+        """Returns a text representation of the current shared XML."""
 
     def len(self, txn: Transaction) -> int:
-        """Returns the numer of children of the current shared xml."""
+        """Returns the numer of children of the current shared XML."""
 
     def get(self, txn: Transaction, index: int) -> XmlFragment | XmlElement | XmlText | None:
-        """Gets a child item by index, or None if the index is out of bounds"""
+        """Gets a child item by index, or `None` if the index is out of bounds."""
 
     def remove_range(self, txn: Transaction, index: int, len: int) -> None:
-        """Removes a range of children"""
+        """Removes a range of children."""
 
     def insert_str(self, txn: Transaction, index: int, text: str) -> XmlText:
-        """Inserts a text node"""
+        """Inserts a text node."""
 
     def insert_element_prelim(self, txn: Transaction, index: int, tag: str) -> XmlElement:
-        """Inserts an empty element node"""
+        """Inserts an empty element node at given index, and returns it."""
 
     def observe(self, callback: Callable[[XmlEvent], None]) -> Subscription:
-        """Subscribes a callback to be called with the xml change event.
+        """Subscribes a callback to be called with the XML change event.
         Returns a subscription that can be used to unsubscribe."""
 
     def observe_deep(self, callback: Callable[[XmlEvent], None]) -> Subscription:
-        """Subscribes a callback to be called with the xml change event
+        """Subscribes a callback to be called with the XML change event
         and its nested elements.
         Returns a subscription that can be used to unsubscribe."""
 
 class XmlElement:
-    def parent(self) -> XmlFragment | XmlElement | XmlText | None: ...
+    def parent(self) -> XmlFragment | XmlElement | XmlText | None:
+        """Returns the parent of the XML element, if any."""
+
     def get_string(self, txn: Transaction) -> str:
-        """Returns a text representation of the current shared xml."""
+        """Returns a text representation of the current shared XML."""
 
     def len(self, txn: Transaction) -> int:
-        """Returns the numer of children of the current shared xml."""
+        """Returns the numer of children of the current shared XML."""
 
     def get(self, txn: Transaction, index: int) -> XmlFragment | XmlElement | XmlText | None:
-        """Gets a child item by index, or None if the index is out of bounds"""
+        """Gets a child item by index, or `None` if the index is out of bounds."""
 
     def remove_range(self, txn: Transaction, index: int, len: int) -> None:
-        """Removes a range of children"""
+        """Removes a range of children."""
 
     def insert_str(self, txn: Transaction, index: int, text: str) -> XmlText:
-        """Inserts a text node"""
+        """Inserts a text node."""
 
     def insert_element_prelim(self, txn: Transaction, index: int, tag: str) -> XmlElement:
-        """Inserts an empty element node"""
+        """Inserts an empty element node at a given index, and returns it."""
 
     def attributes(self, txn: Transaction) -> list[tuple[str, str]]:
-        """Gets all attributes, as a list of `(key, value)` tuples"""
+        """Gets all attributes, as a list of `(key, value)` tuples."""
 
     def attribute(self, txn: Transaction, name: str) -> str | None:
-        """Gets an attribute, or None if the attribute does not exist"""
+        """Gets an attribute, or `None` if the attribute does not exist."""
 
     def insert_attribute(self, txn: Transaction, name: str, value: str) -> None:
         """Inserts or overwrites an attribute."""
 
     def remove_attribute(self, txn: Transaction, name: str) -> None:
-        """Removes an attribute"""
+        """Removes an attribute."""
 
     def siblings(self, txn) -> list[XmlFragment | XmlElement | XmlText]:
-        """Gets the siblings of this node"""
+        """Gets the siblings of this node."""
 
     def observe(self, callback: Callable[[XmlEvent], None]) -> Subscription:
-        """Subscribes a callback to be called with the xml change event.
+        """Subscribes a callback to be called with the XML change event.
         Returns a subscription that can be used to unsubscribe."""
 
     def observe_deep(self, callback: Callable[[XmlEvent], None]) -> Subscription:
-        """Subscribes a callback to be called with the xml change event
+        """Subscribes a callback to be called with the XML change event
         and its nested elements.
         Returns a subscription that can be used to unsubscribe."""
 
 class XmlText:
-    def parent(self) -> XmlFragment | XmlElement | XmlText | None: ...
+    def parent(self) -> XmlFragment | XmlElement | XmlText | None:
+        """Returns the XML text parent, if any."""
+
     def get_string(self, txn: Transaction) -> str:
-        """Returns a text representation of the current shared xml."""
+        """Returns a text representation of the current shared XML."""
 
     def attributes(self, txn: Transaction) -> list[tuple[str, str]]:
-        """Gets all attributes, as a list of `(key, value)` tuples"""
+        """Gets all attributes, as a list of `(key, value)` tuples."""
 
     def attribute(self, txn: Transaction, name: str) -> str | None:
-        """Gets an attribute, or None if the attribute does not exist"""
+        """Gets an attribute, or `None` if the attribute does not exist."""
 
     def insert_attribute(self, txn: Transaction, name: str, value: str) -> None:
         """Inserts or overwrites an attribute."""
 
     def remove_attribute(self, txn: Transaction, name: str) -> None:
-        """Removes an attribute"""
+        """Removes an attribute."""
 
     def siblings(self, txn: Transaction) -> list[XmlFragment | XmlElement | XmlText]:
-        """Gets the siblings of this node"""
+        """Gets the siblings of this node."""
 
     def insert(
         self,
@@ -313,23 +319,23 @@ class XmlText:
         text: str,
         attrs: Iterator[tuple[str, Any]] | None = None,
     ):
-        """Inserts text, optionally with attributes"""
+        """Inserts text, with optional with attributes."""
 
     def remove_range(self, txn: Transaction, index: int, len: int):
-        """Removes text"""
+        """Removes text."""
 
     def format(self, txn: Transaction, index: int, len: int, attrs: Iterator[tuple[str, Any]]):
-        """Adds attributes to a section of text"""
+        """Adds attributes to a section of text."""
 
     def diff(self, txn: Transaction) -> list[tuple[Any, dict[str, Any] | None]]:
-        """Returns a sequence of formatted chunks"""
+        """Returns a sequence of formatted chunks."""
 
     def observe(self, callback: Callable[[XmlEvent], None]) -> Subscription:
-        """Subscribes a callback to be called with the xml change event.
+        """Subscribes a callback to be called with the XML change event.
         Returns a subscription that can be used to unsubscribe."""
 
     def observe_deep(self, callback: Callable[[XmlEvent], None]) -> Subscription:
-        """Subscribes a callback to be called with the xml change event
+        """Subscribes a callback to be called with the XML change event
         and its nested elements.
         Returns a subscription that can be used to unsubscribe."""
 

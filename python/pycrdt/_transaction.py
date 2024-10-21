@@ -8,7 +8,7 @@ from anyio import to_thread
 
 from ._pycrdt import Transaction as _Transaction
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from ._doc import Doc
 
 

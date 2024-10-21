@@ -5,6 +5,12 @@ Pycrdt offers the following shared data types:
 - `Text`: a type similar to a `str`.
 - `Array`: a type similar to a `list`.
 - `Map`: a type similar to a `dict`.
+- `XmlFragment`: a collection of XML nodes.
+- `XmlElement`: an XML node.
+- `XmlText`: an XML text node.
+
+For the XML shared types, see the [API reference](api_reference.md).
+The rest of this section will only refer to `Text`, `Array` and `Map` shared types.
 
 You can initialize them with their Python built-in counterparts:
 

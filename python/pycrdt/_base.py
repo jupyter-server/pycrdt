@@ -13,7 +13,7 @@ from ._pycrdt import Subscription
 from ._pycrdt import Transaction as _Transaction
 from ._transaction import ReadTransaction, Transaction
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from ._doc import Doc
 
 

@@ -11,7 +11,7 @@ from ._pycrdt import (
 )
 from ._transaction import hash_origin
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from ._doc import Doc
 
 
