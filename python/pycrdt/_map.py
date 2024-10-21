@@ -7,7 +7,7 @@ from ._pycrdt import Map as _Map
 from ._pycrdt import MapEvent as _MapEvent
 from ._pycrdt import Subscription
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from ._doc import Doc
 
 
