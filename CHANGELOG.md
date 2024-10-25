@@ -1,6 +1,6 @@
 # Version history
 
-## 0.10.4
+## 0.10.6
 
 - Bump yrs v0.21.3 and pyo3 v0.22.5.
 
