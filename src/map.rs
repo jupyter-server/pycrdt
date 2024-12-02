@@ -2,13 +2,7 @@ use pyo3::prelude::*;
 use pyo3::exceptions::{PyValueError, PyTypeError};
 use pyo3::types::{PyString, PyDict, PyList};
 use yrs::{
-    Any,
-    Doc as _Doc,
-    MapRef,
-    Map as _Map,
-    DeepObservable,
-    Observable,
-    TransactionMut,
+    Any, DeepObservable, Doc as _Doc, Map as _Map, MapRef, Observable, TransactionMut, XmlFragmentPrelim
 };
 use yrs::types::ToJson;
 use yrs::types::text::TextPrelim;
@@ -20,6 +14,7 @@ use crate::type_conversions::{EntryChangeWrapper, events_into_py, py_to_any, ToP
 use crate::text::Text;
 use crate::array::Array;
 use crate::doc::Doc;
+use crate::xml::XmlFragment;
 
 
 #[pyclass]
@@ -77,6 +72,22 @@ impl Map {
         let integrated = self.map.insert(&mut t, key, MapPrelim::default());
         let shared = Map::from(integrated);
         Python::with_gil(|py| { Ok(shared.into_py(py)) })
+    }
+
+    fn insert_xmlfragment_prelim(&self, txn: &mut Transaction, key: &str) -> PyResult<PyObject> {
+        let mut _t = txn.transaction();
+        let mut t = _t.as_mut().unwrap().as_mut();
+        let integrated = self.map.insert(&mut t, key, XmlFragmentPrelim::default());
+        let shared = XmlFragment::from(integrated);
+        Python::with_gil(|py| { Ok(shared.into_py(py)) })
+    }
+
+    fn insert_xmlelement_prelim(&self, _txn: &mut Transaction, _key: &str) -> PyResult<PyObject> {
+        Err(PyTypeError::new_err("Cannot insert an XmlElement into a map - insert it into an XmlFragment and insert that into the map"))
+    }
+
+    fn insert_xmltext_prelim(&self, _txn: &mut Transaction, _key: &str) -> PyResult<PyObject> {
+        Err(PyTypeError::new_err("Cannot insert an XmlText into a map - insert it into an XmlFragment and insert that into the map"))
     }
 
     fn insert_doc(&self, txn: &mut Transaction, key: &str, doc: &Bound<'_, PyAny>) -> PyResult<()> {
