@@ -1,5 +1,5 @@
 import pytest
-from pycrdt import Doc, XmlElement, XmlFragment, XmlText, Map, Array
+from pycrdt import Array, Doc, Map, XmlElement, XmlFragment, XmlText
 
 
 def test_plain_text():
@@ -276,6 +276,7 @@ def test_observe():
     assert events[0][0].delta[0] == {"retain": 1}
     assert events[0][0].delta[1] == {"retain": 2, "attributes": {"bold": True}}
 
+
 def test_xml_in_array():
     doc = Doc()
     array = doc.get("testmap", type=Array)
@@ -291,6 +292,7 @@ def test_xml_in_array():
     with pytest.raises(TypeError):
         array.append(XmlElement("a"))
     assert len(array) == 1
+
 
 def test_xml_in_map():
     doc = Doc()
