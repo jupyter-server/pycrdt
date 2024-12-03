@@ -1,5 +1,5 @@
 import pytest
-from pycrdt import Doc, XmlElement, XmlFragment, XmlText
+from pycrdt import Array, Doc, Map, XmlElement, XmlFragment, XmlText
 
 
 def test_plain_text():
@@ -275,3 +275,37 @@ def test_observe():
     assert str(events[0][0].target) == "H<bold>el</bold>lo world!"
     assert events[0][0].delta[0] == {"retain": 1}
     assert events[0][0].delta[1] == {"retain": 2, "attributes": {"bold": True}}
+
+
+def test_xml_in_array():
+    doc = Doc()
+    array = doc.get("testmap", type=Array)
+    frag = XmlFragment()
+    array.append(frag)
+    frag.children.append("Test XML!")
+
+    assert len(array) == 1
+    assert str(array[0]) == "Test XML!"
+
+    with pytest.raises(TypeError):
+        array.append(XmlText())
+    with pytest.raises(TypeError):
+        array.append(XmlElement("a"))
+    assert len(array) == 1
+
+
+def test_xml_in_map():
+    doc = Doc()
+    map = doc.get("testmap", type=Map)
+    frag = map["testxml"] = XmlFragment()
+    frag.children.append("Test XML!")
+
+    assert len(map) == 1
+    assert "testxml" in map
+    assert str(map["testxml"]) == "Test XML!"
+
+    with pytest.raises(TypeError):
+        map["testtext"] = XmlText()
+    with pytest.raises(TypeError):
+        map["testel"] = XmlElement("a")
+    assert len(map) == 1
