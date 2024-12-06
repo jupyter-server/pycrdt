@@ -14,6 +14,12 @@ def callback(events, event):
     )
 
 
+def test_iterate():
+    doc = Doc()
+    doc["array"] = array = Array([0, 2, 1])
+    assert [val for val in array] == [0, 2, 1]
+
+
 def test_str():
     doc = Doc()
     map2 = Map({"key": "val"})

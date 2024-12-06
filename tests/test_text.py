@@ -7,6 +7,12 @@ sir = " Sir"
 punct = "!"
 
 
+def test_iterate():
+    doc = Doc()
+    doc["text"] = text = Text("abc")
+    assert [char for char in text] == ["a", "b", "c"]
+
+
 def test_str():
     doc1 = Doc()
     text1 = Text()
@@ -100,6 +106,9 @@ def test_prelim():
 def test_slice():
     doc = Doc()
     doc["text"] = text = Text(hello)
+
+    for i, c in enumerate(hello):
+        assert text[i] == c
 
     with pytest.raises(RuntimeError) as excinfo:
         text[1::2] = "a"

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, cast
+from typing import TYPE_CHECKING, Any, Callable, Iterator, cast
 
 from ._base import BaseEvent, BaseType, base_types, event_types
 from ._pycrdt import Subscription
@@ -50,7 +50,7 @@ class Text(BaseType):
     def _get_or_insert(self, name: str, doc: Doc) -> _Text:
         return doc._doc.get_or_insert_text(name)
 
-    def __iter__(self) -> TextIterator:
+    def __iter__(self) -> Iterator[str]:
         """
         ```py
         Doc()["text"] = text = Text("***")
@@ -61,7 +61,7 @@ class Text(BaseType):
         Returns:
             An iterable over the characters of the text.
         """
-        return TextIterator(self)
+        return iter(str(self))
 
     def __contains__(self, item: str) -> bool:
         """
@@ -316,21 +316,6 @@ class TextEvent(BaseEvent):
     """
 
     __slots__ = "target", "delta", "path"
-
-
-class TextIterator:
-    def __init__(self, text: Text):
-        self.text = text
-        self.length = len(text)
-        self.idx = 0
-
-    def __next__(self) -> str:
-        if self.idx == self.length:
-            raise StopIteration
-
-        res = self.text[self.idx]
-        self.idx += 1
-        return res
 
 
 base_types[_Text] = Text
