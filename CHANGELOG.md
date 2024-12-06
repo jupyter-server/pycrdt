@@ -1,5 +1,9 @@
 # Version history
 
+## 0.10.8
+
+- Fix `Array` iterator.
+
 ## 0.10.7
 
 - Add support for adding `XmlFragments` to arrays and maps (PR by @ColonelThirtyTwo).
