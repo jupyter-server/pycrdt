@@ -36,6 +36,7 @@ dependencies = [
 [project.optional-dependencies]
 test = [
     "pytest >=7.4.2,<8",
+    "pytest-mypy-testing",
     "anyio",
     "trio >=0.25.1,<0.27",
     "pydantic >=2.5.2,<3",
@@ -58,11 +59,13 @@ python-source = "python"
 module-name = "pycrdt._pycrdt"
 
 [tool.ruff]
+exclude = ["tests/test_types.py"]
 line-length = 100
 lint.select = ["F", "E", "W", "I001"]
 
 [tool.coverage.run]
 source = ["python", "tests"]
+omit = ["tests/test_types.py"]
 
 [tool.coverage.report]
 show_missing = true
