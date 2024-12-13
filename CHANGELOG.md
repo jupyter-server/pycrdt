@@ -1,5 +1,9 @@
 # Version history
 
+## 0.10.9
+
+- Bump `pyo3` to v0.23.3.
+
 ## 0.10.8
 
 - Fix `Array` iterator.
