@@ -1,4 +1,5 @@
 use pyo3::prelude::*;
+use pyo3::IntoPyObjectExt;
 use pyo3::exceptions::{PyValueError, PyTypeError};
 use pyo3::types::{PyList, PyString};
 use yrs::{
@@ -50,36 +51,36 @@ impl Array {
         }
     }
 
-    fn insert_text_prelim(&self, txn: &mut Transaction, index: u32) -> PyResult<PyObject> {
+    fn insert_text_prelim(&self, txn: &mut Transaction, index: u32) -> PyResult<Text> {
         let mut _t = txn.transaction();
         let mut t = _t.as_mut().unwrap().as_mut();
         let integrated = self.array.insert(&mut t, index, TextPrelim::new(""));
         let shared = Text::from(integrated);
-        Python::with_gil(|py| { Ok(shared.into_py(py)) })
+        Ok(shared)
     }
 
-    fn insert_array_prelim(&self, txn: &mut Transaction, index: u32) -> PyResult<PyObject> {
+    fn insert_array_prelim(&self, txn: &mut Transaction, index: u32) -> PyResult<Array> {
         let mut _t = txn.transaction();
         let mut t = _t.as_mut().unwrap().as_mut();
         let integrated = self.array.insert(&mut t, index, ArrayPrelim::default());
         let shared = Array::from(integrated);
-        Python::with_gil(|py| { Ok(shared.into_py(py)) })
+        Ok(shared)
     }
 
-    fn insert_map_prelim(&self, txn: &mut Transaction, index: u32) -> PyResult<PyObject> {
+    fn insert_map_prelim(&self, txn: &mut Transaction, index: u32) -> PyResult<Map> {
         let mut _t = txn.transaction();
         let mut t = _t.as_mut().unwrap().as_mut();
         let integrated = self.array.insert(&mut t, index, MapPrelim::default());
         let shared = Map::from(integrated);
-        Python::with_gil(|py| { Ok(shared.into_py(py)) })
+        Ok(shared)
     }
 
-    fn insert_xmlfragment_prelim(&self, txn: &mut Transaction, index: u32) -> PyResult<PyObject> {
+    fn insert_xmlfragment_prelim(&self, txn: &mut Transaction, index: u32) -> PyResult<XmlFragment> {
         let mut _t = txn.transaction();
         let mut t = _t.as_mut().unwrap().as_mut();
         let integrated = self.array.insert(&mut t, index, XmlFragmentPrelim::default());
         let shared = XmlFragment::from(integrated);
-        Python::with_gil(|py| { Ok(shared.into_py(py)) })
+        Ok(shared)
     }
 
     fn insert_xmlelement_prelim(&self, _txn: &mut Transaction, _index: u32) -> PyResult<PyObject> {
@@ -114,7 +115,7 @@ impl Array {
         Ok(())
     }
 
-    fn get(&self, txn: &mut Transaction, index: u32) -> PyResult<PyObject> {
+    fn get<'py>(&self, py: Python<'py>, txn: &mut Transaction, index: u32) -> PyResult<Bound<'py, PyAny>> {
         let mut t0 = txn.transaction();
         let t1 = t0.as_mut().unwrap();
         let t = t1.as_ref();
@@ -122,17 +123,17 @@ impl Array {
         if v == None {
             Err(PyValueError::new_err("Index error"))
         } else {
-            Python::with_gil(|py| { Ok(v.unwrap().into_py(py)) })
+            Ok(v.unwrap().into_py(py))
         }
     }
 
-    fn to_json(&mut self, txn: &mut Transaction) -> PyObject {
+    fn to_json<'py>(&mut self, py: Python<'py>, txn: &mut Transaction) -> Bound<'py, PyString> {
         let mut t0 = txn.transaction();
         let t1 = t0.as_mut().unwrap();
         let t = t1.as_ref();
         let mut s = String::new();
         self.array.to_json(t).to_json(&mut s);
-        Python::with_gil(|py| PyString::new_bound(py, s.as_str()).into())
+        PyString::new(py, s.as_str())
     }
 
     pub fn observe(&mut self, py: Python<'_>, f: PyObject) -> PyResult<Py<Subscription>> {
@@ -153,7 +154,7 @@ impl Array {
         let sub = self.array
             .observe_deep(move |txn, events| {
                 Python::with_gil(|py| {
-                    let events = events_into_py(txn, events);
+                    let events = events_into_py(py, txn, events);
                     if let Err(err) = f.call1(py, (events,)) {
                         err.restore(py)
                     }
@@ -178,7 +179,7 @@ impl ArrayEvent {
     pub fn new(event: &_ArrayEvent, txn: &TransactionMut) -> Self {
         let event = event as *const _ArrayEvent;
         let txn = unsafe { std::mem::transmute::<&TransactionMut, &TransactionMut<'static>>(txn) };
-        let mut array_event = ArrayEvent {
+        let array_event = ArrayEvent {
             event,
             txn,
             target: None,
@@ -186,11 +187,6 @@ impl ArrayEvent {
             path: None,
             transaction: None,
         };
-        Python::with_gil(|py| {
-            array_event.target(py);
-            array_event.path(py);
-            array_event.delta(py);
-        });
         array_event
     }
 
@@ -206,55 +202,54 @@ impl ArrayEvent {
 #[pymethods]
 impl ArrayEvent {
     #[getter]
-    pub fn transaction(&mut self, py: Python<'_>) -> PyObject {
+    pub fn transaction<'py>(&mut self, py: Python<'py>) -> Bound<'py, PyAny> {
         if let Some(transaction) = &self.transaction {
-            transaction.clone_ref(py)
+            transaction.clone_ref(py).into_bound(py)
         } else {
-            let transaction: PyObject = Transaction::from(self.txn()).into_py(py);
-            let res = transaction.clone_ref(py);
-            self.transaction = Some(transaction);
-            res
+            let transaction = Transaction::from(self.txn()).into_bound_py_any(py).unwrap();
+            self.transaction = Some(transaction.clone().unbind());
+            transaction
         }
     }
 
     #[getter]
-    pub fn target(&mut self, py: Python<'_>) -> PyObject {
+    pub fn target<'py>(&mut self, py: Python<'py>) -> Bound<'py, PyAny> {
         if let Some(target) = &self.target {
-            target.clone_ref(py)
+            target.clone_ref(py).into_bound(py)
         } else {
-            let target: PyObject = Array::from(self.event().target().clone()).into_py(py);
-            let res = target.clone_ref(py);
-            self.target = Some(target);
-            res
+            let target = Array::from(self.event().target().clone()).into_bound_py_any(py).unwrap();
+            self.target = Some(target.clone().unbind());
+            target
         }
     }
 
     #[getter]
-    pub fn path(&mut self, py: Python<'_>) -> PyObject {
+    pub fn path<'py>(&mut self, py: Python<'py>) -> Bound<'py, PyAny> {
         if let Some(path) = &self.path {
-            path.clone_ref(py)
+            path.clone_ref(py).into_bound(py)
         } else {
-            let path: PyObject = self.event().path().into_py(py);
-            let res = path.clone_ref(py);
-            self.path = Some(path);
-            res
+            let path = self.event().path().into_py(py);
+            self.path = Some(path.clone().unbind());
+            path
         }
     }
 
     #[getter]
-    pub fn delta(&mut self, py: Python<'_>) -> PyObject {
+    pub fn delta<'py>(&mut self, py: Python<'py>) -> Bound<'py, PyAny> {
         if let Some(delta) = &self.delta {
-            delta.clone_ref(py)
+            delta.clone_ref(py).into_bound(py)
         } else {
-            let delta: PyObject = {
-                let delta = self.event().delta(self.txn()).iter().map(|change| {
-                    change.clone().into_py(py)
-                });
-                PyList::new_bound(py, delta).into()
+            let delta = {
+                let delta =
+                    self.event()
+                        .delta(self.txn())
+                        .into_iter()
+                        .map(|d| d.clone().into_py(py));
+                delta
             };
-            let res = delta.clone_ref(py);
-            self.delta = Some(delta);
-            res
+            let delta = PyList::new(py, delta).unwrap().into_bound_py_any(py).unwrap();
+            self.delta = Some(delta.clone().unbind());
+            delta
         }
     }
 

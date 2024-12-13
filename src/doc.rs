@@ -1,6 +1,7 @@
 use pyo3::prelude::*;
+use pyo3::IntoPyObjectExt;
 use pyo3::exceptions::{PyRuntimeError, PyValueError};
-use pyo3::types::{PyBytes, PyDict, PyLong, PyList};
+use pyo3::types::{PyBytes, PyDict, PyInt, PyList};
 use yrs::{
     Doc as _Doc, ReadTxn, StateVector, SubdocsEvent as _SubdocsEvent, Transact, TransactionCleanupEvent, TransactionMut, Update
 };
@@ -35,7 +36,7 @@ impl Doc {
             let doc = _Doc::new();
             return Doc { doc };
         }
-        let id: u64 = client_id.downcast::<PyLong>().unwrap().extract().unwrap();
+        let id: u64 = client_id.downcast::<PyInt>().unwrap().extract().unwrap();
         let doc = _Doc::with_client_id(id);
         Doc { doc }
     }
@@ -90,7 +91,7 @@ impl Doc {
         let txn = self.doc.transact_mut();
         let state = txn.state_vector().encode_v1();
         drop(txn);
-        Python::with_gil(|py| PyBytes::new_bound(py, &state).into())
+        Python::with_gil(|py| PyBytes::new(py, &state).into())
     }
 
     fn get_update(&mut self, state: &Bound<'_, PyBytes>) -> PyResult<PyObject> {
@@ -99,7 +100,7 @@ impl Doc {
         let Ok(state_vector) = StateVector::decode_v1(&state) else { return Err(PyValueError::new_err("Cannot decode state")) };
         let update = txn.encode_diff_v1(&state_vector);
         drop(txn);
-        let bytes: PyObject = Python::with_gil(|py| PyBytes::new_bound(py, &update).into());
+        let bytes: PyObject = Python::with_gil(|py| PyBytes::new(py, &update).into());
         Ok(bytes)
     }
 
@@ -115,7 +116,7 @@ impl Doc {
         let mut t0 = txn.transaction();
         let t1 = t0.as_mut().unwrap();
         let t = t1.as_ref();
-        let result = PyDict::new_bound(py);
+        let result = PyDict::new(py);
         for (k, v) in t.root_refs() {
             result.set_item(k, v.into_py(py)).unwrap();
         }
@@ -143,7 +144,7 @@ impl Doc {
         let sub = self.doc
             .observe_subdocs(move |_, event| {
                 Python::with_gil(|py| {
-                    let event = SubdocsEvent::new(event);
+                    let event = SubdocsEvent::new(py, event);
                     if let Err(err) = f.call1(py, (event,)) {
                         err.restore(py)
                     }
@@ -159,10 +160,10 @@ impl Doc {
 pub struct TransactionEvent {
     event: *const TransactionCleanupEvent,
     txn: *const TransactionMut<'static>,
-    before_state: Option<PyObject>,
-    after_state: Option<PyObject>,
-    delete_set: Option<PyObject>,
-    update: Option<PyObject>,
+    before_state: Option<Py<PyBytes>>,
+    after_state: Option<Py<PyBytes>>,
+    delete_set: Option<Py<PyBytes>>,
+    update: Option<Py<PyBytes>>,
     transaction: Option<PyObject>,
 }
 
@@ -194,66 +195,61 @@ impl TransactionEvent {
 #[pymethods]
 impl TransactionEvent {
     #[getter]
-    pub fn transaction(&mut self, py: Python<'_>) -> PyObject {
+    pub fn transaction<'py>(&mut self, py: Python<'py>) -> Bound<'py, PyAny> {
         if let Some(transaction) = &self.transaction {
-            transaction.clone_ref(py)
+            transaction.clone_ref(py).into_bound(py)
         } else {
-            let transaction: PyObject = Transaction::from(self.txn()).into_py(py);
-            let res = transaction.clone_ref(py);
-            self.transaction = Some(transaction);
-            res
+            let transaction = Transaction::from(self.txn()).into_bound_py_any(py).unwrap();
+            self.transaction = Some(transaction.clone().unbind());
+            transaction
         }
     }
 
     #[getter]
-    pub fn before_state(&mut self, py: Python<'_>) -> PyObject {
+    pub fn before_state<'py>(&mut self, py: Python<'py>) -> Bound<'py, PyBytes> {
         if let Some(before_state) = &self.before_state {
-            before_state.clone_ref(py)
+            before_state.clone_ref(py).into_bound(py)
         } else {
             let before_state = self.event().before_state.encode_v1();
-            let before_state: PyObject = PyBytes::new_bound(py, &before_state).into();
-            let res = before_state.clone_ref(py);
-            self.before_state = Some(before_state);
-            res
+            let before_state = PyBytes::new(py, &before_state);
+            self.before_state = Some(before_state.clone().unbind());
+            before_state
         }
     }
 
     #[getter]
-    pub fn after_state(&mut self, py: Python<'_>) -> PyObject {
+    pub fn after_state<'py>(&mut self, py: Python<'py>) -> Bound<'py, PyBytes> {
         if let Some(after_state) = &self.after_state {
-            after_state.clone_ref(py)
+            after_state.clone_ref(py).into_bound(py)
         } else {
             let after_state = self.event().after_state.encode_v1();
-            let after_state: PyObject = PyBytes::new_bound(py, &after_state).into();
-            let res = after_state.clone_ref(py);
-            self.after_state = Some(after_state);
-            res
+            let after_state = PyBytes::new(py, &after_state);
+            self.after_state = Some(after_state.clone().unbind());
+            after_state
         }
     }
 
     #[getter]
-    pub fn delete_set(&mut self, py: Python<'_>) -> PyObject {
+    pub fn delete_set<'py>(&mut self, py: Python<'py>) -> Bound<'py, PyBytes> {
         if let Some(delete_set) = &self.delete_set {
-            delete_set.clone_ref(py)
+            delete_set.clone_ref(py).into_bound(py)
         } else {
             let delete_set = self.event().delete_set.encode_v1();
-            let delete_set: PyObject = PyBytes::new_bound(py, &delete_set).into();
-            let res = delete_set.clone_ref(py);
-            self.delete_set = Some(delete_set);
-            res
+            let delete_set = PyBytes::new(py, &delete_set);
+            self.delete_set = Some(delete_set.clone().unbind());
+            delete_set
         }
     }
 
     #[getter]
-    pub fn update(&mut self, py: Python<'_>) -> PyObject {
+    pub fn update<'py>(&mut self, py: Python<'py>) -> Bound<'py, PyBytes> {
         if let Some(update) = &self.update {
-            update.clone_ref(py)
+            update.clone_ref(py).into_bound(py)
         } else {
             let update = self.txn().encode_update_v1();
-            let update: PyObject = PyBytes::new_bound(py, &update).into();
-            let res = update.clone_ref(py);
-            self.update = Some(update);
-            res
+            let update = PyBytes::new(py, &update);
+            self.update = Some(update.clone().unbind());
+            update
         }
     }
 }
@@ -266,13 +262,13 @@ pub struct SubdocsEvent {
 }
 
 impl SubdocsEvent {
-    fn new(event: &_SubdocsEvent) -> Self {
+    fn new<'py>(py: Python<'py>, event: &_SubdocsEvent) -> Self {
         let added: Vec<String> = event.added().map(|d| d.guid().clone().to_string()).collect();
-        let added: PyObject = Python::with_gil(|py| PyList::new_bound(py, &added).into());
+        let added = PyList::new(py, added).unwrap().into_py_any(py).unwrap();
         let removed: Vec<String> = event.removed().map(|d| d.guid().clone().to_string()).collect();
-        let removed: PyObject = Python::with_gil(|py| PyList::new_bound(py, &removed).into());
+        let removed = PyList::new(py, removed).unwrap().into_py_any(py).unwrap();
         let loaded: Vec<String> = event.loaded().map(|d| d.guid().clone().to_string()).collect();
-        let loaded: PyObject = Python::with_gil(|py| PyList::new_bound(py, &loaded).into());
+        let loaded = PyList::new(py, loaded).unwrap().into_py_any(py).unwrap();
         SubdocsEvent {
             added,
             removed,
