@@ -15,8 +15,8 @@ class YMessageType(IntEnum):
         AWARENESS: A message type used for the awareness protocol.
     """
 
-    SYNC: int = 0
-    AWARENESS: int = 1
+    SYNC = 0
+    AWARENESS = 1
 
 
 class YSyncMessageType(IntEnum):
@@ -31,9 +31,9 @@ class YSyncMessageType(IntEnum):
         SYNC_UPDATE: A synchronization message type used to send document updates.
     """
 
-    SYNC_STEP1: int = 0
-    SYNC_STEP2: int = 1
-    SYNC_UPDATE: int = 2
+    SYNC_STEP1 = 0
+    SYNC_STEP2 = 1
+    SYNC_UPDATE = 2
 
 
 def write_var_uint(num: int) -> bytes:
