@@ -2,11 +2,9 @@ from __future__ import annotations
 
 from typing import (
     TYPE_CHECKING,
-    Any,
     Callable,
     Generic,
     Iterable,
-    TypedDict,
     TypeVar,
     cast,
     overload,
@@ -24,7 +22,7 @@ T = TypeVar("T")
 T_DefaultValue = TypeVar("T_DefaultValue")
 
 
-class UntypedMap(BaseType):
+class Map(BaseType, Generic[T]):
     """
     A collection used to store key-value entries in an unordered manner, similar to a Python `dict`.
     """
@@ -34,7 +32,7 @@ class UntypedMap(BaseType):
 
     def __init__(
         self,
-        init: dict[str, Any] | None = None,
+        init: dict[str, T] | None = None,
         *,
         _doc: Doc | None = None,
         _integrated: _Map | None = None,
@@ -55,14 +53,14 @@ class UntypedMap(BaseType):
             _integrated=_integrated,
         )
 
-    def _init(self, value: dict[str, Any] | None) -> None:
+    def _init(self, value: dict[str, T] | None) -> None:
         if value is None:
             return
         with self.doc.transaction():
             for k, v in value.items():
                 self._set(k, v)
 
-    def _set(self, key: str, value: Any) -> None:
+    def _set(self, key: str, value: T) -> None:
         with self.doc.transaction() as txn:
             self._forbid_read_transaction(txn)
             if isinstance(value, BaseDoc):
@@ -104,7 +102,7 @@ class UntypedMap(BaseType):
         with self.doc.transaction() as txn:
             return self.integrated.to_json(txn._txn)
 
-    def to_py(self) -> dict[str, Any] | None:
+    def to_py(self) -> dict[str, T] | None:
         """
         Recursively converts the map's items to Python objects, and
         returns them in a `dict`. If the map was not yet inserted in a document,
@@ -141,7 +139,7 @@ class UntypedMap(BaseType):
             self._check_key(key)
             self.integrated.remove(txn._txn, key)
 
-    def __getitem__(self, key: str) -> Any:
+    def __getitem__(self, key: str) -> T:
         """
         Gets the value at the given key:
         ```py
@@ -156,7 +154,7 @@ class UntypedMap(BaseType):
             self._check_key(key)
             return self._maybe_as_type_or_doc(self.integrated.get(txn._txn, key))
 
-    def __setitem__(self, key: str, value: Any) -> None:
+    def __setitem__(self, key: str, value: T) -> None:
         """
         Sets a value at the given key:
         ```py
@@ -205,6 +203,12 @@ class UntypedMap(BaseType):
         """
         return item in self.keys()
 
+    @overload
+    def get(self, key: str) -> T | None: ...
+
+    @overload
+    def get(self, key: str, default_value: T_DefaultValue) -> T | T_DefaultValue: ...
+
     def get(self, *args):
         """
         Returns the value corresponding to the given key if it exists, otherwise
@@ -223,6 +227,12 @@ class UntypedMap(BaseType):
             if not default_value:
                 return None
             return default_value[0]
+
+    @overload
+    def pop(self, key: str) -> T: ...
+
+    @overload
+    def pop(self, key: str, default_value: T_DefaultValue) -> T | T_DefaultValue: ...
 
     def pop(self, *args):
         """
@@ -260,7 +270,7 @@ class UntypedMap(BaseType):
         with self.doc.transaction() as txn:
             return iter(self.integrated.keys(txn._txn))
 
-    def values(self) -> Iterable[Any]:
+    def values(self) -> Iterable[T]:
         """
         Returns:
             An iterable over the values of the map.
@@ -269,7 +279,7 @@ class UntypedMap(BaseType):
             for k in self.integrated.keys(txn._txn):
                 yield self[k]
 
-    def items(self) -> Iterable[tuple[str, Any]]:
+    def items(self) -> Iterable[tuple[str, T]]:
         """
         Returns:
             An iterable over the key-value pairs of the map.
@@ -286,7 +296,7 @@ class UntypedMap(BaseType):
             for k in self.integrated.keys(txn._txn):
                 del self[k]
 
-    def update(self, value: dict[str, Any]) -> None:
+    def update(self, value: dict[str, T]) -> None:
         """
         Sets entries in the map from all entries in the passed `dict`.
 
@@ -303,38 +313,6 @@ class UntypedMap(BaseType):
             callback: The callback to call with the [MapEvent][pycrdt.MapEvent].
         """
         return super().observe(cast(Callable[[BaseEvent], None], callback))
-
-
-if TYPE_CHECKING:
-
-    class Map(UntypedMap, Generic[T] | TypedDict):  # type: ignore[misc, valid-type]
-        def __init__(
-            self,
-            init: dict[str, T] | None = None,
-            *,
-            _doc: Doc | None = None,
-            _integrated: _Map | None = None,
-        ) -> None: ...
-        def _init(self, value: dict[str, T] | None) -> None: ...
-        def _set(self, key: str, value: T) -> None: ...
-        def _get_or_insert(self, name: str, doc: Doc) -> _Map: ...
-        def to_py(self) -> dict[str, T] | None: ...
-        def __getitem__(self, key: str) -> T: ...  # type: ignore[type-var]
-        def __setitem__(self, key: str, value: T) -> None: ...
-        @overload  # type: ignore[no-overload-impl]
-        def get(self, key: str) -> T | None: ...
-        @overload
-        def get(self, key: str, default_value: T_DefaultValue) -> T | T_DefaultValue: ...
-        @overload  # type: ignore[no-overload-impl]
-        def pop(self, key: str) -> T: ...  # type: ignore[type-var]
-        @overload
-        def pop(self, key: str, default_value: T_DefaultValue) -> T | T_DefaultValue: ...
-        def values(self) -> Iterable[T]: ...
-        def items(self) -> Iterable[tuple[str, T]]: ...
-        def update(self, value: dict[str, T]) -> None: ...
-else:
-
-    class Map(UntypedMap): ...
 
 
 class MapEvent(BaseEvent):

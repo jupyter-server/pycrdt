@@ -34,7 +34,7 @@ def mypy_test_typed_map():
             "nested": Array[bool],
         },
     )
-    map0: MyMap = doc.get("map0", type=Map)
+    map0: MyMap = doc.get("map0", type=Map)  # type: ignore[assignment]
     map0["name"] = "foo"
     map0["toggle"] = False
     map0["toggle"] = 3  # E: Value of "toggle" has incompatible type "int"; expected "bool"
