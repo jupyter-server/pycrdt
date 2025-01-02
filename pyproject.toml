@@ -72,3 +72,6 @@ show_missing = true
 exclude_also = [
     "if TYPE_CHECKING:"
 ]
+ 
+[tool.mypy]
+check_untyped_defs = true
