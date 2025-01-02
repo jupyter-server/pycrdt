@@ -265,3 +265,69 @@ print(str(text))
 ```
 
 Undoing a change doesn't remove the change from the document's history, but applies a change that is the opposite of the previous change.
+
+## Type annotations
+
+`Array`, `Map` and `Doc` can be type-annotated for static type analysis. For instance, here is how to declare a `Doc` where all root types are `Array`s of `int`s:
+
+```py
+from pycrdt import Array, Doc
+
+doc: Doc[Array[int]] = Doc()
+array0: Array[int] = doc.get("array0", type=Array)
+array0.append(0)
+array0.append("foo")  # error: Argument 1 to "append" of "Array" has incompatible type "str"; expected "int"  [arg-type]
+array1: Array[str] = doc.get("array1", type=Array)  # error: Incompatible types in assignment (expression has type "Array[int]", variable has type "Array[str]")  [assignment]
+```
+
+Trying to append a `str` will result in a type check error. Likewise if trying to get a root type of `Array[str]`.
+
+Like an `Array`, a `Map` can be declared as uniform, i.e. with values of the same type. But it can also be declared as a [TypedDict](https://mypy.readthedocs.io/en/stable/typed_dict.html):
+
+```py
+from typing import TypedDict
+from pycrdt import Doc, Map
+
+doc: Doc[Map] = Doc()
+
+MyMap = TypedDict(
+    "MyMap",
+    {
+        "name": str,
+        "toggle": bool,
+        "nested": Array[bool],
+    },
+)
+
+map0: MyMap = doc.get("map0", type=Map)  # type: ignore[assignment]
+map0["name"] = "foo"
+map0["toggle"] = False
+map0["toggle"] = 3  # error: Value of "toggle" has incompatible type "int"; expected "bool"
+array0 = Array([1, 2, 3])
+map0["nested"] = array0  # error: Value of "nested" has incompatible type "Array[int]"; expected "Array[bool]"
+array1 = Array([False, True])
+map0["nested"] = array1
+v0: str = map0["name"]
+v1: str = map0["toggle"]  # error: Incompatible types in assignment (expression has type "bool", variable has type "str")
+v2: bool = map0["toggle"]
+map0["key0"]  # error: TypedDict "MyMap@7" has no key "key0"
+```
+
+Like a `Map`, a `Doc` can be declared as consisting of uniform root types, or as a `TypedDict`:
+
+```py
+from typing import TypedDict
+from pycrdt import Doc, Array, Text
+
+MyDoc = TypedDict(
+    "MyDoc",
+    {
+        "text0": Text,
+        "array0": Array[int],
+    }
+)
+doc: MyDoc = Doc()  # type: ignore[assignment]
+doc["text0"] = Text()
+doc["array0"] = Array[bool]()  # error: Value of "array0" has incompatible type "Array[bool]"; expected "Array[int]"
+doc["array0"] = Array[int]()
+```

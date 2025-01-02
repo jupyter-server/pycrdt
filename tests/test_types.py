@@ -6,10 +6,11 @@ from pycrdt import Array, Doc, Map, Text
 
 @pytest.mark.mypy_testing
 def mypy_test_array():
-    doc: Doc[Array] = Doc()
+    doc: Doc[Array[int]] = Doc()
     array0: Array[int] = doc.get("array0", type=Array)
     array0.append(0)
     array0.append("foo")  # E: Argument 1 to "append" of "Array" has incompatible type "str"; expected "int"  [arg-type]
+    array1: Array[str] = doc.get("array1", type=Array)  # E: Incompatible types in assignment (expression has type "Array[int]", variable has type "Array[str]")  [assignment]
 
 
 @pytest.mark.mypy_testing
@@ -45,7 +46,7 @@ def mypy_test_typed_map():
     v0: str = map0["name"]
     v1: str = map0["toggle"]  # E: Incompatible types in assignment (expression has type "bool", variable has type "str")
     v2: bool = map0["toggle"]
-    map0["key0"]  # E: TypedDict "MyMap@29" has no key "key0"
+    map0["key0"]  # E: TypedDict "MyMap@30" has no key "key0"
 
 
 @pytest.mark.mypy_testing
@@ -78,8 +79,7 @@ def mypy_test_typed_doc():
     doc: MyDoc = Doc()  # type: ignore[assignment]
     map0: MyMap = Map()  # type: ignore[assignment]
     doc["map0"] = map0
-    doc["map0"] = Array()  # E: Value of "map0" has incompatible type "Array[Never]"; expected "MyMap@61"
+    doc["map0"] = Array()  # E: Value of "map0" has incompatible type "Array[Never]"; expected "MyMap@62"
     doc["text0"] = Text()
-    array0: Array[bool] = Array()
-    doc["array0"] = array0  # E: Value of "array0" has incompatible type "Array[bool]"; expected "Array[int]"
+    doc["array0"] = Array[bool]()  # E: Value of "array0" has incompatible type "Array[bool]"; expected "Array[int]"
     doc["array0"] = Array()
