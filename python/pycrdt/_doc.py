@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Iterable, Type, TypeVar, cast
+from typing import Any, Callable, Generic, Iterable, Type, TypeVar, cast
 
 from ._base import BaseDoc, BaseType, base_types, forbid_read_transaction
 from ._pycrdt import Doc as _Doc
@@ -8,10 +8,10 @@ from ._pycrdt import SubdocsEvent, Subscription, TransactionEvent
 from ._pycrdt import Transaction as _Transaction
 from ._transaction import NewTransaction, ReadTransaction, Transaction
 
-T_BaseType = TypeVar("T_BaseType", bound=BaseType)
+T = TypeVar("T", bound=BaseType)
 
 
-class Doc(BaseDoc):
+class Doc(BaseDoc, Generic[T]):
     """
     A shared document.
 
@@ -23,7 +23,7 @@ class Doc(BaseDoc):
 
     def __init__(
         self,
-        init: dict[str, BaseType] = {},
+        init: dict[str, T] = {},
         *,
         client_id: int | None = None,
         doc: _Doc | None = None,
@@ -165,7 +165,7 @@ class Doc(BaseDoc):
             assert txn._txn is not None
             self._doc.apply_update(txn._txn, update)
 
-    def __setitem__(self, key: str, value: BaseType) -> None:
+    def __setitem__(self, key: str, value: T) -> None:
         """
         Sets a document root type:
         ```py
@@ -185,7 +185,7 @@ class Doc(BaseDoc):
         prelim = value._integrate(self, integrated)
         value._init(prelim)
 
-    def __getitem__(self, key: str) -> BaseType:
+    def __getitem__(self, key: str) -> T:
         """
         Gets the document root type corresponding to the given key:
         ```py
@@ -207,7 +207,7 @@ class Doc(BaseDoc):
         """
         return iter(self.keys())
 
-    def get(self, key: str, *, type: type[T_BaseType]) -> T_BaseType:
+    def get(self, key: str, *, type: type[T]) -> T:
         """
         Gets the document root type corresponding to the given key.
         If it already exists, it will be cast to the given type (if different),
@@ -230,14 +230,14 @@ class Doc(BaseDoc):
         """
         return self._roots.keys()
 
-    def values(self) -> Iterable[BaseType]:
+    def values(self) -> Iterable[T]:
         """
         Returns:
             An iterable over the document root types.
         """
         return self._roots.values()
 
-    def items(self) -> Iterable[tuple[str, BaseType]]:
+    def items(self) -> Iterable[tuple[str, T]]:
         """
         Returns:
             An iterable over the key-value pairs of document root types.
@@ -245,14 +245,14 @@ class Doc(BaseDoc):
         return self._roots.items()
 
     @property
-    def _roots(self) -> dict[str, BaseType]:
+    def _roots(self) -> dict[str, T]:
         with self.transaction() as txn:
             assert txn._txn is not None
             return {
                 key: (
                     None
                     if val is None
-                    else cast(Type[BaseType], base_types[type(val)])(_integrated=val, _doc=self)
+                    else cast(Type[T], base_types[type(val)])(_integrated=val, _doc=self)
                 )
                 for key, val in self._doc.roots(txn._txn).items()
             }
