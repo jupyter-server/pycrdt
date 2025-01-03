@@ -1,5 +1,9 @@
 # Version history
 
+## 0.11.1
+
+- Rearrange typing tests and docs.
+
 ## 0.11.0
 
 - Drop Python v3.8.
