@@ -273,20 +273,20 @@ Undoing a change doesn't remove the change from the document's history, but appl
 ```py
 from pycrdt import Array, Doc
 
-doc: Doc[Array[int]] = Doc()
-array0: Array[int] = doc.get("array0", type=Array)
+doc = Doc[Array[int]]()
+array0 = doc.get("array0", type=Array[int])
 array0.append(0)
-array0.append("foo")  # error: Argument 1 to "append" of "Array" has incompatible type "str"; expected "int"  [arg-type]
-array1: Array[str] = doc.get("array1", type=Array)  # error: Incompatible types in assignment (expression has type "Array[int]", variable has type "Array[str]")  [assignment]
+array0.append("foo")  # error: Argument 1 to "append" of "Array" has incompatible type "str"; expected "int"
+array1 = doc.get("array1", type=Array[str])  # error: Argument "type" to "get" of "Doc" has incompatible type "type[pycrdt._array.Array[Any]]"; expected "type[pycrdt._array.Array[int]]"
 ```
 
 Trying to append a `str` will result in a type check error. Likewise if trying to get a root type of `Array[str]`.
 
-Like an `Array`, a `Map` can be declared as uniform, i.e. with values of the same type. But it can also be declared as a [TypedDict](https://mypy.readthedocs.io/en/stable/typed_dict.html):
+Like an `Array`, a `Map` can be declared as uniform, i.e. with values of the same type. If one wants to associate types with specific keys, the `Map` can be cast to a [TypedDict](https://mypy.readthedocs.io/en/stable/typed_dict.html):
 
 ```py
-from typing import TypedDict
-from pycrdt import Doc, Map
+from typing import TypedDict, cast
+from pycrdt import Array, Doc, Map
 
 doc: Doc[Map] = Doc()
 
@@ -299,7 +299,7 @@ MyMap = TypedDict(
     },
 )
 
-map0: MyMap = doc.get("map0", type=Map)  # type: ignore[assignment]
+map0 = cast(MyMap, doc.get("map0", type=Map))
 map0["name"] = "foo"
 map0["toggle"] = False
 map0["toggle"] = 3  # error: Value of "toggle" has incompatible type "int"; expected "bool"
@@ -310,13 +310,15 @@ map0["nested"] = array1
 v0: str = map0["name"]
 v1: str = map0["toggle"]  # error: Incompatible types in assignment (expression has type "bool", variable has type "str")
 v2: bool = map0["toggle"]
-map0["key0"]  # error: TypedDict "MyMap@7" has no key "key0"
+map0["key0"]  # error: TypedDict "MyMap" has no key "key0"
 ```
+
+Note however that this solution is not ideal, since a `Map` is not exactly a `dict`, although it behaves similarly. For instance, `map0` may need to be cast again to a `Map` if one wants to access specific methods.
 
 Like a `Map`, a `Doc` can be declared as consisting of uniform root types, or as a `TypedDict`:
 
 ```py
-from typing import TypedDict
+from typing import TypedDict, cast
 from pycrdt import Doc, Array, Text
 
 MyDoc = TypedDict(
@@ -326,8 +328,10 @@ MyDoc = TypedDict(
         "array0": Array[int],
     }
 )
-doc: MyDoc = Doc()  # type: ignore[assignment]
+doc = cast(MyDoc, Doc())
 doc["text0"] = Text()
 doc["array0"] = Array[bool]()  # error: Value of "array0" has incompatible type "Array[bool]"; expected "Array[int]"
 doc["array0"] = Array[int]()
 ```
+
+Here again, beware that a `Doc` has some similarities with a `dict`, but also differences. Cast `doc` back to a `Doc` when needed.
