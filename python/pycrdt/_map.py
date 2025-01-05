@@ -10,7 +10,7 @@ from typing import (
     overload,
 )
 
-from ._base import BaseDoc, BaseEvent, BaseType, base_types, event_types
+from ._base import BaseDoc, BaseEvent, BaseType, Typed, base_types, event_types
 from ._pycrdt import Map as _Map
 from ._pycrdt import MapEvent as _MapEvent
 from ._pycrdt import Subscription
@@ -313,6 +313,42 @@ class Map(BaseType, Generic[T]):
             callback: The callback to call with the [MapEvent][pycrdt.MapEvent].
         """
         return super().observe(cast(Callable[[BaseEvent], None], callback))
+
+
+class TypedMap(Typed):
+    """
+    A container for a [Map][pycrdt.Map.__init__] where values have types associated with
+    specific keys. The underlying `Map` can be accessed with the special `_` attribute.
+
+    ```py
+    from pycrdt import Array, Map, TypedDoc, TypedMap
+
+    class MyMap(TypedMap):
+        name: str
+        toggle: bool
+        nested: Array[bool]
+
+    class MyDoc(TypedDoc):
+        map0: MyMap
+
+    doc = MyDoc()
+
+    doc.map0.name = "John"
+    doc.map0.toggle = True
+    doc.map0.nested = Array([True, False])
+
+    print(doc.map0._.to_py())
+    # {'nested': [True, False], 'toggle': True, 'name': 'John'}
+    ```
+    """
+
+    _: Map
+
+    def __init__(self, map: Map | None = None) -> None:
+        super().__init__()
+        if map is None:
+            map = Map()
+        self.__dict__["_"] = map
 
 
 class MapEvent(BaseEvent):

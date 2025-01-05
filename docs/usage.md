@@ -280,58 +280,44 @@ array0.append("foo")  # error: Argument 1 to "append" of "Array" has incompatibl
 array1 = doc.get("array1", type=Array[str])  # error: Argument "type" to "get" of "Doc" has incompatible type "type[pycrdt._array.Array[Any]]"; expected "type[pycrdt._array.Array[int]]"
 ```
 
-Trying to append a `str` will result in a type check error. Likewise if trying to get a root type of `Array[str]`.
+Trying to append a `str` to an `Array[int]` will result in a type check error. Likewise if trying to get a root type of `Array[str]` from the `Doc[Array[int]]`.
 
-Like an `Array`, a `Map` can be declared as uniform, i.e. with values of the same type. If one wants to associate types with specific keys, the `Map` can be cast to a [TypedDict](https://mypy.readthedocs.io/en/stable/typed_dict.html):
+Like an `Array`, a `Map` can be declared as uniform, i.e. with values of the same type. For instance, if declared as `Map[int]`, then all values will be of type `int`. Likewise for a `Doc`: a `Doc[Map[int]]` will have root values of type `Map[int]`.
 
-```py
-from typing import TypedDict, cast
-from pycrdt import Array, Doc, Map
-
-doc: Doc[Map] = Doc()
-
-MyMap = TypedDict(
-    "MyMap",
-    {
-        "name": str,
-        "toggle": bool,
-        "nested": Array[bool],
-    },
-)
-
-map0 = cast(MyMap, doc.get("map0", type=Map))
-map0["name"] = "foo"
-map0["toggle"] = False
-map0["toggle"] = 3  # error: Value of "toggle" has incompatible type "int"; expected "bool"
-array0 = Array([1, 2, 3])
-map0["nested"] = array0  # error: Value of "nested" has incompatible type "Array[int]"; expected "Array[bool]"
-array1 = Array([False, True])
-map0["nested"] = array1
-v0: str = map0["name"]
-v1: str = map0["toggle"]  # error: Incompatible types in assignment (expression has type "bool", variable has type "str")
-v2: bool = map0["toggle"]
-map0["key0"]  # error: TypedDict "MyMap" has no key "key0"
-```
-
-Note however that this solution is not ideal, since a `Map` is not exactly a `dict`, although it behaves similarly. For instance, `map0` may need to be cast again to a `Map` if one wants to access specific methods.
-
-Like a `Map`, a `Doc` can be declared as consisting of uniform root types, or as a `TypedDict`:
+But if one wants to associate types with specific keys, a `TypedMap` can be used instead of a `Map`, and a `TypedDoc` can be used instead of a `Doc`:
 
 ```py
-from typing import TypedDict, cast
-from pycrdt import Doc, Array, Text
+from pycrdt import Array, Text, TypedDoc, TypedMap
 
-MyDoc = TypedDict(
-    "MyDoc",
-    {
-        "text0": Text,
-        "array0": Array[int],
-    }
-)
-doc = cast(MyDoc, Doc())
-doc["text0"] = Text()
-doc["array0"] = Array[bool]()  # error: Value of "array0" has incompatible type "Array[bool]"; expected "Array[int]"
-doc["array0"] = Array[int]()
+class MyMap(TypedMap):
+    name: str
+    toggle: bool
+    nested: Array[bool]
+
+class MyDoc(TypedDoc):
+    map0: MyMap
+    array0: Array[int]
+    text0: Text
+
+doc = MyDoc()
+
+doc.map0.name = "foo"
+doc.map0.toggle = False
+doc.map0.toggle = 3  # error: Incompatible types in assignment (expression has type "int", variable has type "bool")  [assignment]
+doc.array0 = Array([1, 2, 3])
+doc.map0.nested = Array([4])  # error: List item 0 has incompatible type "int"; expected "bool"  [list-item]
+doc.map0.nested = Array([False, True])
+v0: str = doc.map0.name
+v1: str = doc.map0.toggle  # error: Incompatible types in assignment (expression has type "bool", variable has type "str")  [assignment]
+v2: bool = doc.map0.toggle
+doc.map0.wrong_key0  # error: "MyMap" has no attribute "wrong_key0"  [attr-defined]
 ```
 
-Here again, beware that a `Doc` has some similarities with a `dict`, but also differences. Cast `doc` back to a `Doc` when needed.
+`TypedMap` and `TypedDoc` are special container types, i.e. they are not subclasses of `Map` and `Doc`, respectively. Instead, they *have* a `Map` and a `Doc`, respectively. Those can be accessed with the `_` property:
+
+```py
+from pycrdt import Doc, Map
+
+untyped_doc: Doc = doc._
+untyped_map: Map = doc.map0._
+```

@@ -1,7 +1,7 @@
 from typing import TypedDict, cast
 
 import pytest
-from pycrdt import Array, Doc, Map, Text
+from pycrdt import Array, Doc, Map, Text, TypedMap, TypedDoc
 
 
 @pytest.mark.mypy_testing
@@ -84,3 +84,34 @@ def mypy_test_typed_doc():
     doc["text0"] = Text()
     doc["array0"] = Array[bool]()  # E: Value of "array0" has incompatible type "Array[bool]"; expected "Array[int]"
     doc["array0"] = Array()
+
+
+@pytest.mark.mypy_testing
+def mypy_test_typed():
+
+    class MyTypedMap0(TypedMap):
+        k0: bool
+
+    class MyTypedMap1(TypedMap):
+        key0: str
+        key1: int
+        key2: MyTypedMap0
+
+    class MySubTypedDoc(TypedDoc):
+        my_typed_map: MyTypedMap1
+
+    class MyTypedDoc(MySubTypedDoc):
+        my_array: Array[bool]
+
+    my_typed_doc = MyTypedDoc()
+    my_typed_doc.my_typed_map.key0 = "foo"
+    my_typed_doc.my_typed_map.key0 = 3  # E: Incompatible types in assignment (expression has type "int", variable has type "str")
+    my_typed_doc.my_typed_map.key1 = 123
+    my_typed_doc.my_typed_map.key1 = "bar"  # E: Incompatible types in assignment (expression has type "str", variable has type "int")
+    my_typed_doc.my_typed_map.key2.k0 = 3  # E: Incompatible types in assignment (expression has type "int", variable has type "bool")
+    my_typed_doc.my_typed_map.key2.k0 = False
+    my_typed_doc.my_typed_map.key2.k1  # E: "MyTypedMap0" has no attribute "k1"
+    my_typed_doc.my_array.append(True)
+    my_typed_doc.my_array.append(2)  # E: Argument 1 to "append" of "Array" has incompatible type "int"; expected "bool"
+    my_typed_doc.my_wrong_root  # E: "MyTypedDoc" has no attribute "my_wrong_root"
+    my_typed_doc.my_typed_map.wrong_key  # E: "MyTypedMap1" has no attribute "wrong_key"
