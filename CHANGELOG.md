@@ -1,5 +1,9 @@
 # Version history
 
+## 0.12.0
+
+- Add `TypedDoc` and `TypedMap` typed containers.
+
 ## 0.11.1
 
 - Rearrange typing tests and docs.
