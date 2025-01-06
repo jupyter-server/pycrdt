@@ -4,7 +4,7 @@ import threading
 from abc import ABC, abstractmethod
 from functools import lru_cache, partial
 from inspect import signature
-from typing import TYPE_CHECKING, Any, Callable, Type, cast
+from typing import TYPE_CHECKING, Any, Callable, Type, cast, get_type_hints
 
 import anyio
 
@@ -253,3 +253,47 @@ def process_event(value: Any, doc: Doc) -> Any:
 def count_parameters(func: Callable) -> int:
     """Count the number of parameters in a callable"""
     return len(signature(func).parameters)
+
+
+class Typed:
+    _: Any
+
+    def __init__(self) -> None:
+        annotation_lists = [
+            get_type_hints(class_) for class_ in type(self).mro() if class_ is not object
+        ]
+        annotations = {
+            key: value
+            for annotations in annotation_lists
+            for key, value in annotations.items()
+            if key != "_"
+        }
+        self.__dict__["__annotations__"] = annotations
+
+    if not TYPE_CHECKING:
+
+        def __getattr__(self, key: str) -> Any:
+            annotations = self.__dict__["__annotations__"]
+            if key in annotations:
+                expected_type = annotations[key]
+                if Typed in expected_type.mro():
+                    return expected_type(self.__dict__["_"][key])
+                return self.__dict__["_"][key]
+            raise AttributeError(f'"{type(self).mro()[0]}" has no attribute "{key}"')
+
+        def __setattr__(self, key: str, value: Any) -> None:
+            annotations = self.__dict__["__annotations__"]
+            if key in annotations:
+                expected_type = annotations[key]
+                if hasattr(expected_type, "__origin__"):
+                    expected_type = expected_type.__origin__
+                if type(value) is not expected_type:
+                    raise TypeError(
+                        f'Incompatible types in assignment (expression has type "{expected_type}", '
+                        f'variable has type "{type(value)}")'
+                    )
+                if isinstance(value, Typed):
+                    value = value._
+                self.__dict__["_"][key] = value
+                return
+            raise AttributeError(f'"{type(self).mro()[0]}" has no attribute "{key}"')

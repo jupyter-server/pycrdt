@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, Generic, Iterable, Type, TypeVar, cast
 
-from ._base import BaseDoc, BaseType, base_types, forbid_read_transaction
+from ._base import BaseDoc, BaseType, Typed, base_types, forbid_read_transaction
 from ._pycrdt import Doc as _Doc
 from ._pycrdt import SubdocsEvent, Subscription, TransactionEvent
 from ._pycrdt import Transaction as _Transaction
@@ -294,6 +294,42 @@ class Doc(BaseDoc, Generic[T]):
         """
         self._subscriptions.remove(subscription)
         subscription.drop()
+
+
+class TypedDoc(Typed):
+    """
+    A container for a [Doc][pycrdt.Doc.__init__] where root shared values have types associated
+    with specific keys. The underlying `Doc` can be accessed with the special `_` attribute.
+
+    ```py
+    from pycrdt import Array, Doc, Map, Text, TypedDoc
+
+    class MyDoc(TypedDoc):
+        map0: Map[int]
+        array0: Array[bool]
+        text0: Text
+
+    doc = MyDoc()
+
+    doc.map0["foo"] = 3
+    doc.array0.append(True)
+    doc.text0 += "Hello"
+    untyped_doc: Doc = doc._
+    ```
+    """
+
+    _: Doc
+
+    def __init__(self, doc: Doc | None = None) -> None:
+        super().__init__()
+        if doc is None:
+            doc = Doc()
+        self.__dict__["_"] = doc
+        for key, value in self.__dict__["__annotations__"].items():
+            root_type = value()
+            if isinstance(root_type, Typed):
+                root_type = root_type._
+            self.__dict__["_"][key] = root_type
 
 
 base_types[_Doc] = Doc

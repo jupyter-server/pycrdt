@@ -23,6 +23,8 @@
       - TextEvent
       - Transaction
       - TransactionEvent
+      - TypedDoc
+      - TypedMap
       - UndoManager
       - XmlElement
       - XmlFragment
