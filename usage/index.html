@@ -849,56 +849,45 @@ Changes can be serialized to binary by getting the event's <code>update</code>:<
 <p><code>Array</code>, <code>Map</code> and <code>Doc</code> can be type-annotated for static type analysis. For instance, here is how to declare a <code>Doc</code> where all root types are <code>Array</code>s of <code>int</code>s:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pycrdt</span> <span class="kn">import</span> <span class="n">Array</span><span class="p">,</span> <span class="n">Doc</span>
 
-<span class="n">doc</span><span class="p">:</span> <span class="n">Doc</span><span class="p">[</span><span class="n">Array</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="n">Doc</span><span class="p">()</span>
-<span class="n">array0</span><span class="p">:</span> <span class="n">Array</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;array0&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">Array</span><span class="p">)</span>
+<span class="n">doc</span> <span class="o">=</span> <span class="n">Doc</span><span class="p">[</span><span class="n">Array</span><span class="p">[</span><span class="nb">int</span><span class="p">]]()</span>
+<span class="n">array0</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;array0&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">Array</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span>
 <span class="n">array0</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-<span class="n">array0</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;foo&quot;</span><span class="p">)</span>  <span class="c1"># error: Argument 1 to &quot;append&quot; of &quot;Array&quot; has incompatible type &quot;str&quot;; expected &quot;int&quot;  [arg-type]</span>
-<span class="n">array1</span><span class="p">:</span> <span class="n">Array</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;array1&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">Array</span><span class="p">)</span>  <span class="c1"># error: Incompatible types in assignment (expression has type &quot;Array[int]&quot;, variable has type &quot;Array[str]&quot;)  [assignment]</span>
+<span class="n">array0</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;foo&quot;</span><span class="p">)</span>  <span class="c1"># error: Argument 1 to &quot;append&quot; of &quot;Array&quot; has incompatible type &quot;str&quot;; expected &quot;int&quot;</span>
+<span class="n">array1</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;array1&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">Array</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span>  <span class="c1"># error: Argument &quot;type&quot; to &quot;get&quot; of &quot;Doc&quot; has incompatible type &quot;type[pycrdt._array.Array[Any]]&quot;; expected &quot;type[pycrdt._array.Array[int]]&quot;</span>
 </code></pre></div>
-<p>Trying to append a <code>str</code> will result in a type check error. Likewise if trying to get a root type of <code>Array[str]</code>.</p>
-<p>Like an <code>Array</code>, a <code>Map</code> can be declared as uniform, i.e. with values of the same type. But it can also be declared as a <a href="https://mypy.readthedocs.io/en/stable/typed_dict.html">TypedDict</a>:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TypedDict</span>
-<span class="kn">from</span> <span class="nn">pycrdt</span> <span class="kn">import</span> <span class="n">Doc</span><span class="p">,</span> <span class="n">Map</span>
+<p>Trying to append a <code>str</code> to an <code>Array[int]</code> will result in a type check error. Likewise if trying to get a root type of <code>Array[str]</code> from the <code>Doc[Array[int]]</code>.</p>
+<p>Like an <code>Array</code>, a <code>Map</code> can be declared as uniform, i.e. with values of the same type. For instance, if declared as <code>Map[int]</code>, then all values will be of type <code>int</code>. Likewise for a <code>Doc</code>: a <code>Doc[Map[int]]</code> will have root values of type <code>Map[int]</code>.</p>
+<p>But if one wants to associate types with specific keys, a <code>TypedMap</code> can be used instead of a <code>Map</code>, and a <code>TypedDoc</code> can be used instead of a <code>Doc</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pycrdt</span> <span class="kn">import</span> <span class="n">Array</span><span class="p">,</span> <span class="n">Text</span><span class="p">,</span> <span class="n">TypedDoc</span><span class="p">,</span> <span class="n">TypedMap</span>
 
-<span class="n">doc</span><span class="p">:</span> <span class="n">Doc</span><span class="p">[</span><span class="n">Map</span><span class="p">]</span> <span class="o">=</span> <span class="n">Doc</span><span class="p">()</span>
+<span class="k">class</span> <span class="nc">MyMap</span><span class="p">(</span><span class="n">TypedMap</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">toggle</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">nested</span><span class="p">:</span> <span class="n">Array</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span>
 
-<span class="n">MyMap</span> <span class="o">=</span> <span class="n">TypedDict</span><span class="p">(</span>
-    <span class="s2">&quot;MyMap&quot;</span><span class="p">,</span>
-    <span class="p">{</span>
-        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="s2">&quot;toggle&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
-        <span class="s2">&quot;nested&quot;</span><span class="p">:</span> <span class="n">Array</span><span class="p">[</span><span class="nb">bool</span><span class="p">],</span>
-    <span class="p">},</span>
-<span class="p">)</span>
+<span class="k">class</span> <span class="nc">MyDoc</span><span class="p">(</span><span class="n">TypedDoc</span><span class="p">):</span>
+    <span class="n">map0</span><span class="p">:</span> <span class="n">MyMap</span>
+    <span class="n">array0</span><span class="p">:</span> <span class="n">Array</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="n">text0</span><span class="p">:</span> <span class="n">Text</span>
 
-<span class="n">map0</span><span class="p">:</span> <span class="n">MyMap</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;map0&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">Map</span><span class="p">)</span>  <span class="c1"># type: ignore[assignment]</span>
-<span class="n">map0</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;foo&quot;</span>
-<span class="n">map0</span><span class="p">[</span><span class="s2">&quot;toggle&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-<span class="n">map0</span><span class="p">[</span><span class="s2">&quot;toggle&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>  <span class="c1"># error: Value of &quot;toggle&quot; has incompatible type &quot;int&quot;; expected &quot;bool&quot;</span>
-<span class="n">array0</span> <span class="o">=</span> <span class="n">Array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
-<span class="n">map0</span><span class="p">[</span><span class="s2">&quot;nested&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">array0</span>  <span class="c1"># error: Value of &quot;nested&quot; has incompatible type &quot;Array[int]&quot;; expected &quot;Array[bool]&quot;</span>
-<span class="n">array1</span> <span class="o">=</span> <span class="n">Array</span><span class="p">([</span><span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">])</span>
-<span class="n">map0</span><span class="p">[</span><span class="s2">&quot;nested&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">array1</span>
-<span class="n">v0</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">map0</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
-<span class="n">v1</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">map0</span><span class="p">[</span><span class="s2">&quot;toggle&quot;</span><span class="p">]</span>  <span class="c1"># error: Incompatible types in assignment (expression has type &quot;bool&quot;, variable has type &quot;str&quot;)</span>
-<span class="n">v2</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">map0</span><span class="p">[</span><span class="s2">&quot;toggle&quot;</span><span class="p">]</span>
-<span class="n">map0</span><span class="p">[</span><span class="s2">&quot;key0&quot;</span><span class="p">]</span>  <span class="c1"># error: TypedDict &quot;MyMap@7&quot; has no key &quot;key0&quot;</span>
+<span class="n">doc</span> <span class="o">=</span> <span class="n">MyDoc</span><span class="p">()</span>
+
+<span class="n">doc</span><span class="o">.</span><span class="n">map0</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;foo&quot;</span>
+<span class="n">doc</span><span class="o">.</span><span class="n">map0</span><span class="o">.</span><span class="n">toggle</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="n">doc</span><span class="o">.</span><span class="n">map0</span><span class="o">.</span><span class="n">toggle</span> <span class="o">=</span> <span class="mi">3</span>  <span class="c1"># error: Incompatible types in assignment (expression has type &quot;int&quot;, variable has type &quot;bool&quot;)  [assignment]</span>
+<span class="n">doc</span><span class="o">.</span><span class="n">array0</span> <span class="o">=</span> <span class="n">Array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="n">doc</span><span class="o">.</span><span class="n">map0</span><span class="o">.</span><span class="n">nested</span> <span class="o">=</span> <span class="n">Array</span><span class="p">([</span><span class="mi">4</span><span class="p">])</span>  <span class="c1"># error: List item 0 has incompatible type &quot;int&quot;; expected &quot;bool&quot;  [list-item]</span>
+<span class="n">doc</span><span class="o">.</span><span class="n">map0</span><span class="o">.</span><span class="n">nested</span> <span class="o">=</span> <span class="n">Array</span><span class="p">([</span><span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">])</span>
+<span class="n">v0</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">map0</span><span class="o">.</span><span class="n">name</span>
+<span class="n">v1</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">map0</span><span class="o">.</span><span class="n">toggle</span>  <span class="c1"># error: Incompatible types in assignment (expression has type &quot;bool&quot;, variable has type &quot;str&quot;)  [assignment]</span>
+<span class="n">v2</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">map0</span><span class="o">.</span><span class="n">toggle</span>
+<span class="n">doc</span><span class="o">.</span><span class="n">map0</span><span class="o">.</span><span class="n">wrong_key0</span>  <span class="c1"># error: &quot;MyMap&quot; has no attribute &quot;wrong_key0&quot;  [attr-defined]</span>
 </code></pre></div>
-<p>Like a <code>Map</code>, a <code>Doc</code> can be declared as consisting of uniform root types, or as a <code>TypedDict</code>:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TypedDict</span>
-<span class="kn">from</span> <span class="nn">pycrdt</span> <span class="kn">import</span> <span class="n">Doc</span><span class="p">,</span> <span class="n">Array</span><span class="p">,</span> <span class="n">Text</span>
+<p><code>TypedMap</code> and <code>TypedDoc</code> are special container types, i.e. they are not subclasses of <code>Map</code> and <code>Doc</code>, respectively. Instead, they <em>have</em> a <code>Map</code> and a <code>Doc</code>, respectively. Those can be accessed with the <code>_</code> property:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pycrdt</span> <span class="kn">import</span> <span class="n">Doc</span><span class="p">,</span> <span class="n">Map</span>
 
-<span class="n">MyDoc</span> <span class="o">=</span> <span class="n">TypedDict</span><span class="p">(</span>
-    <span class="s2">&quot;MyDoc&quot;</span><span class="p">,</span>
-    <span class="p">{</span>
-        <span class="s2">&quot;text0&quot;</span><span class="p">:</span> <span class="n">Text</span><span class="p">,</span>
-        <span class="s2">&quot;array0&quot;</span><span class="p">:</span> <span class="n">Array</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
-    <span class="p">}</span>
-<span class="p">)</span>
-<span class="n">doc</span><span class="p">:</span> <span class="n">MyDoc</span> <span class="o">=</span> <span class="n">Doc</span><span class="p">()</span>  <span class="c1"># type: ignore[assignment]</span>
-<span class="n">doc</span><span class="p">[</span><span class="s2">&quot;text0&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Text</span><span class="p">()</span>
-<span class="n">doc</span><span class="p">[</span><span class="s2">&quot;array0&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Array</span><span class="p">[</span><span class="nb">bool</span><span class="p">]()</span>  <span class="c1"># error: Value of &quot;array0&quot; has incompatible type &quot;Array[bool]&quot;; expected &quot;Array[int]&quot;</span>
-<span class="n">doc</span><span class="p">[</span><span class="s2">&quot;array0&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Array</span><span class="p">[</span><span class="nb">int</span><span class="p">]()</span>
+<span class="n">untyped_doc</span><span class="p">:</span> <span class="n">Doc</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">_</span>
+<span class="n">untyped_map</span><span class="p">:</span> <span class="n">Map</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">map0</span><span class="o">.</span><span class="n">_</span>
 </code></pre></div>
 
 
