@@ -1,7 +1,7 @@
 from typing import TypedDict, cast
 
 import pytest
-from pycrdt import Array, Doc, Map, Text, TypedMap, TypedDoc
+from pycrdt import Array, Doc, Map, Text, TypedArray, TypedMap, TypedDoc
 
 
 @pytest.mark.mypy_testing
@@ -89,6 +89,9 @@ def mypy_test_typed_doc():
 @pytest.mark.mypy_testing
 def mypy_test_typed():
 
+    class MyTypedArray(TypedArray[bool]):
+        type: bool
+
     class MyTypedMap0(TypedMap):
         k0: bool
 
@@ -101,7 +104,7 @@ def mypy_test_typed():
         my_typed_map: MyTypedMap1
 
     class MyTypedDoc(MySubTypedDoc):
-        my_array: Array[bool]
+        my_array: MyTypedArray
 
     my_typed_doc = MyTypedDoc()
     my_typed_doc.my_typed_map.key0 = "foo"
@@ -112,6 +115,6 @@ def mypy_test_typed():
     my_typed_doc.my_typed_map.key2.k0 = False
     my_typed_doc.my_typed_map.key2.k1  # E: "MyTypedMap0" has no attribute "k1"
     my_typed_doc.my_array.append(True)
-    my_typed_doc.my_array.append(2)  # E: Argument 1 to "append" of "Array" has incompatible type "int"; expected "bool"
+    my_typed_doc.my_array.append(2)  # E: Argument 1 to "append" of "TypedArray" has incompatible type "int"; expected "bool"
     my_typed_doc.my_wrong_root  # E: "MyTypedDoc" has no attribute "my_wrong_root"
     my_typed_doc.my_typed_map.wrong_key  # E: "MyTypedMap1" has no attribute "wrong_key"

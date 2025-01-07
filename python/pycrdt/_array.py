@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar, cast, overload
 
-from ._base import BaseDoc, BaseEvent, BaseType, base_types, event_types
+from ._base import BaseDoc, BaseEvent, BaseType, Typed, base_types, event_types
 from ._pycrdt import Array as _Array
 from ._pycrdt import ArrayEvent as _ArrayEvent
 from ._pycrdt import Subscription
@@ -406,6 +406,77 @@ class ArrayIterator:
         res = self.array[self.idx]
         self.idx += 1
         return res
+
+
+class TypedArray(Typed, Generic[T]):
+    """
+    A container for an [Array][pycrdt.Array.__init__] where values have types that can be
+    other typed containers, e.g. a [TypedMap][pycrdt.TypedMap]. The subclass of `TypedArray[T]`
+    must have a special `type: T` annotation where `T` is the same type.
+    The underlying `Array` can be accessed with the special `_` attribute.
+
+    ```py
+    from pycrdt import Array, TypedArray, TypedDoc, TypedMap
+
+    class MyMap(TypedMap):
+        name: str
+        toggle: bool
+        nested: Array[bool]
+
+    class MyArray(TypedArray[MyMap]):
+        type: MyMap
+
+    class MyDoc(TypedDoc):
+        array0: MyArray
+
+    doc = MyDoc()
+
+    map0 = MyMap()
+    doc.array0.append(map0)
+    map0.name = "foo"
+    map0.toggle = True
+    map0.nested = Array([True, False])
+
+    print(doc.array0._.to_py())
+    # [{'name': 'foo', 'toggle': True, 'nested': [True, False]}]
+    print(doc.array0[0].name)
+    # foo
+    print(doc.array0[0].toggle)
+    # True
+    print(doc.array0[0].nested.to_py())
+    # [True, False]
+    ```
+    """
+
+    type: T
+    _: Array
+
+    def __init__(self, array: TypedArray | Array | None = None) -> None:
+        super().__init__()
+        if array is None:
+            array = Array()
+        elif isinstance(array, TypedArray):
+            array = array._
+        self._ = array
+        self.__dict__["type"] = self.__dict__["annotations"]["type"]
+
+    def __getitem__(self, key: int) -> T:
+        return self.__dict__["type"](self._[key])
+
+    def __setitem__(self, key: int, value: T) -> None:
+        item = value._ if isinstance(value, Typed) else value
+        self._[key] = item
+
+    def append(self, value: T) -> None:
+        item = value._ if isinstance(value, Typed) else value
+        self._.append(item)
+
+    def extend(self, value: list[T]) -> None:
+        items = [item._ if isinstance(item, Typed) else item for item in value]
+        self._.extend(items)
+
+    def __len__(self) -> int:
+        return len(self._)
 
 
 base_types[_Array] = Array

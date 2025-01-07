@@ -259,41 +259,42 @@ class Typed:
     _: Any
 
     def __init__(self) -> None:
-        annotation_lists = [
-            get_type_hints(class_) for class_ in type(self).mro() if class_ is not object
-        ]
-        annotations = {
-            key: value
-            for annotations in annotation_lists
-            for key, value in annotations.items()
-            if key != "_"
+        self.__dict__["annotations"] = {
+            name: _type
+            for name, _type in get_type_hints(type(self).mro()[0]).items()
+            if name != "_"
         }
-        self.__dict__["__annotations__"] = annotations
 
     if not TYPE_CHECKING:
 
         def __getattr__(self, key: str) -> Any:
-            annotations = self.__dict__["__annotations__"]
-            if key in annotations:
-                expected_type = annotations[key]
-                if Typed in expected_type.mro():
-                    return expected_type(self.__dict__["_"][key])
-                return self.__dict__["_"][key]
-            raise AttributeError(f'"{type(self).mro()[0]}" has no attribute "{key}"')
+            annotations = self.__dict__["annotations"]
+            if key not in annotations:
+                raise AttributeError(f'"{type(self).mro()[0]}" has no attribute "{key}"')
+            expected_type = annotations[key]
+            if hasattr(expected_type, "mro") and Typed in expected_type.mro():
+                return expected_type(self._[key])
+            return self._[key]
 
         def __setattr__(self, key: str, value: Any) -> None:
-            annotations = self.__dict__["__annotations__"]
-            if key in annotations:
-                expected_type = annotations[key]
-                if hasattr(expected_type, "__origin__"):
-                    expected_type = expected_type.__origin__
-                if type(value) is not expected_type:
-                    raise TypeError(
-                        f'Incompatible types in assignment (expression has type "{expected_type}", '
-                        f'variable has type "{type(value)}")'
-                    )
-                if isinstance(value, Typed):
-                    value = value._
-                self.__dict__["_"][key] = value
+            if key == "_":
+                self.__dict__["_"] = value
                 return
-            raise AttributeError(f'"{type(self).mro()[0]}" has no attribute "{key}"')
+            annotations = self.__dict__["annotations"]
+            if key not in annotations:
+                raise AttributeError(f'"{type(self).mro()[0]}" has no attribute "{key}"')
+            expected_type = annotations[key]
+            if hasattr(expected_type, "__origin__"):
+                expected_type = expected_type.__origin__
+            if hasattr(expected_type, "__args__"):
+                expected_types = expected_type.__args__
+            else:
+                expected_types = (expected_type,)
+            if type(value) not in expected_types:
+                raise TypeError(
+                    f'Incompatible types in assignment (expression has type "{expected_type}", '
+                    f'variable has type "{type(value)}")'
+                )
+            if isinstance(value, Typed):
+                value = value._
+            self._[key] = value

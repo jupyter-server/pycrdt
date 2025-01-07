@@ -344,11 +344,13 @@ class TypedMap(Typed):
 
     _: Map
 
-    def __init__(self, map: Map | None = None) -> None:
+    def __init__(self, map: TypedMap | Map | None = None) -> None:
         super().__init__()
         if map is None:
             map = Map()
-        self.__dict__["_"] = map
+        elif isinstance(map, TypedMap):
+            map = map._
+        self._ = map
 
 
 class MapEvent(BaseEvent):
