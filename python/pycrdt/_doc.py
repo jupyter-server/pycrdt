@@ -320,16 +320,19 @@ class TypedDoc(Typed):
 
     _: Doc
 
-    def __init__(self, doc: Doc | None = None) -> None:
+    def __init__(self, doc: TypedDoc | Doc | None = None) -> None:
         super().__init__()
         if doc is None:
             doc = Doc()
-        self.__dict__["_"] = doc
-        for key, value in self.__dict__["__annotations__"].items():
-            root_type = value()
+        elif isinstance(doc, TypedDoc):
+            doc = doc._
+        assert isinstance(doc, Doc)
+        self._ = doc
+        for name, _type in self.__dict__["annotations"].items():
+            root_type = _type()
             if isinstance(root_type, Typed):
                 root_type = root_type._
-            self.__dict__["_"][key] = root_type
+            doc[name] = root_type
 
 
 base_types[_Doc] = Doc

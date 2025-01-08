@@ -23,6 +23,7 @@
       - TextEvent
       - Transaction
       - TransactionEvent
+      - TypedArray
       - TypedDoc
       - TypedMap
       - UndoManager
