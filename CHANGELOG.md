@@ -1,5 +1,9 @@
 # Version history
 
+## 0.12.1
+
+- Add `TypedArray` typed container.
+
 ## 0.12.0
 
 - Add `TypedDoc` and `TypedMap` typed containers.
