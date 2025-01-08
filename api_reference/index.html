@@ -1463,6 +1463,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#pycrdt.TypedArray" class="md-nav__link">
+    <span class="md-ellipsis">
+      TypedArray
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pycrdt.TypedDoc" class="md-nav__link">
     <span class="md-ellipsis">
       TypedDoc
@@ -3089,6 +3098,15 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pycrdt.TypedArray" class="md-nav__link">
+    <span class="md-ellipsis">
+      TypedArray
+    </span>
+  </a>
   
 </li>
       
@@ -9707,6 +9725,83 @@ It must be used with a context manager (see <a class="autorefs autorefs-internal
     </div>
 
 </div>
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pycrdt.TypedArray" class="doc doc-heading">
+            <code>TypedArray</code>
+
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="pycrdt._base.Typed">Typed</span></code>, <code><span title="typing.Generic">Generic</span>[<span title="pycrdt._array.T">T</span>]</code></p>
+
+
+        <p>A container for an <a class="autorefs autorefs-internal" href="#pycrdt.Array.__init__">Array</a> where values have types that can be
+other typed containers, e.g. a <a class="autorefs autorefs-internal" href="#pycrdt.TypedMap">TypedMap</a>. The subclass of <code>TypedArray[T]</code>
+must have a special <code>type: T</code> annotation where <code>T</code> is the same type.
+The underlying <code>Array</code> can be accessed with the special <code>_</code> attribute.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pycrdt</span> <span class="kn">import</span> <span class="n">Array</span><span class="p">,</span> <span class="n">TypedArray</span><span class="p">,</span> <span class="n">TypedDoc</span><span class="p">,</span> <span class="n">TypedMap</span>
+
+<span class="k">class</span> <span class="nc">MyMap</span><span class="p">(</span><span class="n">TypedMap</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">toggle</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">nested</span><span class="p">:</span> <span class="n">Array</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span>
+
+<span class="k">class</span> <span class="nc">MyArray</span><span class="p">(</span><span class="n">TypedArray</span><span class="p">[</span><span class="n">MyMap</span><span class="p">]):</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="n">MyMap</span>
+
+<span class="k">class</span> <span class="nc">MyDoc</span><span class="p">(</span><span class="n">TypedDoc</span><span class="p">):</span>
+    <span class="n">array0</span><span class="p">:</span> <span class="n">MyArray</span>
+
+<span class="n">doc</span> <span class="o">=</span> <span class="n">MyDoc</span><span class="p">()</span>
+
+<span class="n">map0</span> <span class="o">=</span> <span class="n">MyMap</span><span class="p">()</span>
+<span class="n">doc</span><span class="o">.</span><span class="n">array0</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">map0</span><span class="p">)</span>
+<span class="n">map0</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;foo&quot;</span>
+<span class="n">map0</span><span class="o">.</span><span class="n">toggle</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">map0</span><span class="o">.</span><span class="n">nested</span> <span class="o">=</span> <span class="n">Array</span><span class="p">([</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">])</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">doc</span><span class="o">.</span><span class="n">array0</span><span class="o">.</span><span class="n">_</span><span class="o">.</span><span class="n">to_py</span><span class="p">())</span>
+<span class="c1"># [{&#39;name&#39;: &#39;foo&#39;, &#39;toggle&#39;: True, &#39;nested&#39;: [True, False]}]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">doc</span><span class="o">.</span><span class="n">array0</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+<span class="c1"># foo</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">doc</span><span class="o">.</span><span class="n">array0</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">toggle</span><span class="p">)</span>
+<span class="c1"># True</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">doc</span><span class="o">.</span><span class="n">array0</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">nested</span><span class="o">.</span><span class="n">to_py</span><span class="p">())</span>
+<span class="c1"># [True, False]</span>
+</code></pre></div>
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
 
 
 
