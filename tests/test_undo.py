@@ -167,3 +167,27 @@ def test_origin():
     undo_manager.undo()
     assert str(text) == "Hello"
     assert not undo_manager.can_undo()
+
+
+def test_timestamp():
+    timestamp = 0
+    timestamp_called = 0
+
+    def timestamp_callback():
+        nonlocal timestamp, timestamp_called
+        timestamp_called += 1
+        return timestamp
+
+    doc = Doc()
+    doc["text"] = text = Text()
+    undo_manager = UndoManager(
+        scopes=[text], capture_timeout_millis=1, timestamp=timestamp_callback
+    )
+    text += "a"
+    timestamp += 1
+    text += "b"
+    text += "c"
+    timestamp += 1
+    undo_manager.undo()
+    assert str(text) == "a"
+    assert timestamp_called == 4
