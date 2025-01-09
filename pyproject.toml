@@ -4,6 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "pycrdt"
+dynamic = ["version"]
 description = "Python bindings for Yrs"
 license = { file = "LICENSE" }
 authors = [
