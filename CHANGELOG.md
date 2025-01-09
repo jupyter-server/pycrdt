@@ -1,5 +1,9 @@
 # Version history
 
+## 0.12.2
+
+- Allow passing a Python timestamp function to an undo manager.
+
 ## 0.12.1
 
 - Add `TypedArray` typed container.
