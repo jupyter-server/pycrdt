@@ -342,7 +342,7 @@ class XmlText:
 class UndoManager:
     """Undo manager."""
 
-    def __init__(self, doc: Doc, capture_timeout_millis: int = 500) -> None:
+    def __init__(self, doc: Doc, capture_timeout_millis, timestamp: Callable[[], int]) -> None:
         """Creates an undo manager."""
 
     def expand_scope(self, scope: Text | Array | Map) -> None:

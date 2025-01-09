@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from time import time_ns
+from typing import TYPE_CHECKING, Any, Callable
 
 from ._base import BaseType
 from ._pycrdt import (
@@ -13,6 +14,10 @@ from ._transaction import hash_origin
 
 if TYPE_CHECKING:
     from ._doc import Doc
+
+
+def timestamp() -> int:
+    return time_ns() // 1_000_000
 
 
 class UndoManager:
@@ -31,13 +36,14 @@ class UndoManager:
         doc: Doc | None = None,
         scopes: list[BaseType] = [],
         capture_timeout_millis: int = 500,
+        timestamp: Callable[[], int] = timestamp,
     ) -> None:
         """
         Args:
             doc: The document the undo manager will work with.
             scopes: A list of shared types the undo manager will work with.
             capture_timeout_millis: A time interval for grouping changes that will be undone/redone.
-
+            timestamp: A function that returns a timestamp as an integer number of milli-seconds.
 
         Raises:
             RuntimeError: UndoManager must be created with doc or scopes.
@@ -48,7 +54,7 @@ class UndoManager:
             doc = scopes[0].doc
         elif scopes:
             raise RuntimeError("UndoManager must be created with doc or scopes")
-        self._undo_manager = _UndoManager(doc._doc, capture_timeout_millis)
+        self._undo_manager = _UndoManager(doc._doc, capture_timeout_millis, timestamp)
         for scope in scopes:
             self.expand_scope(scope)
 

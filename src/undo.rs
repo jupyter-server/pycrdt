@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+use std::sync::Arc;
 use pyo3::prelude::*;
 use pyo3::types::PyList;
 use pyo3::exceptions::PyRuntimeError;
@@ -8,11 +10,23 @@ use yrs::undo::{
     Options,
     StackItem as _StackItem,
 };
+use yrs::sync::{Clock, Timestamp};
 use crate::doc::Doc;
 use crate::text::Text;
 use crate::array::Array;
 use crate::map::Map;
 
+struct PythonClock {
+    timestamp: PyObject,
+}
+
+impl Clock for PythonClock {
+    fn now(&self) -> Timestamp {
+        Python::with_gil(|py| {
+            self.timestamp.call0(py).expect("Error getting timestamp").extract(py).expect("Could not convert timestamp to int")
+        })
+    }
+}
 
 #[pyclass(unsendable)]
 pub struct UndoManager {
@@ -22,8 +36,13 @@ pub struct UndoManager {
 #[pymethods]
 impl UndoManager {
     #[new]
-    fn new(doc: &Doc, capture_timeout_millis: u64) -> Self {
-        let mut options = Options::default();
+    fn new(doc: &Doc, capture_timeout_millis: u64, timestamp: PyObject) -> Self {
+        let mut options = Options {
+            capture_timeout_millis: 500,
+            tracked_origins: HashSet::new(),
+            capture_transaction: None,
+            timestamp: Arc::new(PythonClock {timestamp}),
+        };
         options.capture_timeout_millis = capture_timeout_millis;
         let undo_manager = _UndoManager::with_options(&doc.doc, options);
         UndoManager { undo_manager }
