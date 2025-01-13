@@ -1,5 +1,9 @@
 # Version history
 
+## 0.12.3
+
+- Upgrade `pyo3` to v0.23.4.
+
 ## 0.12.2
 
 - Allow passing a Python timestamp function to an undo manager.
