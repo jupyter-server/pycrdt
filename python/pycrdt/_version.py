@@ -1,6 +1,12 @@
 try:
-    from importlib.metadata import version
-except ImportError:
-    from importlib_metadata import version  # type: ignore[import-not-found, no-redef]
+    from importlib.metadata import PackageNotFoundError, version
+except ImportError:  # pragma: no cover
+    from importlib_metadata import (  # type: ignore[import-not-found, no-redef]
+        PackageNotFoundError,
+        version,
+    )
 
-__version__ = version("pycrdt")
+try:
+    __version__ = version("pycrdt")
+except PackageNotFoundError:  # pragma: no cover
+    __version__ = "uninstalled"
