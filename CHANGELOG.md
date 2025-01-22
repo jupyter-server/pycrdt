@@ -1,5 +1,9 @@
 # Version history
 
+## 0.12.5
+
+- Add `pycrdt.__version__`.
+
 ## 0.12.4
 
 - Upgrade `yrs` to v0.22.0.
