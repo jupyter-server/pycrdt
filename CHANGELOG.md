@@ -1,6 +1,6 @@
 # Version history
 
-## 0.12.6
+## 0.12.7
 
 - Add `pycrdt.__version__`.
 - Use PyPI's trusted publishing.
