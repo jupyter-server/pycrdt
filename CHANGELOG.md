@@ -1,5 +1,9 @@
 # Version history
 
+## 0.12.8
+
+- Bump trio upper version to <0.29.
+
 ## 0.12.7
 
 - Add `pycrdt.__version__`.
