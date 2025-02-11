@@ -10,7 +10,7 @@ def mypy_test_array():
     array0 = doc.get("array0", type=Array)
     array0.append(0)
     array0.append("foo")  # E: Argument 1 to "append" of "Array" has incompatible type "str"; expected "int"  [arg-type]
-    doc.get("array1", type=Array[str])  # E: Argument "type" to "get" of "Doc" has incompatible type "type[pycrdt._array.Array[Any]]"; expected "type[pycrdt._array.Array[int]]"
+    doc.get("array1", type=Array[str])  # E: Argument "type" to "get" of "Doc" has incompatible type "type[pycrdt._array.Array[str]]"; expected "type[pycrdt._array.Array[int]]"
 
 
 @pytest.mark.mypy_testing
