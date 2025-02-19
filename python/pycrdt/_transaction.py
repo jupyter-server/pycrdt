@@ -12,7 +12,38 @@ if TYPE_CHECKING:
     from ._doc import Doc
 
 
-class Transaction:
+class BaseTransaction:
+    """
+    Base class for read-write and read-only transactions.
+
+    It allows to persist the origin of the transaction outside of its context.
+    """
+
+    _doc: Doc
+    _origin_hash: int | None
+
+    def __init__(
+        self,
+        doc: Doc,
+        origin: Any = None,
+    ) -> None:
+        self._doc = doc
+        if origin is None:
+            self._origin_hash = None
+        else:
+            self._origin_hash = doc._origins.add(origin)
+
+    def __del__(self) -> None:
+        if getattr(self, "_origin_hash", None) is not None:
+            self._doc._origins.remove(self._origin_hash)
+
+    @property
+    def origin(self) -> Any:
+        """The origin of the transaction."""
+        return self._doc._origins.get(self._origin_hash) if self._origin_hash else None
+
+
+class Transaction(BaseTransaction):
     """
     A read-write transaction that can be used to mutate a document.
     It must be used with a context manager (see [Doc.transaction()][pycrdt.Doc.transaction]):
@@ -22,10 +53,8 @@ class Transaction:
     ```
     """
 
-    _doc: Doc
     _txn: _Transaction | None
     _leases: int
-    _origin_hash: int | None
     _timeout: float
 
     def __init__(
@@ -36,14 +65,9 @@ class Transaction:
         origin: Any = None,
         timeout: float | None = None,
     ) -> None:
-        self._doc = doc
+        super().__init__(doc, origin)
         self._txn = _txn
         self._leases = 0
-        if origin is None:
-            self._origin_hash = None
-        else:
-            self._origin_hash = hash_origin(origin)
-            doc._origins[self._origin_hash] = origin
         self._timeout = -1 if timeout is None else timeout
 
     def __enter__(self, _acquire_transaction: bool = True) -> Transaction:
@@ -75,9 +99,6 @@ class Transaction:
             assert self._txn is not None
             if not isinstance(self, ReadTransaction):
                 self._txn.commit()
-                origin_hash = self._txn.origin()
-                if origin_hash is not None:
-                    del self._doc._origins[origin_hash]
                 if self._doc._allow_multithreading:
                     self._doc._txn_lock.release()
             self._txn.drop()
@@ -99,7 +120,7 @@ class Transaction:
         if origin_hash is None:
             return None
 
-        return self._doc._origins[origin_hash]
+        return self._doc._origins.get(origin_hash)
 
 
 class NewTransaction(Transaction):
@@ -141,10 +162,3 @@ class ReadTransaction(Transaction):
     """
     A read-only transaction that cannot be used to mutate a document.
     """
-
-
-def hash_origin(origin: Any) -> int:
-    try:
-        return hash(origin)
-    except Exception:
-        raise TypeError("Origin must be hashable")

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import threading
 from abc import ABC, abstractmethod
+from collections import Counter
 from functools import lru_cache, partial
 from inspect import signature
 from typing import TYPE_CHECKING, Any, Callable, Type, cast, get_type_hints
@@ -11,7 +12,7 @@ import anyio
 from ._pycrdt import Doc as _Doc
 from ._pycrdt import Subscription
 from ._pycrdt import Transaction as _Transaction
-from ._transaction import ReadTransaction, Transaction
+from ._transaction import BaseTransaction, ReadTransaction, Transaction
 
 if TYPE_CHECKING:
     from ._doc import Doc
@@ -26,6 +27,55 @@ def forbid_read_transaction(txn: Transaction):
         raise RuntimeError("Read-only transaction cannot be used to modify document structure")
 
 
+def hash_origin(origin: Any) -> int:
+    try:
+        return hash(origin)
+    except Exception:
+        raise TypeError("Origin must be hashable")
+
+
+class Origins:
+    """Mapping of origins to their ID."""
+
+    def __init__(self) -> None:
+        self._map: dict[int, Any] = {}
+        self._counter = Counter[int]()
+
+    def __len__(self) -> int:
+        """Return the number of origins."""
+        return len(self._map)
+
+    def add(self, value: Any) -> int:
+        """Add a new origin.
+
+        Args:
+            value: Origin
+        Returns:
+            The origin ID.
+        """
+        key = hash_origin(value)
+        if key not in self._map:
+            self._map[key] = value
+        self._counter.update([key])
+
+        return key
+
+    def get(self, key: int) -> Any | None:
+        """Get the origin by its ID.
+
+        Returns:
+            The origin or None if not found.
+        """
+        return self._map.get(key)
+
+    def remove(self, key: int) -> None:
+        """Remove the origin by its ID."""
+        if key in self._map:
+            self._counter.subtract([key])
+            if self._counter[key] == 0:
+                del self._map[key]
+
+
 class BaseDoc:
     _doc: _Doc
     _twin_doc: BaseDoc | None
@@ -35,7 +85,7 @@ class BaseDoc:
     _allow_multithreading: bool
     _Model: Any
     _subscriptions: list[Subscription]
-    _origins: dict[int, Any]
+    _origins: Origins
 
     def __init__(
         self,
@@ -55,7 +105,7 @@ class BaseDoc:
         self._txn_async_lock = anyio.Lock()
         self._Model = Model
         self._subscriptions = []
-        self._origins = {}
+        self._origins = Origins()
         self._allow_multithreading = allow_multithreading
 
 
@@ -237,6 +287,8 @@ def process_event(value: Any, doc: Doc) -> Any:
     elif isinstance(value, dict):
         for key, val in value.items():
             value[key] = process_event(val, doc)
+    elif isinstance(value, _Transaction):
+        value = BaseTransaction(doc, doc._origins.get(value.origin()))
     else:
         val_type = type(value)
         if val_type in base_types:

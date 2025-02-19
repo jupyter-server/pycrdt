@@ -5,6 +5,7 @@ from functools import partial
 import pytest
 from anyio import create_task_group, fail_after, sleep, to_thread
 from pycrdt import Array, Doc, Map, Text
+from pycrdt._base import hash_origin
 
 if sys.version_info < (3, 11):
     from exceptiongroup import ExceptionGroup  # pragma: no cover
@@ -91,13 +92,15 @@ def test_origin():
             assert txn0.origin == origin0
             assert txn1.origin == origin0
             assert len(doc0._origins) == 1
-            assert list(doc0._origins.values())[0] == origin0
-            assert doc0._origins == doc1._origins
+            hashed_origin = hash_origin(origin0)
+            assert doc0._origins.get(hashed_origin) == origin0
+            assert doc1._origins.get(hashed_origin) == origin0
         assert len(doc0._origins) == 1
-        assert list(doc0._origins.values())[0] == origin0
+        assert doc0._origins.get(hash_origin(origin0)) == origin0
+        del txn1
         assert len(doc1._origins) == 0
+    del txn0
     assert len(doc0._origins) == 0
-    assert len(doc1._origins) == 0
 
     with doc0.transaction(origin=123):
         with doc0.transaction(origin=123):

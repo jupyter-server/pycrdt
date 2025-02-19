@@ -2,7 +2,7 @@ import json
 from functools import partial
 
 import pytest
-from pycrdt import Array, Doc, Map, Text
+from pycrdt import Array, Doc, Map, Text, Transaction
 
 
 def callback(events, event):
@@ -126,8 +126,15 @@ def test_observe():
         deep_events.append(events)
 
     sid4 = array.observe_deep(cb)
-    array.append("bar")
-    assert str(deep_events[0][0]) == """{target: ["bar"], delta: [{'insert': ['bar']}], path: []}"""
+    origin = "test"
+    with doc.transaction(origin=origin):
+        array.append("bar")
+    assert deep_events[0]
+    event = deep_events[0][0]
+    assert str(event.target) == '["bar"]'
+    assert str(event.delta) == "[{'insert': ['bar']}]"
+    assert str(event.path) == "[]"
+    assert event.transaction.origin == origin
     deep_events.clear()
     array.unobserve(sid4)
     array.append("baz")

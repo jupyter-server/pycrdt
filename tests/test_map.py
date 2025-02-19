@@ -2,7 +2,7 @@ import json
 from functools import partial
 
 import pytest
-from pycrdt import Array, Doc, Map, Text
+from pycrdt import Array, Doc, Map, Text, Transaction
 
 
 def callback(events, event):
@@ -142,11 +142,14 @@ def test_observe():
     events = []
 
     sub = map0.observe(partial(callback, events))
-    map0["0"] = 0
-    assert (
-        str(events[0])
-        == """{target: {"0":0}, keys: {'0': {'action': 'add', 'newValue': 0.0}}, path: []}"""
-    )
+    origin = "test-map"
+    with doc.transaction(origin=origin):
+        map0["0"] = 0
+    event = events[0]
+    assert str(event.target) == '{"0":0}'
+    assert str(event.keys) == "{'0': {'action': 'add', 'newValue': 0.0}}"
+    assert event.path == []
+    assert event.transaction.origin == origin
     events.clear()
     map0.unobserve(sub)
     map0["1"] = 1
@@ -155,10 +158,11 @@ def test_observe():
     deep_events = []
     sub = map1.observe_deep(partial(callback_deep, deep_events))
     map1["1"] = 1
-    assert (
-        str(deep_events[0][0])
-        == """{target: {"1":1}, keys: {'1': {'action': 'add', 'newValue': 1.0}}, path: []}"""
-    )
+    event = deep_events[0][0]
+    assert str(event.target) == '{"1":1}'
+    assert str(event.keys) == "{'1': {'action': 'add', 'newValue': 1.0}}"
+    assert event.path == []
+    assert event.transaction.origin is None
     deep_events.clear()
     map1.unobserve(sub)
     map1["0"] = 0
