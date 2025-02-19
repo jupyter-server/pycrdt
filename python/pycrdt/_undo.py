@@ -3,14 +3,13 @@ from __future__ import annotations
 from time import time_ns
 from typing import TYPE_CHECKING, Any, Callable
 
-from ._base import BaseType
+from ._base import BaseType, hash_origin
 from ._pycrdt import (
     StackItem,
 )
 from ._pycrdt import (
     UndoManager as _UndoManager,
 )
-from ._transaction import hash_origin
 
 if TYPE_CHECKING:
     from ._doc import Doc
