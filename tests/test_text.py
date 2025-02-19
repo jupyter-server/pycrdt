@@ -1,3 +1,5 @@
+import re
+
 import pytest
 from pycrdt import Array, Doc, Map, Text
 
@@ -169,3 +171,10 @@ def test_observe():
     assert str(event.delta) == f"[{{'insert': '{hello}'}}]"
     assert event.path == []
     assert event.transaction.origin == origin
+    assert (
+        re.match(
+            r"{target: Hello, delta: \[{'insert': 'Hello'}\], path: \[\], transaction: <[\w\.]+ object at 0x[a-fA-F\d]+>}",
+            str(event),
+        )
+        is not None
+    ), "Event string representation"

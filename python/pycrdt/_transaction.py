@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from functools import partial
 from types import TracebackType
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from anyio import to_thread
 
@@ -35,7 +35,7 @@ class BaseTransaction:
 
     def __del__(self) -> None:
         if getattr(self, "_origin_hash", None) is not None:
-            self._doc._origins.remove(self._origin_hash)
+            self._doc._origins.remove(cast(int, self._origin_hash))
 
     @property
     def origin(self) -> Any:
