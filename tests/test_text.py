@@ -173,7 +173,7 @@ def test_observe():
     assert event.transaction.origin == origin
     assert (
         re.match(
-            r"{target: Hello, delta: \[{'insert': 'Hello'}\], path: \[\], transaction: <[\w\.]+ object at 0x[a-fA-F\d]+>}",
+            r"{target: Hello, delta: \[{'insert': 'Hello'}\], path: \[\], transaction: <[\w\.]+ object at 0x[a-fA-F\d]+>}",  # noqa E501
             str(event),
         )
         is not None
