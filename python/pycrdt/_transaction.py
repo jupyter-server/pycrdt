@@ -40,7 +40,7 @@ class BaseTransaction:
     @property
     def origin(self) -> Any:
         """The origin of the transaction."""
-        return self._doc._origins.get(self._origin_hash) if self._origin_hash else None
+        return None if self._origin_hash is None else self._doc._origins.get(self._origin_hash)
 
 
 class Transaction(BaseTransaction):
