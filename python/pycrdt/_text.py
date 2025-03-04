@@ -315,7 +315,7 @@ class TextEvent(BaseEvent):
         path (list[int | str]): A list with the indices pointing to the text that was changed.
     """
 
-    __slots__ = "target", "delta", "path"
+    __slots__ = "target", "delta", "path", "transaction"
 
 
 base_types[_Text] = Text
