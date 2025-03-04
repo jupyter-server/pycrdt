@@ -174,7 +174,7 @@ class Awareness:
                     cur_meta = self._meta[client_id]
                     self._meta[client_id] = {
                         "clock": cur_meta["clock"] + 1,
-                        "lastUpdted": self._get_time(),
+                        "lastUpdated": self._get_time(),
                     }
                 removed.append(client_id)
         if removed:
