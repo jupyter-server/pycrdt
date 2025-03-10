@@ -1,5 +1,9 @@
 # Version history
 
+## 0.12.9
+
+- Upgrade `pyo3` to v0.24.0.
+
 ## 0.12.8
 
 - Bump trio upper version to <0.29.
