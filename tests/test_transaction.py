@@ -73,7 +73,7 @@ def test_origin():
     assert origin1 is origin0
 
     with pytest.raises(RuntimeError) as excinfo:
-        txn.origin()
+        txn.origin
 
     assert str(excinfo.value) == "No current transaction"
 
