@@ -1,5 +1,10 @@
 # Version history
 
+## 0.12.10
+
+- Upgrade `yrs` to v0.23.0.
+- Pin `trio <0.30.0` in tests.
+
 ## 0.12.9
 
 - Upgrade `pyo3` to v0.24.0.
