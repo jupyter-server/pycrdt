@@ -1,5 +1,9 @@
 # Version history
 
+## 0.12.11
+
+- Upgrade `pyo3` to v0.24.1.
+
 ## 0.12.10
 
 - Upgrade `yrs` to v0.23.0.
