@@ -363,7 +363,7 @@ class MapEvent(BaseEvent):
         path (list[int | str]): A list with the indices pointing to the map that was changed.
     """
 
-    __slots__ = "target", "keys", "path"
+    __slots__ = "target", "keys", "path", "transaction"
 
 
 base_types[_Map] = Map
