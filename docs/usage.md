@@ -236,6 +236,16 @@ update: bytes
 remote_doc.apply_update(update)
 ```
 
+When working in an asynchronous environment, one can iterate over the document events, instead of registering a callback:
+
+```py
+async def main():
+    async with doc.events() as events:
+        async for event in events:
+            update: bytes = event.update
+            # send binary update on the wire
+```
+
 ## Undo manager
 
 An undo manager allows to undo/redo changes to a set of shared types belonging to a document:

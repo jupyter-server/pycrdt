@@ -302,13 +302,17 @@ class Doc(BaseDoc, Generic[T]):
     def events(self) -> MemoryObjectReceiveStream[TransactionEvent | SubdocsEvent]:
         """
         Allows to asynchronously iterate over the document events, without using a callback.
+        A buffer of size 1000 is used to store the events, allowing to iterate over the events
+        at a (temporarily) slower rate than they are produced. If the buffer is full, an error
+        will be raised when an update is applied to the document.
+
         This method must be used with an async context manager and an async for-loop:
 
         ```py
         async def main():
             async with doc.events() as events:
                 async for event in events:
-                    update = event.update
+                    update: bytes = event.update
                     ...
         ```
 
@@ -321,7 +325,7 @@ class Doc(BaseDoc, Generic[T]):
             self._event_subscriptions = (sid0, sid1)
         send_stream, receive_stream = create_memory_object_stream[
             Union[TransactionEvent, SubdocsEvent]
-        ](max_buffer_size=1024)
+        ](max_buffer_size=1000)
         self._send_streams.add(send_stream)
         return receive_stream
 
