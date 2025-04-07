@@ -1,7 +1,11 @@
 from functools import partial
 
 import pytest
+from anyio import TASK_STATUS_IGNORED, Event, create_task_group
+from anyio.abc import TaskStatus
 from pycrdt import Array, Doc, Map, Text
+
+pytestmark = pytest.mark.anyio
 
 
 def callback(events, event):
@@ -210,3 +214,32 @@ def test_get_update_exception():
     with pytest.raises(ValueError) as excinfo:
         doc.get_update(b"\x12")
     assert str(excinfo.value) == "Cannot decode state"
+
+
+async def test_iterate_events():
+    doc = Doc()
+    updates = []
+
+    async def iterate_events(done_event, *, task_status: TaskStatus[None] = TASK_STATUS_IGNORED):
+        async with doc.events() as events:
+            task_status.started()
+            idx = 0
+            async for event in events:
+                updates.append(event.update)
+                if idx == 1:
+                    done_event.set()
+                    return
+                idx += 1
+
+    async with create_task_group() as tg:
+        done_event = Event()
+        await tg.start(iterate_events, done_event)
+        text = doc.get("text", type=Text)
+        text += "Hello"
+        text += ", World!"
+        await done_event.wait()
+        text += " Goodbye."
+
+    assert len(updates) == 2
+    assert updates[0].endswith(b"Hello\x00")
+    assert updates[1].endswith(b", World!\x00")
