@@ -185,9 +185,11 @@ class Doc(BaseDoc, Generic[T]):
         """
         if not isinstance(key, str):
             raise RuntimeError("Key must be of type string")
-        integrated = value._get_or_insert(key, self)
-        prelim = value._integrate(self, integrated)
-        value._init(prelim)
+        with self.transaction() as txn:
+            forbid_read_transaction(txn)
+            integrated = value._get_or_insert(key, self)
+            prelim = value._integrate(self, integrated)
+            value._init(prelim)
 
     def __getitem__(self, key: str) -> T:
         """

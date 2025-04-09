@@ -66,7 +66,9 @@ class Array(BaseType, Generic[T]):
                 self.integrated.insert(txn._txn, index, value)
 
     def _get_or_insert(self, name: str, doc: Doc) -> _Array:
-        return doc._doc.get_or_insert_array(name)
+        assert doc._txn is not None
+        assert doc._txn._txn is not None
+        return doc._doc.get_or_insert_array(doc._txn._txn, name)
 
     def __len__(self) -> int:
         """

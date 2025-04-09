@@ -4,7 +4,7 @@ from functools import partial
 
 import pytest
 from anyio import create_task_group, fail_after, sleep, to_thread
-from pycrdt import Array, Doc, Map, Text
+from pycrdt import Array, Doc, Map, Text, XmlFragment
 
 if sys.version_info < (3, 11):
     from exceptiongroup import ExceptionGroup  # pragma: no cover
@@ -270,3 +270,21 @@ async def test_new_async_transaction_concurrent_no_multithreading():
 
     assert len(events) == 2
     assert map0.to_py() == {"key0": "val0", "key1": "val1"}
+
+
+def test_get_root_type_in_transaction():
+    doc = Doc()
+    with doc.transaction():
+        text = doc.get("text", type=Text)
+        array = doc.get("Array", type=Array)
+        map0 = doc.get("map0", type=Map)
+        frag = doc.get("xml", type=XmlFragment)
+        text += "foo"
+        array.append("bar")
+        map0["key0"] = "val0"
+        frag.children.append("baz")
+
+    assert str(text) == "foo"
+    assert array.to_py() == ["bar"]
+    assert map0.to_py() == {"key0": "val0"}
+    assert str(frag) == "baz"
