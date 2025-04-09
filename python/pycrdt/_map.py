@@ -75,7 +75,9 @@ class Map(BaseType, Generic[T]):
                 self.integrated.insert(txn._txn, key, value)
 
     def _get_or_insert(self, name: str, doc: Doc) -> _Map:
-        return doc._doc.get_or_insert_map(name)
+        assert doc._txn is not None
+        assert doc._txn._txn is not None
+        return doc._doc.get_or_insert_map(doc._txn._txn, name)
 
     def __len__(self) -> int:
         """

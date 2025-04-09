@@ -19,16 +19,16 @@ class Doc:
     def create_transaction_with_origin(self, origin: Any) -> Transaction:
         """Create a document transaction with an origin."""
 
-    def get_or_insert_text(self, name: str) -> Text:
+    def get_or_insert_text(self, txn: Transaction, name: str) -> Text:
         """Create a text root type on this document, or get an existing one."""
 
-    def get_or_insert_array(self, name: str) -> Array:
+    def get_or_insert_array(self, txn: Transaction, name: str) -> Array:
         """Create an array root type on this document, or get an existing one."""
 
-    def get_or_insert_map(self, name: str) -> Map:
+    def get_or_insert_map(self, txn: Transaction, name: str) -> Map:
         """Create a map root type on this document, or get an existing one."""
 
-    def get_or_insert_xml_fragment(self, name: str) -> XmlFragment:
+    def get_or_insert_xml_fragment(self, txn: Transaction, name: str) -> XmlFragment:
         """Create an XML fragment root type on this document, or get an existing one."""
 
     def get_state(self) -> bytes:

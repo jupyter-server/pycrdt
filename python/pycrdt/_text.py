@@ -48,7 +48,9 @@ class Text(BaseType):
             self.integrated.insert(txn._txn, 0, value)
 
     def _get_or_insert(self, name: str, doc: Doc) -> _Text:
-        return doc._doc.get_or_insert_text(name)
+        assert doc._txn is not None
+        assert doc._txn._txn is not None
+        return doc._doc.get_or_insert_text(doc._txn._txn, name)
 
     def __iter__(self) -> Iterator[str]:
         """

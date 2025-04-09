@@ -113,7 +113,9 @@ class XmlFragment(_XmlFragmentTraitMixin):
         raise ValueError("XmlFragment has no Python equivalent")
 
     def _get_or_insert(self, name: str, doc: Doc) -> Any:
-        return doc._doc.get_or_insert_xml_fragment(name)
+        assert doc._txn is not None
+        assert doc._txn._txn is not None
+        return doc._doc.get_or_insert_xml_fragment(doc._txn._txn, name)
 
     def _init(self, value: list[XmlElement | str] | None) -> None:
         if value is None:

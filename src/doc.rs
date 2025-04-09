@@ -3,7 +3,7 @@ use pyo3::IntoPyObjectExt;
 use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::types::{PyBytes, PyDict, PyInt, PyList};
 use yrs::{
-    Doc as _Doc, ReadTxn, StateVector, SubdocsEvent as _SubdocsEvent, Transact, TransactionCleanupEvent, TransactionMut, Update
+    Doc as _Doc, ReadTxn, StateVector, SubdocsEvent as _SubdocsEvent, Transact, TransactionCleanupEvent, TransactionMut, Update, WriteTxn
 };
 use yrs::updates::encoder::Encode;
 use yrs::updates::decoder::Decode;
@@ -49,26 +49,34 @@ impl Doc {
         self.doc.client_id()
     }
 
-    fn get_or_insert_text(&mut self, py: Python<'_>, name: &str) -> PyResult<Py<Text>> {
-        let text = self.doc.get_or_insert_text(name);
+    fn get_or_insert_text(&mut self, py: Python<'_>, txn: &mut Transaction, name: &str) -> PyResult<Py<Text>> {
+        let mut _t = txn.transaction();
+        let t = _t.as_mut().unwrap().as_mut();
+        let text = t.get_or_insert_text(name);
         let pytext: Py<Text> = Py::new(py, Text::from(text))?;
         Ok(pytext)
     }
 
-    fn get_or_insert_array(&mut self, py: Python<'_>, name: &str) -> PyResult<Py<Array>> {
-        let shared = self.doc.get_or_insert_array(name);
+    fn get_or_insert_array(&mut self, py: Python<'_>, txn: &mut Transaction, name: &str) -> PyResult<Py<Array>> {
+        let mut _t = txn.transaction();
+        let t = _t.as_mut().unwrap().as_mut();
+        let shared = t.get_or_insert_array(name);
         let pyshared: Py<Array > = Py::new(py, Array::from(shared))?;
         Ok(pyshared)
     }
 
-    fn get_or_insert_map(&mut self, py: Python<'_>, name: &str) -> PyResult<Py<Map>> {
-        let shared = self.doc.get_or_insert_map(name);
+    fn get_or_insert_map(&mut self, py: Python<'_>, txn: &mut Transaction, name: &str) -> PyResult<Py<Map>> {
+        let mut _t = txn.transaction();
+        let t = _t.as_mut().unwrap().as_mut();
+        let shared = t.get_or_insert_map(name);
         let pyshared: Py<Map> = Py::new(py, Map::from(shared))?;
         Ok(pyshared)
     }
 
-    fn get_or_insert_xml_fragment(&mut self, name: &str) -> XmlFragment {
-        self.doc.get_or_insert_xml_fragment(name).into()
+    fn get_or_insert_xml_fragment(&mut self, txn: &mut Transaction, name: &str) -> XmlFragment {
+        let mut _t = txn.transaction();
+        let t = _t.as_mut().unwrap().as_mut();
+        t.get_or_insert_xml_fragment(name).into()
     }
 
     fn create_transaction(&self, py: Python<'_>) -> PyResult<Py<Transaction>> {
