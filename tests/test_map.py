@@ -2,7 +2,11 @@ import json
 from functools import partial
 
 import pytest
+from anyio import TASK_STATUS_IGNORED, Event, create_task_group
+from anyio.abc import TaskStatus
 from pycrdt import Array, Doc, Map, Text
+
+pytestmark = pytest.mark.anyio
 
 
 def callback(events, event):
@@ -163,3 +167,33 @@ def test_observe():
     map1.unobserve(sub)
     map1["0"] = 0
     assert deep_events == []
+
+
+async def test_iterate_events():
+    doc = Doc()
+    map0 = doc.get("map0", type=Map)
+    keys = []
+
+    async def iterate_events(done_event, *, task_status: TaskStatus[None] = TASK_STATUS_IGNORED):
+        async with map0.events() as events:
+            task_status.started()
+            idx = 0
+            async for event in events:
+                print(event)
+                keys.append(event.keys)
+                if idx == 1:
+                    done_event.set()
+                    return
+                idx += 1
+
+    async with create_task_group() as tg:
+        done_event = Event()
+        await tg.start(iterate_events, done_event)
+        map0["key0"] = "Hello"
+        map0["key1"] = ", World!"
+        await done_event.wait()
+        map0["key2"] = " Goodbye."
+
+    assert len(keys) == 2
+    assert keys[0] == {"key0": {"action": "add", "newValue": "Hello"}}
+    assert keys[1] == {"key1": {"action": "add", "newValue": ", World!"}}

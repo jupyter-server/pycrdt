@@ -2,7 +2,11 @@ import json
 from functools import partial
 
 import pytest
+from anyio import TASK_STATUS_IGNORED, Event, create_task_group
+from anyio.abc import TaskStatus
 from pycrdt import Array, Doc, Map, Text
+
+pytestmark = pytest.mark.anyio
 
 
 def callback(events, event):
@@ -239,3 +243,57 @@ def test_to_py():
     subarray = Array([1, submap])
     doc["array"] = array = Array([0, subarray])
     assert array.to_py() == [0, [1, {"foo": "bar"}]]
+
+
+async def test_iterate_events():
+    doc = Doc()
+    array0 = doc.get("array0", type=Array)
+    deltas = []
+    paths = []
+    deltas_deep = []
+    paths_deep = []
+
+    async def iterate_events(*, task_status: TaskStatus[None] = TASK_STATUS_IGNORED):
+        async with array0.events() as events:
+            task_status.started()
+            idx = 0
+            async for event in events:
+                deltas.append(event.delta)
+                paths.append(event.path)
+                if idx == 1:
+                    break
+                idx += 1
+
+    async def iterate_events_deep(
+        done_event, *, task_status: TaskStatus[None] = TASK_STATUS_IGNORED
+    ):
+        async with array0.events(deep=True) as events:
+            task_status.started()
+            async for _events in events:
+                for event in _events:
+                    deltas_deep.append(event.delta)
+                    paths_deep.append(event.path)
+                    done_event.set()
+                    return
+
+    async with create_task_group() as tg:
+        done_event = Event()
+        await tg.start(iterate_events)
+        array0.append("Hello")
+        array1 = Array([", World!"])
+        array0.append(array1)
+        await tg.start(iterate_events_deep, done_event)
+        array1.append("Good")
+        await done_event.wait()
+        array1.append("bye.")
+
+    assert len(deltas) == 2
+    assert deltas[0] == [{"insert": ["Hello"]}]
+    assert paths[0] == []
+    assert len(deltas[1]) == 2
+    assert deltas[1][0] == {"retain": 1}
+    assert deltas[1][1]["insert"][0].to_py() == [", World!", "Good", "bye."]
+    assert paths[1] == []
+    assert len(deltas_deep) == 1
+    assert deltas_deep[0] == [{"retain": 1}, {"insert": ["Good"]}]
+    assert paths_deep[0] == [1]

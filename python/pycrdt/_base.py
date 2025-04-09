@@ -4,9 +4,11 @@ import threading
 from abc import ABC, abstractmethod
 from functools import lru_cache, partial
 from inspect import signature
-from typing import TYPE_CHECKING, Any, Callable, Type, cast, get_type_hints
+from typing import TYPE_CHECKING, Any, Callable, Literal, Type, cast, get_type_hints, overload
 
 import anyio
+from anyio import BrokenResourceError, create_memory_object_stream
+from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
 
 from ._pycrdt import Doc as _Doc
 from ._pycrdt import Subscription
@@ -75,6 +77,11 @@ class BaseType(ABC):
     ) -> None:
         self._type_name = self.__class__.__name__.lower()
         self._subscriptions = []
+        self._send_streams: dict[bool, set[MemoryObjectSendStream[BaseEvent | list[BaseEvent]]]] = {
+            False: set(),
+            True: set(),
+        }
+        self._event_subscription: dict[bool, Subscription] = {}
         # private API
         if _integrated is not None:
             self._doc = _doc
@@ -184,6 +191,69 @@ class BaseType(ABC):
         """
         self._subscriptions.remove(subscription)
         subscription.drop()
+
+    @overload
+    def events(
+        self,
+        deep: Literal[False],
+        max_buffer_size: float = float("inf"),
+    ) -> MemoryObjectReceiveStream[BaseEvent]: ...
+
+    @overload
+    def events(
+        self,
+        deep: Literal[True],
+        max_buffer_size: float = float("inf"),
+    ) -> MemoryObjectReceiveStream[list[BaseEvent]]: ...
+
+    def events(
+        self,
+        deep: bool = False,
+        max_buffer_size: float = float("inf"),
+    ):
+        """
+        Allows to asynchronously iterate over the shared type events, without using a callback.
+        A buffer is used to store the events, allowing to iterate at a (temporarily) slower rate
+        than they are produced.
+
+        This method must be used with an async context manager and an async for-loop:
+
+        ```py
+        async def main():
+            async with doc.events() as events:
+                async for event in events:
+                    update: bytes = event.update
+                    ...
+        ```
+
+        Args:
+            deep: Whether to iterate over the nested events.
+            max_buffer_size: Maximum number of events that can be buffered.
+
+        Returns:
+            An async iterator over the shared type events.
+        """
+        observe = self.observe_deep if deep else self.observe
+        if not self._send_streams[deep]:
+            self._event_subscription[deep] = observe(partial(self._send_event, deep))
+        send_stream, receive_stream = create_memory_object_stream[BaseEvent | list[BaseEvent]](
+            max_buffer_size=max_buffer_size
+        )
+        self._send_streams[deep].add(send_stream)
+        return receive_stream
+
+    def _send_event(self, deep: bool, event: BaseEvent | list[BaseEvent]):
+        to_remove: list[MemoryObjectSendStream[BaseEvent | list[BaseEvent]]] = []
+        send_streams = self._send_streams[deep]
+        for send_stream in send_streams:
+            try:
+                send_stream.send_nowait(event)
+            except BrokenResourceError:
+                to_remove.append(send_stream)
+        for send_stream in to_remove:
+            send_streams.remove(send_stream)
+        if not send_streams:
+            self.unobserve(self._event_subscription[deep])
 
 
 def observe_callback(

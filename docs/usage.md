@@ -212,6 +212,15 @@ array0_subscription_id = array0.observe_deep(handle_deep_changes)
 
 Unregistering the callback is done with the same `unobserve` method.
 
+When working in an asynchronous environment, one can iterate over the shared data events, instead of registering a callback:
+
+```py
+async def main():
+    async with text0.events() as events:
+        async for event in events:
+            # process the event
+```
+
 ### Document events
 
 Observing changes made to a document is mostly meant to send the changes to another document, usually over the wire to a remote machine.
