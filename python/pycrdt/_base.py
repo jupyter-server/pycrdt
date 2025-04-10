@@ -4,7 +4,17 @@ import threading
 from abc import ABC, abstractmethod
 from functools import lru_cache, partial
 from inspect import signature
-from typing import TYPE_CHECKING, Any, Callable, Literal, Type, cast, get_type_hints, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Literal,
+    Type,
+    Union,
+    cast,
+    get_type_hints,
+    overload,
+)
 
 import anyio
 from anyio import BrokenResourceError, create_memory_object_stream
@@ -236,9 +246,9 @@ class BaseType(ABC):
         observe = self.observe_deep if deep else self.observe
         if not self._send_streams[deep]:
             self._event_subscription[deep] = observe(partial(self._send_event, deep))
-        send_stream, receive_stream = create_memory_object_stream[BaseEvent | list[BaseEvent]](
-            max_buffer_size=max_buffer_size
-        )
+        send_stream, receive_stream = create_memory_object_stream[
+            Union[BaseEvent, list[BaseEvent]]
+        ](max_buffer_size=max_buffer_size)
         self._send_streams[deep].add(send_stream)
         return receive_stream
 

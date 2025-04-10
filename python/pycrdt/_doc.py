@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import Any, Callable, Generic, Iterable, Literal, Type, TypeVar, cast, overload
+from typing import Any, Callable, Generic, Iterable, Literal, Type, TypeVar, Union, cast, overload
 
 from anyio import BrokenResourceError, create_memory_object_stream
 from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
@@ -326,7 +326,8 @@ class Doc(BaseDoc, Generic[T]):
     ):
         """
         Allows to asynchronously iterate over the document events, without using a callback.
-        A buffer is used to store the events, allowing to iterate at a (temporarily) slower rate than they are produced.
+        A buffer is used to store the events, allowing to iterate at a (temporarily) slower
+        rate than they are produced.
 
         This method must be used with an async context manager and an async for-loop:
 
@@ -339,7 +340,8 @@ class Doc(BaseDoc, Generic[T]):
         ```
 
         Args:
-            subdocs: Whether to iterate over the [SubdocsEvent][pycrdt.SubdocsEvent] events (default is [TransactionEvent][pycrdt.TransactionEvent]).
+            subdocs: Whether to iterate over the [SubdocsEvent][pycrdt.SubdocsEvent] events
+                (default is [TransactionEvent][pycrdt.TransactionEvent]).
             max_buffer_size: Maximum number of events that can be buffered.
 
         Returns:
@@ -348,9 +350,9 @@ class Doc(BaseDoc, Generic[T]):
         observe = self.observe_subdocs if subdocs else self.observe
         if not self._send_streams[subdocs]:
             self._event_subscription[subdocs] = observe(partial(self._send_event, subdocs))
-        send_stream, receive_stream = create_memory_object_stream[TransactionEvent | SubdocsEvent](
-            max_buffer_size=max_buffer_size
-        )
+        send_stream, receive_stream = create_memory_object_stream[
+            Union[TransactionEvent, SubdocsEvent]
+        ](max_buffer_size=max_buffer_size)
         self._send_streams[subdocs].add(send_stream)
         return receive_stream
 
