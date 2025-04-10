@@ -1,5 +1,10 @@
 # Version history
 
+## 0.12.12
+
+- Add doc and shared type `events()` async event iterator.
+- Fix deadlock while getting root type from within transaction.
+
 ## 0.12.11
 
 - Upgrade `pyo3` to v0.24.1.
