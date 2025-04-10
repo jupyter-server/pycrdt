@@ -1,5 +1,9 @@
 import pytest
+from anyio import TASK_STATUS_IGNORED, Event, create_task_group
+from anyio.abc import TaskStatus
 from pycrdt import Array, Doc, Map, Text
+
+pytestmark = pytest.mark.anyio
 
 hello = "Hello"
 world = ", World"
@@ -163,3 +167,32 @@ def test_observe():
     sub = text.observe(callback)  # noqa: F841
     text += hello
     assert str(events[0]) == """{target: Hello, delta: [{'insert': 'Hello'}], path: []}"""
+
+
+async def test_iterate_events():
+    doc = Doc()
+    text = doc.get("text", type=Text)
+    deltas = []
+
+    async def iterate_events(done_event, *, task_status: TaskStatus[None] = TASK_STATUS_IGNORED):
+        async with text.events() as events:
+            task_status.started()
+            idx = 0
+            async for event in events:
+                deltas.append(event.delta)
+                if idx == 1:
+                    done_event.set()
+                    return
+                idx += 1
+
+    async with create_task_group() as tg:
+        done_event = Event()
+        await tg.start(iterate_events, done_event)
+        text += "Hello"
+        text += ", World!"
+        await done_event.wait()
+        text += " Goodbye."
+
+    assert len(deltas) == 2
+    assert deltas[0] == [{"insert": "Hello"}]
+    assert deltas[1] == [{"retain": 5}, {"insert": ", World!"}]
