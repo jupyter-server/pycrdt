@@ -286,10 +286,10 @@ def is_awareness_disconnect_message(message: bytes) -> bool:
     from the client.
 
     Args:
-        message: The message received from the client, in bytes.
+        message: The message received from the client.
 
     Returns:
-        A boolean, whether the message is a disconnection message or not.
+        Whether the message is a disconnection message or not.
     """
     decoder = Decoder(read_message(message))
     length = decoder.read_var_uint()
