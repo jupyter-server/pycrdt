@@ -2,6 +2,7 @@ from ._array import Array as Array
 from ._array import ArrayEvent as ArrayEvent
 from ._array import TypedArray as TypedArray
 from ._awareness import Awareness as Awareness
+from ._awareness import is_awareness_disconnect_message as is_awareness_disconnect_message
 from ._doc import Doc as Doc
 from ._doc import TypedDoc as TypedDoc
 from ._map import Map as Map
