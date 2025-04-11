@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import pytest
 from anyio import create_task_group, sleep
-from pycrdt import Awareness, Doc, Encoder, YMessageType, create_awareness_message, read_message
+from pycrdt import Awareness, Doc, Encoder, YMessageType, create_awareness_message, is_disconnection_message, read_message, write_message
 
 pytestmark = pytest.mark.anyio
 
@@ -433,3 +433,13 @@ async def test_awareness_periodic_updates():
             "local",
         ),
     )
+
+
+def test_awareness_disconnection():
+    # Should return True if it is a disconnection message
+    update = write_message(create_awareness_update(REMOTE_CLIENT_ID, "null"))
+    assert is_disconnection_message(update)
+
+    # Should return False if it is not a disconnection message
+    update = write_message(create_awareness_update(REMOTE_CLIENT_ID, "{}"))
+    assert not is_disconnection_message(update)

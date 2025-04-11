@@ -280,13 +280,11 @@ class Awareness:
         del self._subscriptions[id]
 
 
-"""
-Check if the message is null, which means that it is a disconnection message
-from the client.
-"""
-
-
 def is_disconnection_message(message: bytes) -> bool:
+    """
+    Check if the message is null, which means that it is a disconnection message
+    from the client.
+    """
     decoder = Decoder(read_message(message))
     length = decoder.read_var_uint()
     # A disconnection message should be a single message
