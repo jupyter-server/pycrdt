@@ -10,6 +10,12 @@ pytestmark = pytest.mark.anyio
 async def test_multi_threading():
     doc = Doc()
     doc["text"] = text = Text()
+
+    def callback(event):
+        pass
+
+    subscription = text.observe(callback)
+
     message = "Hello from thread!"
 
     def add_text(text, message):
@@ -18,6 +24,8 @@ async def test_multi_threading():
     limiter = CapacityLimiter(1)
     await to_thread.run_sync(add_text, text, message, limiter=limiter)
     assert str(text) == message
+
+    text.unobserve(subscription)
 
     def drop():
         nonlocal text, doc
