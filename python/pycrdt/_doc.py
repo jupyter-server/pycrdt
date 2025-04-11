@@ -365,6 +365,7 @@ class Doc(BaseDoc, Generic[T]):
             except BrokenResourceError:
                 to_remove.append(send_stream)
         for send_stream in to_remove:
+            send_stream.close()
             send_streams.remove(send_stream)
         if not send_streams:
             self.unobserve(self._event_subscription[subdocs])

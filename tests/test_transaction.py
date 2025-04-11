@@ -1,3 +1,4 @@
+import gc
 import sys
 import time
 from functools import partial
@@ -145,6 +146,9 @@ def create_new_transaction(map0: Map, key: str, val: str) -> None:
     with map0.doc.new_transaction():
         time.sleep(0.1)
         map0[key] = val
+    gc.collect()
+    # looks like PyPy needs a second one:
+    gc.collect()
 
 
 async def create_new_transaction_async(map0: Map, key: str, val: str) -> None:
@@ -156,6 +160,7 @@ async def create_new_transaction_async(map0: Map, key: str, val: str) -> None:
 async def test_new_transaction_multithreading():
     doc = Doc(allow_multithreading=True)
     doc["map0"] = map0 = Map()
+    gc.collect()
 
     def callback(events, event):
         events.append(None)
@@ -176,6 +181,7 @@ async def test_new_transaction_multithreading():
 async def test_new_transaction_no_multithreading():
     doc = Doc(allow_multithreading=False)
     doc["map0"] = map0 = Map()
+    gc.collect()
 
     def callback(events, event):
         events.append(None)
