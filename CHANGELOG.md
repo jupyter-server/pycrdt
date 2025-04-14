@@ -1,5 +1,10 @@
 # Version history
 
+## 0.12.13
+
+- Add `is_awareness_disconnect_message()`.
+- Close memory streams in event iterators.
+
 ## 0.12.12
 
 - Add doc and shared type `events()` async event iterator.
