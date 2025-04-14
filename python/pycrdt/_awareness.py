@@ -10,7 +10,7 @@ from anyio import TASK_STATUS_IGNORED, create_task_group, sleep
 from anyio.abc import TaskGroup, TaskStatus
 
 from ._doc import Doc
-from ._sync import Decoder, Encoder
+from ._sync import Decoder, Encoder, read_message
 
 
 class Awareness:
@@ -278,3 +278,27 @@ class Awareness:
             id: The subscription ID to unregister.
         """
         del self._subscriptions[id]
+
+
+def is_awareness_disconnect_message(message: bytes) -> bool:
+    """
+    Check if the message is null, which means that it is a disconnection message
+    from the client.
+
+    Args:
+        message: The message received from the client.
+
+    Returns:
+        Whether the message is a disconnection message or not.
+    """
+    decoder = Decoder(read_message(message))
+    length = decoder.read_var_uint()
+    # A disconnection message should be a single message
+    if length == 1:
+        # Remove client_id and clock information from message (not used)
+        for _ in range(2):
+            decoder.read_var_uint()
+        state = decoder.read_var_string()
+        if state == "null":
+            return True
+    return False
