@@ -1,5 +1,9 @@
 # Version history
 
+## 0.12.14
+
+- Upgrade `yrs` to v0.23.1.
+
 ## 0.12.13
 
 - Add `is_awareness_disconnect_message()`.
