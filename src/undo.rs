@@ -131,6 +131,14 @@ impl UndoManager {
         self.undo_manager.expand_scope(&doc.doc, &scope.fragment);
     }
 
+    pub fn origin(&self) -> i128 {
+        let origin = self.undo_manager.as_origin();
+        let data = origin.as_ref();
+        let mut bytes = [0; 16];
+        bytes[16 - data.len()..].copy_from_slice(data);
+        i128::from_be_bytes(bytes)
+    }
+
     pub fn include_origin(&mut self, origin: i128) {
         self.undo_manager.include_origin(origin);
     }

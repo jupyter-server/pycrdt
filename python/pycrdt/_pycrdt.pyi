@@ -369,6 +369,9 @@ class UndoManager:
     ) -> None:
         """Creates an undo manager."""
 
+    def origin(self) -> int:
+        """Returns the transaction origin used for undo and redo operations."""
+
     def expand_scope(self, doc: Doc, scope: Text | Array | Map) -> None:
         """Extends a list of shared types tracked by current undo manager by a given scope."""
 
