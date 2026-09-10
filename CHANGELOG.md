@@ -1,5 +1,9 @@
 # Version history
 
+## 0.14.5
+
+- Support undo manager origins.
+
 ## 0.14.4
 
 - Bump `yrs` to v0.27.4.
